@@ -1,4 +1,5 @@
 *.go ident
+*.java ident
 
 # In general, use LF for text
 * text eol=lf
