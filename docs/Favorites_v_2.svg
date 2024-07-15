@@ -1,5 +1,5 @@
 <?xml version="1.0" standalone="no"?>
-<svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="718.7333374023438" height="281">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="778.7333374023438" height="372">
     <style>
         @font-face {
         font-family: 'Open Sans';
@@ -16,189 +16,57 @@
         font-weight: bold;
         }
     </style>
-    <svg x="455.5" y="90" width="67" height="137">
-        <path d="M44,22L34,22Q24,22,24,32L24,101Q24,111,14,111L4,111L4,111L14,111Q24,111,24,101L24,32Q24,22,34,22L44,22ZM44,18L34,22L44,26M14,107L14,115"
+    <svg x="488.23333740234375" y="90" width="94.26666259765625" height="196">
+        <path d="M71.26666259765625,22L51.26666259765625,22L44.44999694824219,22Q37.633331298828125,22,37.633331298828125,28.816665649414062L37.633331298828125,163.18333435058594Q37.633331298828125,170,30.816665649414062,170L24,170L4,170L4,170L24,170L30.816665649414062,170Q37.633331298828125,170,37.633331298828125,163.18333435058594L37.633331298828125,28.816665649414062Q37.633331298828125,22,44.44999694824219,22L51.26666259765625,22L71.26666259765625,22ZM71.26666259765625,18L61.26666259765625,22L71.26666259765625,26M14,166L14,174"
               fill="none" stroke="#D3D3D3" stroke-width="1"></path>
-        <text x="33" y="19"
+        <text x="60.26666259765625" y="19"
               style="font-family: Open Sans, sans-serif; font-size: 14px; font-weight: normal; fill: transparent;">*
         </text>
-        <text x="7" y="108"
+        <text x="7" y="167"
               style="font-family: Open Sans, sans-serif; font-size: 14px; font-weight: normal; fill: transparent;">1
         </text>
     </svg>
-    <svg x="455.5" y="26" width="67" height="80">
-        <path d="M44,54L34,54Q24,54,24,44L24,32Q24,22,14,22L4,22L4,22L14,22Q24,22,24,32L24,44Q24,54,34,54L44,54ZM44,50L34,54L44,58M14,18L14,26"
+    <svg x="488.23333740234375" y="26" width="94.26666259765625" height="80">
+        <path d="M71.26666259765625,54L51.26666259765625,54L44.44999694824219,54Q37.633331298828125,54,37.633331298828125,47.18333435058594L37.633331298828125,28.816665649414062Q37.633331298828125,22,30.816665649414062,22L24,22L4,22L4,22L24,22L30.816665649414062,22Q37.633331298828125,22,37.633331298828125,28.816665649414062L37.633331298828125,47.18333435058594Q37.633331298828125,54,44.44999694824219,54L51.26666259765625,54L71.26666259765625,54ZM71.26666259765625,50L61.26666259765625,54L71.26666259765625,58M14,18L14,26"
               fill="none" stroke="#D3D3D3" stroke-width="1"></path>
-        <text x="33" y="51"
+        <text x="60.26666259765625" y="51"
               style="font-family: Open Sans, sans-serif; font-size: 14px; font-weight: normal; fill: transparent;">*
         </text>
         <text x="7" y="19"
               style="font-family: Open Sans, sans-serif; font-size: 14px; font-weight: normal; fill: transparent;">1
         </text>
     </svg>
-    <svg x="205.5" y="58" width="67.5" height="48">
-        <path d="M44.5,22L24.5,22L24,22L4,22L4,22L24,22L24.5,22L44.5,22ZM34.5,18L34.5,26M4,18L14,22L4,26" fill="none"
-              stroke="#D3D3D3" stroke-width="1"></path>
-        <text x="33.80000019073486" y="19"
-              style="font-family: Open Sans, sans-serif; font-size: 14px; font-weight: normal; fill: transparent;">1
-        </text>
-        <text x="7" y="19"
+    <svg x="210.23333740234375" y="26" width="90.76666259765624" height="80">
+        <path d="M67.76666259765624,54L47.766662597656236,54L41.82499694824217,54Q35.88333129882812,54,35.88333129882812,48.05833435058594L35.88333129882812,27.94166564941406Q35.88333129882812,22,29.94166564941406,22L24,22L4,22L4,22L24,22L29.94166564941406,22Q35.88333129882812,22,35.88333129882812,27.94166564941406L35.88333129882812,48.05833435058594Q35.88333129882812,54,41.82499694824217,54L47.766662597656236,54L67.76666259765624,54ZM67.76666259765624,50L57.766662597656236,54L67.76666259765624,58M14,18L14,26"
+              fill="none" stroke="#D3D3D3" stroke-width="1"></path>
+        <text x="56.766662597656236" y="51"
               style="font-family: Open Sans, sans-serif; font-size: 14px; font-weight: normal; fill: transparent;">*
         </text>
+        <text x="7" y="19"
+              style="font-family: Open Sans, sans-serif; font-size: 14px; font-weight: normal; fill: transparent;">1
+        </text>
     </svg>
-    <svg x="0" y="32">
-        <rect x="0" y="0" width="209.5" height="32" fill="#316896"></rect>
+    <svg x="0" y="0">
+        <rect x="0" y="0" width="214.23333740234375" height="32" fill="#316896"></rect>
         <text x="10" y="19.25"
               style="font-family: Open Sans, sans-serif; font-size: 13px; font-weight: bold; fill: rgb(255, 255, 255);">
             asset_types
         </text>
     </svg>
-    <svg x="0" y="64">
-        <rect x="0" y="0" width="209.5" height="32" fill="#F2F2F2"></rect>
+    <svg x="0" y="32">
+        <rect x="0" y="0" width="214.23333740234375" height="32" fill="#F2F2F2"></rect>
         <text x="10" y="19.25"
               style="font-family: Open Sans, sans-serif; font-size: 13px; font-weight: bold; fill: rgb(111, 111, 111);">
             name
         </text>
         <path transform="translate(50.83333206176758,9.25)" fill="#6F6F6F"
               d="M 6.5625 0.9844 C 8.1935 0.9844 9.5156 2.3065 9.5156 3.9375 C 9.5156 5.5685 8.1935 6.8906 6.5625 6.8906 C 6.1735 6.8906 5.8022 6.8153 5.462 6.6786 L 4.5938 7.5469 H 3.9375 V 8.5313 H 2.9531 V 9.5156 H 0.9844 V 7.5469 L 3.736 4.7952 C 3.6518 4.5171 3.6092 4.2281 3.6094 3.9375 C 3.6094 2.3065 4.9315 0.9844 6.5625 0.9844 Z M 6.5625 0 C 4.388 0 2.625 1.7627 2.625 3.9375 C 2.625 4.1186 2.6373 4.2989 2.6619 4.4772 L 0.1441 6.995 C 0.0519 7.0873 0 7.2125 0 7.343 L 0 10.0078 C 0 10.2797 0.2204 10.5 0.4922 10.5 H 3.4453 C 3.7171 10.5 3.9375 10.2797 3.9375 10.0078 V 9.5156 H 4.4297 C 4.7015 9.5156 4.9219 9.2953 4.9219 9.0234 V 8.6133 L 5.7432 7.7895 C 6.011 7.8464 6.2848 7.875 6.5625 7.875 C 8.737 7.875 10.5 6.1123 10.5 3.9375 C 10.5 1.763 8.7373 0 6.5625 0 Z M 6.5625 2.9531 C 6.5625 3.4968 7.0032 3.9375 7.5469 3.9375 C 8.0905 3.9375 8.5313 3.4968 8.5313 2.9531 C 8.5313 2.4095 8.0905 1.9688 7.5469 1.9688 C 7.0032 1.9688 6.5625 2.4095 6.5625 2.9531 Z"></path>
-        <text x="149.33333206176758" y="19.25"
+        <text x="154.06666946411133" y="19.25"
               style="font-family: Open Sans, sans-serif; font-size: 13px; font-weight: bold; fill: rgb(153, 153, 153);">
             varchar
         </text>
     </svg>
-    <svg x="0" y="96">
-        <rect x="0" y="0" width="209.5" height="32" fill="#F2F2F2"></rect>
-        <text x="10" y="19.25" style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(111, 111, 111);">
-            created_at
-        </text>
-        <text x="134.1999969482422" y="19.25"
-              style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(153, 153, 153);">timestamp
-        </text>
-    </svg>
-    <svg x="250" y="0">
-        <rect x="0" y="0" width="209.5" height="32" fill="#316896"></rect>
-        <text x="10" y="19.25"
-              style="font-family: Open Sans, sans-serif; font-size: 13px; font-weight: bold; fill: rgb(255, 255, 255);">
-            asset
-        </text>
-    </svg>
-    <svg x="250" y="32">
-        <rect x="0" y="0" width="209.5" height="32" fill="#F2F2F2"></rect>
-        <text x="10" y="19.25"
-              style="font-family: Open Sans, sans-serif; font-size: 13px; font-weight: bold; fill: rgb(111, 111, 111);">
-            isin
-        </text>
-        <path transform="translate(36.933332443237305,9.25)" fill="#6F6F6F"
-              d="M 6.5625 0.9844 C 8.1935 0.9844 9.5156 2.3065 9.5156 3.9375 C 9.5156 5.5685 8.1935 6.8906 6.5625 6.8906 C 6.1735 6.8906 5.8022 6.8153 5.462 6.6786 L 4.5938 7.5469 H 3.9375 V 8.5313 H 2.9531 V 9.5156 H 0.9844 V 7.5469 L 3.736 4.7952 C 3.6518 4.5171 3.6092 4.2281 3.6094 3.9375 C 3.6094 2.3065 4.9315 0.9844 6.5625 0.9844 Z M 6.5625 0 C 4.388 0 2.625 1.7627 2.625 3.9375 C 2.625 4.1186 2.6373 4.2989 2.6619 4.4772 L 0.1441 6.995 C 0.0519 7.0873 0 7.2125 0 7.343 L 0 10.0078 C 0 10.2797 0.2204 10.5 0.4922 10.5 H 3.4453 C 3.7171 10.5 3.9375 10.2797 3.9375 10.0078 V 9.5156 H 4.4297 C 4.7015 9.5156 4.9219 9.2953 4.9219 9.0234 V 8.6133 L 5.7432 7.7895 C 6.011 7.8464 6.2848 7.875 6.5625 7.875 C 8.737 7.875 10.5 6.1123 10.5 3.9375 C 10.5 1.763 8.7373 0 6.5625 0 Z M 6.5625 2.9531 C 6.5625 3.4968 7.0032 3.9375 7.5469 3.9375 C 8.0905 3.9375 8.5313 3.4968 8.5313 2.9531 C 8.5313 2.4095 8.0905 1.9688 7.5469 1.9688 C 7.0032 1.9688 6.5625 2.4095 6.5625 2.9531 Z"></path>
-        <text x="149.33333206176758" y="19.25"
-              style="font-family: Open Sans, sans-serif; font-size: 13px; font-weight: bold; fill: rgb(153, 153, 153);">
-            varchar
-        </text>
-    </svg>
-    <svg x="250" y="64">
-        <rect x="0" y="0" width="209.5" height="32" fill="#F2F2F2"></rect>
-        <text x="10" y="19.25" style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(111, 111, 111);">
-            asset_type
-        </text>
-        <text x="153.73333358764648" y="19.25"
-              style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(153, 153, 153);">varchar
-        </text>
-    </svg>
-    <svg x="250" y="96">
-        <rect x="0" y="0" width="209.5" height="32" fill="#F2F2F2"></rect>
-        <text x="10" y="19.25" style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(111, 111, 111);">
-            created_at
-        </text>
-        <text x="134.1999969482422" y="19.25"
-              style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(153, 153, 153);">timestamp
-        </text>
-    </svg>
-    <svg x="250" y="153">
-        <rect x="0" y="0" width="209.5" height="32" fill="#316896"></rect>
-        <text x="10" y="19.25"
-              style="font-family: Open Sans, sans-serif; font-size: 13px; font-weight: bold; fill: rgb(255, 255, 255);">
-            users
-        </text>
-    </svg>
-    <svg x="250" y="185">
-        <rect x="0" y="0" width="209.5" height="32" fill="#F2F2F2"></rect>
-        <text x="10" y="19.25"
-              style="font-family: Open Sans, sans-serif; font-size: 13px; font-weight: bold; fill: rgb(111, 111, 111);">
-            id
-        </text>
-        <path transform="translate(26.199999809265137,9.25)" fill="#6F6F6F"
-              d="M 6.5625 0.9844 C 8.1935 0.9844 9.5156 2.3065 9.5156 3.9375 C 9.5156 5.5685 8.1935 6.8906 6.5625 6.8906 C 6.1735 6.8906 5.8022 6.8153 5.462 6.6786 L 4.5938 7.5469 H 3.9375 V 8.5313 H 2.9531 V 9.5156 H 0.9844 V 7.5469 L 3.736 4.7952 C 3.6518 4.5171 3.6092 4.2281 3.6094 3.9375 C 3.6094 2.3065 4.9315 0.9844 6.5625 0.9844 Z M 6.5625 0 C 4.388 0 2.625 1.7627 2.625 3.9375 C 2.625 4.1186 2.6373 4.2989 2.6619 4.4772 L 0.1441 6.995 C 0.0519 7.0873 0 7.2125 0 7.343 L 0 10.0078 C 0 10.2797 0.2204 10.5 0.4922 10.5 H 3.4453 C 3.7171 10.5 3.9375 10.2797 3.9375 10.0078 V 9.5156 H 4.4297 C 4.7015 9.5156 4.9219 9.2953 4.9219 9.0234 V 8.6133 L 5.7432 7.7895 C 6.011 7.8464 6.2848 7.875 6.5625 7.875 C 8.737 7.875 10.5 6.1123 10.5 3.9375 C 10.5 1.763 8.7373 0 6.5625 0 Z M 6.5625 2.9531 C 6.5625 3.4968 7.0032 3.9375 7.5469 3.9375 C 8.0905 3.9375 8.5313 3.4968 8.5313 2.9531 C 8.5313 2.4095 8.0905 1.9688 7.5469 1.9688 C 7.0032 1.9688 6.5625 2.4095 6.5625 2.9531 Z"></path>
-        <text x="170.23333358764648" y="19.25"
-              style="font-family: Open Sans, sans-serif; font-size: 13px; font-weight: bold; fill: rgb(153, 153, 153);">
-            uuid
-        </text>
-    </svg>
-    <svg x="250" y="217">
-        <rect x="0" y="0" width="209.5" height="32" fill="#F2F2F2"></rect>
-        <text x="10" y="19.25" style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(111, 111, 111);">
-            upk
-        </text>
-        <text x="153.73333358764648" y="19.25"
-              style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(153, 153, 153);">varchar
-        </text>
-    </svg>
-    <svg x="250" y="249">
-        <rect x="0" y="0" width="209.5" height="32" fill="#F2F2F2"></rect>
-        <text x="10" y="19.25" style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(111, 111, 111);">
-            created_at
-        </text>
-        <text x="134.1999969482422" y="19.25"
-              style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(153, 153, 153);">timestamp
-        </text>
-    </svg>
-    <svg x="499.5" y="0">
-        <rect x="0" y="0" width="214.23333740234375" height="32" fill="#316896"></rect>
-        <text x="10" y="19.25"
-              style="font-family: Open Sans, sans-serif; font-size: 13px; font-weight: bold; fill: rgb(255, 255, 255);">
-            favorites
-        </text>
-    </svg>
-    <svg x="499.5" y="32">
-        <rect x="0" y="0" width="214.23333740234375" height="32" fill="#F2F2F2"></rect>
-        <text x="10" y="19.25"
-              style="font-family: Open Sans, sans-serif; font-size: 13px; font-weight: bold; fill: rgb(111, 111, 111);">
-            id
-        </text>
-        <path transform="translate(26.199999809265137,9.25)" fill="#6F6F6F"
-              d="M 6.5625 0.9844 C 8.1935 0.9844 9.5156 2.3065 9.5156 3.9375 C 9.5156 5.5685 8.1935 6.8906 6.5625 6.8906 C 6.1735 6.8906 5.8022 6.8153 5.462 6.6786 L 4.5938 7.5469 H 3.9375 V 8.5313 H 2.9531 V 9.5156 H 0.9844 V 7.5469 L 3.736 4.7952 C 3.6518 4.5171 3.6092 4.2281 3.6094 3.9375 C 3.6094 2.3065 4.9315 0.9844 6.5625 0.9844 Z M 6.5625 0 C 4.388 0 2.625 1.7627 2.625 3.9375 C 2.625 4.1186 2.6373 4.2989 2.6619 4.4772 L 0.1441 6.995 C 0.0519 7.0873 0 7.2125 0 7.343 L 0 10.0078 C 0 10.2797 0.2204 10.5 0.4922 10.5 H 3.4453 C 3.7171 10.5 3.9375 10.2797 3.9375 10.0078 V 9.5156 H 4.4297 C 4.7015 9.5156 4.9219 9.2953 4.9219 9.0234 V 8.6133 L 5.7432 7.7895 C 6.011 7.8464 6.2848 7.875 6.5625 7.875 C 8.737 7.875 10.5 6.1123 10.5 3.9375 C 10.5 1.763 8.7373 0 6.5625 0 Z M 6.5625 2.9531 C 6.5625 3.4968 7.0032 3.9375 7.5469 3.9375 C 8.0905 3.9375 8.5313 3.4968 8.5313 2.9531 C 8.5313 2.4095 8.0905 1.9688 7.5469 1.9688 C 7.0032 1.9688 6.5625 2.4095 6.5625 2.9531 Z"></path>
-        <text x="157.5333366394043" y="19.25"
-              style="font-family: Open Sans, sans-serif; font-size: 13px; font-weight: bold; fill: rgb(153, 153, 153);">
-            integer
-        </text>
-    </svg>
-    <svg x="499.5" y="64">
-        <rect x="0" y="0" width="214.23333740234375" height="32" fill="#F2F2F2"></rect>
-        <text x="10" y="19.25" style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(111, 111, 111);">
-            isin
-        </text>
-        <text x="158.46667098999023" y="19.25"
-              style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(153, 153, 153);">varchar
-        </text>
-    </svg>
-    <svg x="499.5" y="96">
-        <rect x="0" y="0" width="214.23333740234375" height="32" fill="#F2F2F2"></rect>
-        <text x="10" y="19.25" style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(111, 111, 111);">
-            user_id
-        </text>
-        <text x="177.06667137145996" y="19.25"
-              style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(153, 153, 153);">uuid
-        </text>
-    </svg>
-    <svg x="499.5" y="128">
-        <rect x="0" y="0" width="214.23333740234375" height="32" fill="#F2F2F2"></rect>
-        <text x="10" y="19.25" style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(111, 111, 111);">
-            asset_type
-        </text>
-        <text x="158.46667098999023" y="19.25"
-              style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(153, 153, 153);">varchar
-        </text>
-    </svg>
-    <svg x="499.5" y="160">
+    <svg x="0" y="64">
         <rect x="0" y="0" width="214.23333740234375" height="32" fill="#F2F2F2"></rect>
         <text x="10" y="19.25" style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(111, 111, 111);">
             deleted
@@ -207,7 +75,7 @@
               style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(153, 153, 153);">bool
         </text>
     </svg>
-    <svg x="499.5" y="192">
+    <svg x="0" y="96">
         <rect x="0" y="0" width="214.23333740234375" height="32" fill="#F2F2F2"></rect>
         <text x="10" y="19.25" style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(111, 111, 111);">
             created_at
@@ -216,7 +84,184 @@
               style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(153, 153, 153);">timestamp
         </text>
     </svg>
-    <svg x="499.5" y="224">
+    <svg x="0" y="128">
+        <rect x="0" y="0" width="214.23333740234375" height="32" fill="#F2F2F2"></rect>
+        <text x="10" y="19.25" style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(111, 111, 111);">
+            updated_at
+        </text>
+        <text x="138.93333435058594" y="19.25"
+              style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(153, 153, 153);">timestamp
+        </text>
+    </svg>
+    <svg x="278" y="0">
+        <rect x="0" y="0" width="214.23333740234375" height="32" fill="#316896"></rect>
+        <text x="10" y="19.25"
+              style="font-family: Open Sans, sans-serif; font-size: 13px; font-weight: bold; fill: rgb(255, 255, 255);">
+            assets
+        </text>
+    </svg>
+    <svg x="278" y="32">
+        <rect x="0" y="0" width="214.23333740234375" height="32" fill="#F2F2F2"></rect>
+        <text x="10" y="19.25"
+              style="font-family: Open Sans, sans-serif; font-size: 13px; font-weight: bold; fill: rgb(111, 111, 111);">
+            isin
+        </text>
+        <path transform="translate(36.933332443237305,9.25)" fill="#6F6F6F"
+              d="M 6.5625 0.9844 C 8.1935 0.9844 9.5156 2.3065 9.5156 3.9375 C 9.5156 5.5685 8.1935 6.8906 6.5625 6.8906 C 6.1735 6.8906 5.8022 6.8153 5.462 6.6786 L 4.5938 7.5469 H 3.9375 V 8.5313 H 2.9531 V 9.5156 H 0.9844 V 7.5469 L 3.736 4.7952 C 3.6518 4.5171 3.6092 4.2281 3.6094 3.9375 C 3.6094 2.3065 4.9315 0.9844 6.5625 0.9844 Z M 6.5625 0 C 4.388 0 2.625 1.7627 2.625 3.9375 C 2.625 4.1186 2.6373 4.2989 2.6619 4.4772 L 0.1441 6.995 C 0.0519 7.0873 0 7.2125 0 7.343 L 0 10.0078 C 0 10.2797 0.2204 10.5 0.4922 10.5 H 3.4453 C 3.7171 10.5 3.9375 10.2797 3.9375 10.0078 V 9.5156 H 4.4297 C 4.7015 9.5156 4.9219 9.2953 4.9219 9.0234 V 8.6133 L 5.7432 7.7895 C 6.011 7.8464 6.2848 7.875 6.5625 7.875 C 8.737 7.875 10.5 6.1123 10.5 3.9375 C 10.5 1.763 8.7373 0 6.5625 0 Z M 6.5625 2.9531 C 6.5625 3.4968 7.0032 3.9375 7.5469 3.9375 C 8.0905 3.9375 8.5313 3.4968 8.5313 2.9531 C 8.5313 2.4095 8.0905 1.9688 7.5469 1.9688 C 7.0032 1.9688 6.5625 2.4095 6.5625 2.9531 Z"></path>
+        <text x="154.06666946411133" y="19.25"
+              style="font-family: Open Sans, sans-serif; font-size: 13px; font-weight: bold; fill: rgb(153, 153, 153);">
+            varchar
+        </text>
+    </svg>
+    <svg x="278" y="64">
+        <rect x="0" y="0" width="214.23333740234375" height="32" fill="#F2F2F2"></rect>
+        <text x="10" y="19.25" style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(111, 111, 111);">
+            asset_type
+        </text>
+        <text x="158.46667098999023" y="19.25"
+              style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(153, 153, 153);">varchar
+        </text>
+    </svg>
+    <svg x="278" y="96">
+        <rect x="0" y="0" width="214.23333740234375" height="32" fill="#F2F2F2"></rect>
+        <text x="10" y="19.25" style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(111, 111, 111);">
+            deleted
+        </text>
+        <text x="177.33333778381348" y="19.25"
+              style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(153, 153, 153);">bool
+        </text>
+    </svg>
+    <svg x="278" y="128">
+        <rect x="0" y="0" width="214.23333740234375" height="32" fill="#F2F2F2"></rect>
+        <text x="10" y="19.25" style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(111, 111, 111);">
+            created_at
+        </text>
+        <text x="138.93333435058594" y="19.25"
+              style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(153, 153, 153);">timestamp
+        </text>
+    </svg>
+    <svg x="278" y="160">
+        <rect x="0" y="0" width="214.23333740234375" height="32" fill="#F2F2F2"></rect>
+        <text x="10" y="19.25" style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(111, 111, 111);">
+            updated_at
+        </text>
+        <text x="138.93333435058594" y="19.25"
+              style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(153, 153, 153);">timestamp
+        </text>
+    </svg>
+    <svg x="278" y="212">
+        <rect x="0" y="0" width="214.23333740234375" height="32" fill="#316896"></rect>
+        <text x="10" y="19.25"
+              style="font-family: Open Sans, sans-serif; font-size: 13px; font-weight: bold; fill: rgb(255, 255, 255);">
+            users
+        </text>
+    </svg>
+    <svg x="278" y="244">
+        <rect x="0" y="0" width="214.23333740234375" height="32" fill="#F2F2F2"></rect>
+        <text x="10" y="19.25"
+              style="font-family: Open Sans, sans-serif; font-size: 13px; font-weight: bold; fill: rgb(111, 111, 111);">
+            upk
+        </text>
+        <path transform="translate(38.83333396911621,9.25)" fill="#6F6F6F"
+              d="M 6.5625 0.9844 C 8.1935 0.9844 9.5156 2.3065 9.5156 3.9375 C 9.5156 5.5685 8.1935 6.8906 6.5625 6.8906 C 6.1735 6.8906 5.8022 6.8153 5.462 6.6786 L 4.5938 7.5469 H 3.9375 V 8.5313 H 2.9531 V 9.5156 H 0.9844 V 7.5469 L 3.736 4.7952 C 3.6518 4.5171 3.6092 4.2281 3.6094 3.9375 C 3.6094 2.3065 4.9315 0.9844 6.5625 0.9844 Z M 6.5625 0 C 4.388 0 2.625 1.7627 2.625 3.9375 C 2.625 4.1186 2.6373 4.2989 2.6619 4.4772 L 0.1441 6.995 C 0.0519 7.0873 0 7.2125 0 7.343 L 0 10.0078 C 0 10.2797 0.2204 10.5 0.4922 10.5 H 3.4453 C 3.7171 10.5 3.9375 10.2797 3.9375 10.0078 V 9.5156 H 4.4297 C 4.7015 9.5156 4.9219 9.2953 4.9219 9.0234 V 8.6133 L 5.7432 7.7895 C 6.011 7.8464 6.2848 7.875 6.5625 7.875 C 8.737 7.875 10.5 6.1123 10.5 3.9375 C 10.5 1.763 8.7373 0 6.5625 0 Z M 6.5625 2.9531 C 6.5625 3.4968 7.0032 3.9375 7.5469 3.9375 C 8.0905 3.9375 8.5313 3.4968 8.5313 2.9531 C 8.5313 2.4095 8.0905 1.9688 7.5469 1.9688 C 7.0032 1.9688 6.5625 2.4095 6.5625 2.9531 Z"></path>
+        <text x="154.06666946411133" y="19.25"
+              style="font-family: Open Sans, sans-serif; font-size: 13px; font-weight: bold; fill: rgb(153, 153, 153);">
+            varchar
+        </text>
+    </svg>
+    <svg x="278" y="276">
+        <rect x="0" y="0" width="214.23333740234375" height="32" fill="#F2F2F2"></rect>
+        <text x="10" y="19.25" style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(111, 111, 111);">
+            deleted
+        </text>
+        <text x="177.33333778381348" y="19.25"
+              style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(153, 153, 153);">bool
+        </text>
+    </svg>
+    <svg x="278" y="308">
+        <rect x="0" y="0" width="214.23333740234375" height="32" fill="#F2F2F2"></rect>
+        <text x="10" y="19.25" style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(111, 111, 111);">
+            created_at
+        </text>
+        <text x="138.93333435058594" y="19.25"
+              style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(153, 153, 153);">timestamp
+        </text>
+    </svg>
+    <svg x="278" y="340">
+        <rect x="0" y="0" width="214.23333740234375" height="32" fill="#F2F2F2"></rect>
+        <text x="10" y="19.25" style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(111, 111, 111);">
+            updated_at
+        </text>
+        <text x="138.93333435058594" y="19.25"
+              style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(153, 153, 153);">timestamp
+        </text>
+    </svg>
+    <svg x="559.5" y="0">
+        <rect x="0" y="0" width="214.23333740234375" height="32" fill="#316896"></rect>
+        <text x="10" y="19.25"
+              style="font-family: Open Sans, sans-serif; font-size: 13px; font-weight: bold; fill: rgb(255, 255, 255);">
+            favorites
+        </text>
+    </svg>
+    <svg x="559.5" y="32">
+        <rect x="0" y="0" width="214.23333740234375" height="32" fill="#F2F2F2"></rect>
+        <text x="10" y="19.25"
+              style="font-family: Open Sans, sans-serif; font-size: 13px; font-weight: bold; fill: rgb(111, 111, 111);">
+            id
+        </text>
+        <path transform="translate(26.199999809265137,9.25)" fill="#6F6F6F"
+              d="M 6.5625 0.9844 C 8.1935 0.9844 9.5156 2.3065 9.5156 3.9375 C 9.5156 5.5685 8.1935 6.8906 6.5625 6.8906 C 6.1735 6.8906 5.8022 6.8153 5.462 6.6786 L 4.5938 7.5469 H 3.9375 V 8.5313 H 2.9531 V 9.5156 H 0.9844 V 7.5469 L 3.736 4.7952 C 3.6518 4.5171 3.6092 4.2281 3.6094 3.9375 C 3.6094 2.3065 4.9315 0.9844 6.5625 0.9844 Z M 6.5625 0 C 4.388 0 2.625 1.7627 2.625 3.9375 C 2.625 4.1186 2.6373 4.2989 2.6619 4.4772 L 0.1441 6.995 C 0.0519 7.0873 0 7.2125 0 7.343 L 0 10.0078 C 0 10.2797 0.2204 10.5 0.4922 10.5 H 3.4453 C 3.7171 10.5 3.9375 10.2797 3.9375 10.0078 V 9.5156 H 4.4297 C 4.7015 9.5156 4.9219 9.2953 4.9219 9.0234 V 8.6133 L 5.7432 7.7895 C 6.011 7.8464 6.2848 7.875 6.5625 7.875 C 8.737 7.875 10.5 6.1123 10.5 3.9375 C 10.5 1.763 8.7373 0 6.5625 0 Z M 6.5625 2.9531 C 6.5625 3.4968 7.0032 3.9375 7.5469 3.9375 C 8.0905 3.9375 8.5313 3.4968 8.5313 2.9531 C 8.5313 2.4095 8.0905 1.9688 7.5469 1.9688 C 7.0032 1.9688 6.5625 2.4095 6.5625 2.9531 Z"></path>
+        <text x="174.96667098999023" y="19.25"
+              style="font-family: Open Sans, sans-serif; font-size: 13px; font-weight: bold; fill: rgb(153, 153, 153);">
+            uuid
+        </text>
+    </svg>
+    <svg x="559.5" y="64">
+        <rect x="0" y="0" width="214.23333740234375" height="32" fill="#F2F2F2"></rect>
+        <text x="10" y="19.25" style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(111, 111, 111);">
+            isin
+        </text>
+        <text x="158.46667098999023" y="19.25"
+              style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(153, 153, 153);">varchar
+        </text>
+    </svg>
+    <svg x="559.5" y="96">
+        <rect x="0" y="0" width="214.23333740234375" height="32" fill="#F2F2F2"></rect>
+        <text x="10" y="19.25" style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(111, 111, 111);">
+            user_upk
+        </text>
+        <text x="158.46667098999023" y="19.25"
+              style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(153, 153, 153);">varchar
+        </text>
+    </svg>
+    <svg x="559.5" y="128">
+        <rect x="0" y="0" width="214.23333740234375" height="32" fill="#F2F2F2"></rect>
+        <text x="10" y="19.25" style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(111, 111, 111);">
+            version
+        </text>
+        <text x="170.06666946411133" y="19.25"
+              style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(153, 153, 153);">bigint
+        </text>
+    </svg>
+    <svg x="559.5" y="160">
+        <rect x="0" y="0" width="214.23333740234375" height="32" fill="#F2F2F2"></rect>
+        <text x="10" y="19.25" style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(111, 111, 111);">
+            deleted
+        </text>
+        <text x="177.33333778381348" y="19.25"
+              style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(153, 153, 153);">bool
+        </text>
+    </svg>
+    <svg x="559.5" y="192">
+        <rect x="0" y="0" width="214.23333740234375" height="32" fill="#F2F2F2"></rect>
+        <text x="10" y="19.25" style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(111, 111, 111);">
+            created_at
+        </text>
+        <text x="138.93333435058594" y="19.25"
+              style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(153, 153, 153);">timestamp
+        </text>
+    </svg>
+    <svg x="559.5" y="224">
         <rect x="0" y="0" width="214.23333740234375" height="32" fill="#F2F2F2"></rect>
         <text x="10" y="19.25" style="font-family: Open Sans, sans-serif; font-size: 13px; fill: rgb(111, 111, 111);">
             updated_at
