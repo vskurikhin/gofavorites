@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-15 17:59 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-16 20:57 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites.go
@@ -17,6 +17,7 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/google/uuid"
 	"github.com/vskurikhin/gofavorites/internal/domain"
+	"github.com/vskurikhin/gofavorites/internal/tool"
 	"time"
 )
 
@@ -34,24 +35,14 @@ type Favorites struct {
 	updatedAt sql.NullTime
 }
 
-type favoritesJSON struct {
-	Id        uuid.UUID
-	Asset     assetJSON
-	User      userJSON
-	Version   int64
-	Deleted   bool
-	CreatedAt time.Time
-	UpdatedAt sql.NullTime
-}
-
 var _ domain.Entity = (*Favorites)(nil)
 
-func GetFavorites(ctx context.Context, repo domain.Repo, isin, upk string) (Favorites, error) {
+func GetFavorites(ctx context.Context, repo domain.Repo[*Favorites], isin, upk string) (Favorites, error) {
 
 	var e error
-	var result Favorites
+	result := &Favorites{asset: Asset{isin: isin}, user: User{upk: upk}}
 
-	err := repo.Get(ctx, &Favorites{asset: Asset{isin: isin}, user: User{upk: upk}}, func(scanner domain.Scanner) {
+	_, err := repo.Get(ctx, result, func(scanner domain.Scanner) {
 		e = scanner.Scan(
 			&result.id,
 			&result.version,
@@ -81,20 +72,64 @@ func GetFavorites(ctx context.Context, repo domain.Repo, isin, upk string) (Favo
 	if err != nil {
 		return Favorites{}, err
 	}
-	return result, nil
+	return *result, nil
 }
 
-func NewFavorites(isin, assetType string, user User, createdAt time.Time) Favorites {
+func NewFavorites(asset Asset, user User, createdAt time.Time) Favorites {
 	return Favorites{
 		id:        uuid.New(),
-		asset:     NewAsset(isin, assetType, createdAt),
+		asset:     asset,
 		user:      user,
 		createdAt: createdAt,
 	}
 }
 
-func (f *Favorites) Delete(ctx context.Context, repo domain.Repo) (err error) {
-	return repo.Delete(ctx, f)
+func (f *Favorites) ID() uuid.UUID {
+	return f.id
+}
+
+func (f *Favorites) Asset() Asset {
+	return f.asset
+}
+
+func (f *Favorites) User() User {
+	return f.user
+}
+
+func (f *Favorites) Version() sql.NullInt64 {
+	return f.version
+}
+
+func (f *Favorites) Deleted() sql.NullBool {
+	return f.deleted
+}
+
+func (f *Favorites) CreatedAt() time.Time {
+	return f.createdAt
+}
+
+func (f *Favorites) UpdatedAt() sql.NullTime {
+	return f.updatedAt
+}
+
+func (f *Favorites) Copy() domain.Entity {
+	c := *f
+	return &c
+}
+
+func (f *Favorites) Delete(ctx context.Context, repo domain.Repo[*Favorites]) (err error) {
+
+	_, e := repo.Delete(ctx, f, func(s domain.Scanner) {
+		t := *f
+		err = s.Scan(&t.deleted, &t.updatedAt)
+		if err == nil {
+			*f = t
+		}
+	})
+	if e != nil {
+		return e
+	}
+	return
 }
 
 func (f *Favorites) DeleteArgs() []any {
@@ -102,7 +137,46 @@ func (f *Favorites) DeleteArgs() []any {
 }
 
 func (f *Favorites) DeleteSQL() string {
-	return `UPDATE favorites SET deleted = true WHERE isin = $1 AND user_upk = $2`
+	return `UPDATE favorites
+	SET deleted = true
+	WHERE isin = $1 AND user_upk = $2
+	RETURNING deleted, updated_at`
+}
+
+type favoritesJSON struct {
+	ID        uuid.UUID
+	Asset     assetJSON
+	User      userJSON
+	Version   int64
+	Deleted   *bool
+	CreatedAt time.Time
+	UpdatedAt *time.Time
+}
+
+func (f *Favorites) FromJSON(data []byte) (err error) {
+
+	var t favoritesJSON
+	err = json.Unmarshal(data, &t)
+
+	if err != nil {
+		return err
+	}
+	f.id = t.ID
+	f.deleted = tool.ConvertBoolPointerToNullBool(t.Deleted)
+	f.createdAt = t.CreatedAt
+	f.updatedAt = tool.ConvertTimePointerToNullTime(t.UpdatedAt)
+
+	f.asset.isin = t.Asset.Isin
+	f.asset.deleted = tool.ConvertBoolPointerToNullBool(t.Deleted)
+	f.asset.createdAt = t.CreatedAt
+	f.asset.updatedAt = tool.ConvertTimePointerToNullTime(t.UpdatedAt)
+
+	f.asset.assetType.name = t.Asset.AssetType.Name
+	f.asset.assetType.deleted = tool.ConvertBoolPointerToNullBool(t.Deleted)
+	f.asset.assetType.createdAt = t.CreatedAt
+	f.asset.assetType.updatedAt = tool.ConvertTimePointerToNullTime(t.UpdatedAt)
+
+	return nil
 }
 
 func (f *Favorites) GetArgs() []any {
@@ -113,7 +187,7 @@ func (f *Favorites) GetSQL() string {
 	return `SELECT f.id, f.version, f.deleted, f.created_at, f.updated_at,
                    a.isin, a.deleted, a.created_at, a.updated_at,
                    t.name, t.deleted, t.created_at, t.updated_at,
-                   u.upk, u.deleted, u.created_at, u.updated_at,
+                   u.upk, u.deleted, u.created_at, u.updated_at
     FROM favorites f
     JOIN assets a ON f.isin = a.isin
     JOIN asset_types t ON a.asset_type = t.name 
@@ -121,8 +195,19 @@ func (f *Favorites) GetSQL() string {
     WHERE f.isin = $1 AND u.upk = $2`
 }
 
-func (f *Favorites) Insert(ctx context.Context, repo domain.Repo) (err error) {
-	return repo.Insert(ctx, f)
+func (f *Favorites) Insert(ctx context.Context, repo domain.Repo[*Favorites]) (err error) {
+
+	_, e := repo.Insert(ctx, f, func(s domain.Scanner) {
+		t := *f
+		err = s.Scan(&t.id, &t.version, &t.createdAt)
+		if err == nil {
+			*f = t
+		}
+	})
+	if e != nil {
+		return e
+	}
+	return
 }
 
 func (f *Favorites) InsertArgs() []any {
@@ -130,35 +215,42 @@ func (f *Favorites) InsertArgs() []any {
 }
 
 func (f *Favorites) InsertSQL() string {
-	return `INSERT INTO favorites (isin, user_upk, version, created_at) VALUES ($1, $2, $3, $4)`
+	return `INSERT INTO favorites
+    (isin, user_upk, version, created_at)
+    VALUES ($1, $2, $3, $4)
+    RETURNING id, version, created_at`
 }
 
-func (f *Favorites) JSON() ([]byte, error) {
+func (f *Favorites) Key() string {
+	return fmt.Sprintf(KeyFormat, f.asset.isin, f.user.upk)
+}
+
+func (f *Favorites) ToJSON() ([]byte, error) {
 
 	result, err := json.Marshal(favoritesJSON{
-		Id: f.id,
+		ID: f.id,
 		Asset: assetJSON{
 			Isin: f.asset.isin,
 			AssetType: assetTypeJSON{
 				Name:      f.asset.assetType.name,
-				Deleted:   f.asset.assetType.deleted.Bool,
+				Deleted:   tool.ConvertNullBoolToBoolPointer(f.asset.assetType.deleted),
 				CreatedAt: f.asset.assetType.createdAt,
-				UpdatedAt: f.asset.assetType.updatedAt,
+				UpdatedAt: tool.ConvertNullTimeToTimePointer(f.asset.assetType.updatedAt),
 			},
-			Deleted:   f.asset.deleted.Bool,
+			Deleted:   tool.ConvertNullBoolToBoolPointer(f.asset.deleted),
 			CreatedAt: f.asset.createdAt,
-			UpdatedAt: f.asset.updatedAt,
+			UpdatedAt: tool.ConvertNullTimeToTimePointer(f.asset.updatedAt),
 		},
 		User: userJSON{
 			UPK:       f.user.upk,
-			Deleted:   f.user.deleted.Bool,
+			Deleted:   tool.ConvertNullBoolToBoolPointer(f.user.deleted),
 			CreatedAt: f.user.createdAt,
-			UpdatedAt: f.user.updatedAt,
+			UpdatedAt: tool.ConvertNullTimeToTimePointer(f.user.updatedAt),
 		},
 		Version:   f.version.Int64,
-		Deleted:   f.deleted.Bool,
+		Deleted:   tool.ConvertNullBoolToBoolPointer(f.deleted),
 		CreatedAt: f.createdAt,
-		UpdatedAt: f.updatedAt,
+		UpdatedAt: tool.ConvertNullTimeToTimePointer(f.updatedAt),
 	})
 	if err != nil {
 		return nil, err
@@ -166,16 +258,30 @@ func (f *Favorites) JSON() ([]byte, error) {
 	return result, nil
 }
 
-func (f *Favorites) Key() string {
-	return fmt.Sprintf(KeyFormat, f.asset.isin, f.user.upk)
+func (f *Favorites) Update(ctx context.Context, repo domain.Repo[*Favorites]) (err error) {
+
+	_, e := repo.Update(ctx, f, func(s domain.Scanner) {
+		t := *f
+		err = s.Scan(&t.version, &t.updatedAt)
+		if err == nil {
+			*f = t
+		}
+	})
+	if e != nil {
+		return e
+	}
+	return
 }
 
 func (f *Favorites) UpdateArgs() []any {
-	return []any{f.asset.isin, f.user.upk, f.updatedAt, f.version}
+	return []any{f.asset.isin, f.user.upk, f.version, f.updatedAt}
 }
 
 func (f *Favorites) UpdateSQL() string {
-	return `UPDATE favorites SET updatedAt = $3, version = $4 WHERE isin = $1 AND user_upk = $2`
+	return `UPDATE favorites
+    SET version = $3, updated_at = $4
+    WHERE isin = $1 AND user_upk = $2
+    RETURNING version, updated_at`
 }
 
 //!-

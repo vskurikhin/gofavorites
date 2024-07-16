@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-15 17:53 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-16 20:57 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * asset.go
@@ -15,6 +15,7 @@ import (
 	"database/sql"
 	"github.com/goccy/go-json"
 	"github.com/vskurikhin/gofavorites/internal/domain"
+	"github.com/vskurikhin/gofavorites/internal/tool"
 	"time"
 )
 
@@ -26,22 +27,14 @@ type Asset struct {
 	updatedAt sql.NullTime
 }
 
-type assetJSON struct {
-	Isin      string
-	AssetType assetTypeJSON
-	Deleted   bool
-	CreatedAt time.Time
-	UpdatedAt sql.NullTime
-}
-
 var _ domain.Entity = (*Asset)(nil)
 
-func GetAsset(ctx context.Context, repo domain.Repo, isin string) (Asset, error) {
+func GetAsset(ctx context.Context, repo domain.Repo[*Asset], isin string) (Asset, error) {
 
 	var e error
-	var result Asset
+	result := &Asset{isin: isin}
 
-	err := repo.Get(ctx, &Asset{isin: isin}, func(scanner domain.Scanner) {
+	result, err := repo.Get(ctx, result, func(scanner domain.Scanner) {
 		e = scanner.Scan(
 			&result.isin,
 			&result.deleted,
@@ -59,19 +52,56 @@ func GetAsset(ctx context.Context, repo domain.Repo, isin string) (Asset, error)
 	if err != nil {
 		return Asset{}, err
 	}
-	return result, nil
+	return *result, nil
 }
 
-func NewAsset(isin, assetType string, createdAt time.Time) Asset {
+func NewAsset(isin string, assetType AssetType, createdAt time.Time) Asset {
 	return Asset{
 		isin:      isin,
-		assetType: NewAssetTypes(assetType, createdAt),
+		assetType: assetType,
 		createdAt: createdAt,
 	}
 }
 
-func (a *Asset) Delete(ctx context.Context, repo domain.Repo) (err error) {
-	return repo.Delete(ctx, a)
+func (a *Asset) Isin() string {
+	return a.isin
+}
+
+func (a *Asset) AssetType() AssetType {
+	return a.assetType
+}
+
+func (a *Asset) Deleted() sql.NullBool {
+	return a.deleted
+}
+
+func (a *Asset) CreatedAt() time.Time {
+	return a.createdAt
+}
+
+func (a *Asset) UpdatedAt() sql.NullTime {
+	return a.updatedAt
+}
+
+// shallow copy and return same type
+func (a *Asset) Copy() domain.Entity {
+	c := *a
+	return &c
+}
+
+func (a *Asset) Delete(ctx context.Context, repo domain.Repo[*Asset]) (err error) {
+
+	_, e := repo.Delete(ctx, a, func(s domain.Scanner) {
+		t := *a
+		err = s.Scan(&t.deleted, &t.updatedAt)
+		if err == nil {
+			*a = t
+		}
+	})
+	if e != nil {
+		return e
+	}
+	return
 }
 
 func (a *Asset) DeleteArgs() []any {
@@ -79,7 +109,36 @@ func (a *Asset) DeleteArgs() []any {
 }
 
 func (a *Asset) DeleteSQL() string {
-	return `UPDATE assets SET deleted = true WHERE name = $1`
+	return `UPDATE assets SET deleted = true WHERE isin = $1 RETURNING deleted, updated_at`
+}
+
+type assetJSON struct {
+	Isin      string
+	AssetType assetTypeJSON
+	Deleted   *bool
+	CreatedAt time.Time
+	UpdatedAt *time.Time
+}
+
+func (a *Asset) FromJSON(data []byte) (err error) {
+
+	var t assetJSON
+	err = json.Unmarshal(data, &t)
+
+	if err != nil {
+		return err
+	}
+	a.isin = t.Isin
+	a.deleted = tool.ConvertBoolPointerToNullBool(t.Deleted)
+	a.createdAt = t.CreatedAt
+	a.updatedAt = tool.ConvertTimePointerToNullTime(t.UpdatedAt)
+
+	a.assetType.name = t.AssetType.Name
+	a.assetType.deleted = tool.ConvertBoolPointerToNullBool(t.Deleted)
+	a.assetType.createdAt = t.CreatedAt
+	a.assetType.updatedAt = tool.ConvertTimePointerToNullTime(t.UpdatedAt)
+
+	return nil
 }
 
 func (a *Asset) GetArgs() []any {
@@ -92,8 +151,19 @@ func (a *Asset) GetSQL() string {
 	FROM assets a JOIN asset_types t ON a.asset_type = t.name WHERE a.isin = $1`
 }
 
-func (a *Asset) Insert(ctx context.Context, repo domain.Repo) (err error) {
-	return repo.Insert(ctx, a)
+func (a *Asset) Insert(ctx context.Context, repo domain.Repo[*Asset]) (err error) {
+
+	_, e := repo.Insert(ctx, a, func(s domain.Scanner) {
+		t := *a
+		err = s.Scan(&t.isin, &t.assetType.name, &t.createdAt)
+		if err == nil {
+			*a = t
+		}
+	})
+	if e != nil {
+		return e
+	}
+	return
 }
 
 func (a *Asset) InsertArgs() []any {
@@ -101,22 +171,29 @@ func (a *Asset) InsertArgs() []any {
 }
 
 func (a *Asset) InsertSQL() string {
-	return `INSERT INTO asset (isin, asset_type, created_at) VALUES ($1, $2, $3)`
+	return `INSERT INTO assets
+	(isin, asset_type, created_at)
+	VALUES ($1, $2, $3)
+	RETURNING isin, asset_type, created_at`
 }
 
-func (a *Asset) JSON() ([]byte, error) {
+func (a *Asset) Key() string {
+	return a.isin
+}
+
+func (a *Asset) ToJSON() ([]byte, error) {
 
 	result, err := json.Marshal(assetJSON{
 		Isin: a.isin,
 		AssetType: assetTypeJSON{
 			Name:      a.assetType.name,
-			Deleted:   a.assetType.deleted.Bool,
+			Deleted:   tool.ConvertNullBoolToBoolPointer(a.assetType.deleted),
 			CreatedAt: a.assetType.createdAt,
-			UpdatedAt: a.assetType.updatedAt,
+			UpdatedAt: tool.ConvertNullTimeToTimePointer(a.assetType.updatedAt),
 		},
-		Deleted:   a.deleted.Bool,
+		Deleted:   tool.ConvertNullBoolToBoolPointer(a.deleted),
 		CreatedAt: a.createdAt,
-		UpdatedAt: a.updatedAt,
+		UpdatedAt: tool.ConvertNullTimeToTimePointer(a.updatedAt),
 	})
 	if err != nil {
 		return nil, err
@@ -124,16 +201,30 @@ func (a *Asset) JSON() ([]byte, error) {
 	return result, nil
 }
 
-func (a *Asset) Key() string {
-	return a.isin
+func (a *Asset) Update(ctx context.Context, repo domain.Repo[*Asset]) (err error) {
+
+	_, e := repo.Update(ctx, a, func(s domain.Scanner) {
+		t := *a
+		err = s.Scan(&t.assetType.name, &t.updatedAt)
+		if err == nil {
+			*a = t
+		}
+	})
+	if e != nil {
+		return e
+	}
+	return
 }
 
 func (a *Asset) UpdateArgs() []any {
-	return []any{a.isin, a.updatedAt, a.assetType.name}
+	return []any{a.isin, a.assetType.name, a.updatedAt}
 }
 
 func (a *Asset) UpdateSQL() string {
-	return `UPDATE assets SET updatedAt = $2, asset_type = $3 WHERE name = $1`
+	return `UPDATE assets
+	SET asset_type = $2, updated_at = $3
+	WHERE isin = $1
+	RETURNING asset_type, updated_at`
 }
 
 //!-

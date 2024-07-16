@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-15 16:32 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-16 20:57 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * entity.go
@@ -10,15 +10,25 @@
 // Package domain TODO.
 package domain
 
+type Cloneable interface {
+	Copy() Entity
+}
+
+type Serializable interface {
+	FromJSON(data []byte) (err error)
+	Key() string
+	ToJSON() ([]byte, error)
+}
+
 type Entity interface {
+	Cloneable
+	Serializable
 	DeleteArgs() []any
 	DeleteSQL() string
 	GetArgs() []any
 	GetSQL() string
 	InsertArgs() []any
 	InsertSQL() string
-	JSON() ([]byte, error)
-	Key() string
 	UpdateArgs() []any
 	UpdateSQL() string
 }

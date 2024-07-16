@@ -12,12 +12,18 @@ package main
 
 import (
 	"context"
+	"embed"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
+	"github.com/jackc/pgx/v5/stdlib"
+	"github.com/pressly/goose/v3"
 	"github.com/vskurikhin/gofavorites/internal/env"
+	"log"
 	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 var (
@@ -26,12 +32,15 @@ var (
 	buildCommit  = "N/A"
 )
 
+//go:embed migrations/*.sql
+var embedMigrations embed.FS //
+
 func main() {
 	run(context.Background())
 }
 
 func run(ctx context.Context) {
-
+	_ = fiber.New()
 	slog.Info(env.MSG,
 		"build_version", buildVersion,
 		"build_date", buildDate,
@@ -43,13 +52,41 @@ func run(ctx context.Context) {
 	// запускаем горутину обработки пойманных прерываний
 	prop := env.GetProperties()
 	_, _ = fmt.Fprintf(os.Stderr, "PROPERTIES%s\n", prop)
+	dbMigrations(prop)
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-sigint:
 			return
+		default:
+			time.Sleep(time.Millisecond * 500)
 		}
+	}
+}
+
+func dbMigrations(prop env.Properties) {
+	pool := prop.DBPool()
+	if pool == nil {
+		slog.Warn(env.MSG+" dbMigrations", "pool", pool)
+		return
+	}
+
+	goose.SetBaseFS(embedMigrations)
+
+	if err := goose.SetDialect("postgres"); err != nil {
+		panic(err)
+	}
+
+	db := stdlib.OpenDBFromPool(pool)
+	if err := goose.Up(db, "migrations"); err != nil {
+		panic(err)
+	}
+	if err := goose.Version(db, "migrations"); err != nil {
+		log.Fatal(err)
+	}
+	if err := db.Close(); err != nil {
+		panic(err)
 	}
 }
 
