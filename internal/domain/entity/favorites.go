@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-16 20:57 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-16 23:18 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites.go
@@ -148,9 +148,9 @@ type favoritesJSON struct {
 	Asset     assetJSON
 	User      userJSON
 	Version   int64
-	Deleted   *bool
+	Deleted   *bool `json:",omitempty"`
 	CreatedAt time.Time
-	UpdatedAt *time.Time
+	UpdatedAt *time.Time `json:",omitempty"`
 }
 
 func (f *Favorites) FromJSON(data []byte) (err error) {
@@ -167,14 +167,14 @@ func (f *Favorites) FromJSON(data []byte) (err error) {
 	f.updatedAt = tool.ConvertTimePointerToNullTime(t.UpdatedAt)
 
 	f.asset.isin = t.Asset.Isin
-	f.asset.deleted = tool.ConvertBoolPointerToNullBool(t.Deleted)
-	f.asset.createdAt = t.CreatedAt
-	f.asset.updatedAt = tool.ConvertTimePointerToNullTime(t.UpdatedAt)
+	f.asset.deleted = tool.ConvertBoolPointerToNullBool(t.Asset.Deleted)
+	f.asset.createdAt = t.Asset.CreatedAt
+	f.asset.updatedAt = tool.ConvertTimePointerToNullTime(t.Asset.UpdatedAt)
 
 	f.asset.assetType.name = t.Asset.AssetType.Name
-	f.asset.assetType.deleted = tool.ConvertBoolPointerToNullBool(t.Deleted)
-	f.asset.assetType.createdAt = t.CreatedAt
-	f.asset.assetType.updatedAt = tool.ConvertTimePointerToNullTime(t.UpdatedAt)
+	f.asset.assetType.deleted = tool.ConvertBoolPointerToNullBool(t.Asset.AssetType.Deleted)
+	f.asset.assetType.createdAt = t.Asset.AssetType.CreatedAt
+	f.asset.assetType.updatedAt = tool.ConvertTimePointerToNullTime(t.Asset.AssetType.UpdatedAt)
 
 	return nil
 }
@@ -192,7 +192,7 @@ func (f *Favorites) GetSQL() string {
     JOIN assets a ON f.isin = a.isin
     JOIN asset_types t ON a.asset_type = t.name 
     JOIN users u ON f.user_upk = u.upk 
-    WHERE f.isin = $1 AND u.upk = $2`
+    WHERE f.isin = $1 AND f.user_upk = $2`
 }
 
 func (f *Favorites) Insert(ctx context.Context, repo domain.Repo[*Favorites]) (err error) {
@@ -223,6 +223,29 @@ func (f *Favorites) InsertSQL() string {
 
 func (f *Favorites) Key() string {
 	return fmt.Sprintf(KeyFormat, f.asset.isin, f.user.upk)
+}
+
+func (f *Favorites) String() string {
+	return fmt.Sprintf(
+		"{%v {%s {%s %v %v %v} %v %v %v} {%s %v %v %v} %v %v %v %v}\n",
+		f.id,
+		f.asset.isin,
+		f.asset.assetType.name,
+		f.asset.assetType.deleted,
+		f.asset.assetType.createdAt,
+		f.asset.assetType.updatedAt,
+		f.asset.deleted,
+		f.asset.createdAt,
+		f.asset.updatedAt,
+		f.user.upk,
+		f.user.deleted,
+		f.user.createdAt,
+		f.user.updatedAt,
+		f.version,
+		f.deleted,
+		f.createdAt,
+		f.updatedAt,
+	)
 }
 
 func (f *Favorites) ToJSON() ([]byte, error) {
@@ -282,6 +305,10 @@ func (f *Favorites) UpdateSQL() string {
     SET version = $3, updated_at = $4
     WHERE isin = $1 AND user_upk = $2
     RETURNING version, updated_at`
+}
+
+func IsFavoritesNotFound(f Favorites, err error) bool {
+	return f == Favorites{} || tool.NoRowsInResultSet(err)
 }
 
 //!-

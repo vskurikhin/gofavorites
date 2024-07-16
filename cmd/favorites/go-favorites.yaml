@@ -1,7 +1,7 @@
 favorites:
     enabled: true
     db:
-        enabled: false
+        enabled: true
         name: db
         host: localhost
         port: 5432

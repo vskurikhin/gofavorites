@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-16 20:07 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-16 23:18 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * user.go
@@ -104,9 +104,9 @@ func (u *User) DeleteSQL() string {
 
 type userJSON struct {
 	UPK       string
-	Deleted   *bool
+	Deleted   *bool `json:",omitempty"`
 	CreatedAt time.Time
-	UpdatedAt *time.Time
+	UpdatedAt *time.Time `json:",omitempty"`
 }
 
 func (u *User) FromJSON(data []byte) (err error) {
@@ -205,6 +205,10 @@ func (u *User) UpdateArgs() []any {
 
 func (u *User) UpdateSQL() string {
 	return `UPDATE users SET updated_at = $2 WHERE upk = $1 RETURNING updated_at`
+}
+
+func IsUserNotFound(u User, err error) bool {
+	return u == User{} || tool.NoRowsInResultSet(err)
 }
 
 //!-

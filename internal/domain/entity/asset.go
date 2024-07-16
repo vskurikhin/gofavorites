@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-16 20:57 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-16 23:18 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * asset.go
@@ -13,6 +13,7 @@ package entity
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"github.com/goccy/go-json"
 	"github.com/vskurikhin/gofavorites/internal/domain"
 	"github.com/vskurikhin/gofavorites/internal/tool"
@@ -115,9 +116,9 @@ func (a *Asset) DeleteSQL() string {
 type assetJSON struct {
 	Isin      string
 	AssetType assetTypeJSON
-	Deleted   *bool
-	CreatedAt time.Time
-	UpdatedAt *time.Time
+	Deleted   *bool      `json:",omitempty"`
+	CreatedAt time.Time  `json:",omitempty"`
+	UpdatedAt *time.Time `json:",omitempty"`
 }
 
 func (a *Asset) FromJSON(data []byte) (err error) {
@@ -134,9 +135,9 @@ func (a *Asset) FromJSON(data []byte) (err error) {
 	a.updatedAt = tool.ConvertTimePointerToNullTime(t.UpdatedAt)
 
 	a.assetType.name = t.AssetType.Name
-	a.assetType.deleted = tool.ConvertBoolPointerToNullBool(t.Deleted)
-	a.assetType.createdAt = t.CreatedAt
-	a.assetType.updatedAt = tool.ConvertTimePointerToNullTime(t.UpdatedAt)
+	a.assetType.deleted = tool.ConvertBoolPointerToNullBool(t.AssetType.Deleted)
+	a.assetType.createdAt = t.AssetType.CreatedAt
+	a.assetType.updatedAt = tool.ConvertTimePointerToNullTime(t.AssetType.UpdatedAt)
 
 	return nil
 }
@@ -179,6 +180,20 @@ func (a *Asset) InsertSQL() string {
 
 func (a *Asset) Key() string {
 	return a.isin
+}
+
+func (a *Asset) String() string {
+	return fmt.Sprintf(
+		"{%s {%s %v %v %v} %v %v %v}\n",
+		a.isin,
+		a.assetType.name,
+		a.assetType.deleted,
+		a.assetType.createdAt,
+		a.assetType.updatedAt,
+		a.deleted,
+		a.createdAt,
+		a.updatedAt,
+	)
 }
 
 func (a *Asset) ToJSON() ([]byte, error) {
@@ -225,6 +240,10 @@ func (a *Asset) UpdateSQL() string {
 	SET asset_type = $2, updated_at = $3
 	WHERE isin = $1
 	RETURNING asset_type, updated_at`
+}
+
+func IsAssetNotFound(a Asset, err error) bool {
+	return a == Asset{} || tool.NoRowsInResultSet(err)
 }
 
 //!-

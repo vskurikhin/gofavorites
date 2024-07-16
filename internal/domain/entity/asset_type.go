@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-16 20:07 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-16 22:43 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * asset_type.go
@@ -29,7 +29,7 @@ type AssetType struct {
 
 var _ domain.Entity = (*AssetType)(nil)
 
-func GetAssetTypes(ctx context.Context, repo domain.Repo[*AssetType], name string) (AssetType, error) {
+func GetAssetType(ctx context.Context, repo domain.Repo[*AssetType], name string) (AssetType, error) {
 
 	var e error
 	result := &AssetType{name: name}
@@ -51,7 +51,7 @@ func GetAssetTypes(ctx context.Context, repo domain.Repo[*AssetType], name strin
 	return *result, nil
 }
 
-func NewAssetTypes(name string, createdAt time.Time) AssetType {
+func NewAssetType(name string, createdAt time.Time) AssetType {
 	return AssetType{
 		name:      name,
 		createdAt: createdAt,
@@ -104,9 +104,9 @@ func (a *AssetType) DeleteSQL() string {
 
 type assetTypeJSON struct {
 	Name      string
-	Deleted   *bool
+	Deleted   *bool `json:",omitempty"`
 	CreatedAt time.Time
-	UpdatedAt *time.Time
+	UpdatedAt *time.Time `json:",omitempty"`
 }
 
 func (a *AssetType) FromJSON(data []byte) (err error) {
