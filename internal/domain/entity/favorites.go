@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-16 23:18 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-17 12:01 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites.go
@@ -175,6 +175,11 @@ func (f *Favorites) FromJSON(data []byte) (err error) {
 	f.asset.assetType.deleted = tool.ConvertBoolPointerToNullBool(t.Asset.AssetType.Deleted)
 	f.asset.assetType.createdAt = t.Asset.AssetType.CreatedAt
 	f.asset.assetType.updatedAt = tool.ConvertTimePointerToNullTime(t.Asset.AssetType.UpdatedAt)
+
+	f.user.upk = t.User.UPK
+	f.user.deleted = tool.ConvertBoolPointerToNullBool(t.User.Deleted)
+	f.user.createdAt = t.User.CreatedAt
+	f.user.updatedAt = tool.ConvertTimePointerToNullTime(t.User.UpdatedAt)
 
 	return nil
 }

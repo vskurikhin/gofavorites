@@ -1,5 +1,9 @@
 favorites:
   enabled: true
+  cache:
+    enabled: true
+    expire_ms: 1000
+    gc_interval_sec: 10
   db:
     enabled: false
     name: db

@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-11 11:30 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-17 11:10 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * properties_tool.go
@@ -18,7 +18,37 @@ import (
 	"google.golang.org/grpc/credentials"
 	"log/slog"
 	"strconv"
+	"time"
 )
+
+func getCacheExpire(flm map[string]interface{}, env *environments, yml Config) (expire time.Duration, err error) {
+	expire = time.Duration(yml.CacheExpire()) * time.Millisecond
+	return timeFromFlagOrEnvironment(flm[flagCacheExpireMs], env, time.Millisecond)
+}
+
+func getCacheGCInterval(flm map[string]interface{}, env *environments, yml Config) (gcInterval time.Duration, err error) {
+	gcInterval = time.Duration(yml.CacheGCInterval()) * time.Second
+	return timeFromFlagOrEnvironment(flm[flagCacheGCIntervalSec], env, time.Second)
+}
+
+func timeFromFlagOrEnvironment(flm interface{}, env *environments, scale time.Duration) (result time.Duration, err error) {
+
+	getFlagCacheExpire := func() {
+		if a, ok := flm.(*int); !ok {
+			err = fmt.Errorf("bad value")
+		} else {
+			result = time.Duration(*a) * scale
+		}
+	}
+	if env.CacheExpire > 0 {
+		result = time.Duration(env.CacheExpire) * scale
+	} else if result == 0 {
+		getFlagCacheExpire()
+	}
+	setIfFlagChanged(flagCacheExpireMs, getFlagCacheExpire)
+
+	return result, err
+}
 
 func getGRPCAddress(flm map[string]interface{}, env *environments, yml Config) (address string, err error) {
 	if yml.GRPCEnabled() {

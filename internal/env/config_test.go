@@ -27,7 +27,10 @@ func TestConfig(t *testing.T) {
 			name:  `positive test #0 nil config`,
 			fRun:  nilConfig,
 			isNil: true,
-			want: `DBHost: 
+			want: `CacheEnabled: false
+CacheExpire: 0
+CacheGCInterval: 0
+DBHost: 
 DBName: 
 DBEnabled: false
 DBPort: 0
@@ -54,7 +57,10 @@ Token: `,
 		{
 			name: `positive test #1 zero config`,
 			fRun: zeroConfig,
-			want: `DBHost: 
+			want: `CacheEnabled: false
+CacheExpire: 0
+CacheGCInterval: 0
+DBHost: 
 DBName: 
 DBEnabled: false
 DBPort: 0

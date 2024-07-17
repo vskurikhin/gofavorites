@@ -34,6 +34,10 @@ func TestLoadConfig(t *testing.T) {
 			fRun:  LoadConfig,
 			want: want{
 				yamlConfig: &config{Favorites: struct {
+					Cache struct {
+						Enabled     bool
+						cacheConfig `mapstructure:",squash"`
+					}
 					DB struct {
 						Enabled  bool
 						dbConfig `mapstructure:",squash"`
@@ -57,6 +61,17 @@ func TestLoadConfig(t *testing.T) {
 					}
 					goFavoritesConfig `mapstructure:",squash"`
 				}{
+
+					Cache: struct {
+						Enabled     bool
+						cacheConfig `mapstructure:",squash"`
+					}{
+						Enabled: true,
+						cacheConfig: cacheConfig{
+							Expire:     1000,
+							GCInterval: 10,
+						},
+					},
 					DB: struct {
 						Enabled  bool
 						dbConfig `mapstructure:",squash"`

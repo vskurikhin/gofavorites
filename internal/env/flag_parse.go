@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-11 11:30 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-17 10:34 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * flag_parse.go
@@ -13,15 +13,17 @@ package env
 import "github.com/spf13/pflag"
 
 const (
-	flagDatabaseDSN  = "database-dsn"
-	flagGRPCAddress  = "grpc-address"
-	flagGRPCCAFile   = "grpc-ca-file"
-	flagGRPCCertFile = "grpc-cert-file"
-	flagGRPCKeyFile  = "grpc-key-file"
-	flagHTTPAddress  = "http-address"
-	flagHTTPCAFile   = "http-ca-file"
-	flagHTTPCertFile = "http-cert-file"
-	flagHTTPKeyFile  = "http-key-file"
+	flagCacheExpireMs      = "cache-expire-ms"
+	flagCacheGCIntervalSec = "cache-gc-interval-sec"
+	flagDatabaseDSN        = "database-dsn"
+	flagGRPCAddress        = "grpc-address"
+	flagGRPCCAFile         = "grpc-ca-file"
+	flagGRPCCertFile       = "grpc-cert-file"
+	flagGRPCKeyFile        = "grpc-key-file"
+	flagHTTPAddress        = "http-address"
+	flagHTTPCAFile         = "http-ca-file"
+	flagHTTPCertFile       = "http-cert-file"
+	flagHTTPKeyFile        = "http-key-file"
 )
 
 func makeFlagsParse() map[string]interface{} {
@@ -29,11 +31,21 @@ func makeFlagsParse() map[string]interface{} {
 	var flagsMap = make(map[string]interface{})
 
 	if !pflag.Parsed() {
+		flagsMap[flagCacheExpireMs] = pflag.Int(
+			flagCacheExpireMs,
+			1000,
+			"time to expire key in millisecond",
+		)
+		flagsMap[flagCacheGCIntervalSec] = pflag.Int(
+			flagCacheGCIntervalSec,
+			10,
+			"time before deleting expired keys in second",
+		)
 		flagsMap[flagDatabaseDSN] = pflag.StringP(
 			flagDatabaseDSN,
 			"d",
 			"postgres://dbuser:password@localhost:5432/db?sslmode=disable",
-			"for the database DSN",
+			"database DSN",
 		)
 		flagsMap[flagGRPCAddress] = pflag.StringP(
 			flagGRPCAddress,

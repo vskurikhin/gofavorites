@@ -1,15 +1,19 @@
 favorites:
+  enabled: true
+  cache:
     enabled: true
-    db:
-        enabled: true
-        name: db
-        host: localhost
-        port: 5432
-        username: dbuser
-        password: password
-    grpc:
-        address: localhost
-        enabled: true
+    expire_ms: 1000
+    gc_interval_sec: 10
+  db:
+    enabled: true
+    name: db
+    host: localhost
+    port: 5432
+    username: dbuser
+    password: password
+  grpc:
+    address: localhost
+    enabled: true
         port: 8443
         proto: tcp
         tls:

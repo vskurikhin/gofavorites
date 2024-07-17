@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-11 11:30 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-17 10:29 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * config.go
@@ -19,6 +19,9 @@ var _ Config = (*config)(nil)
 
 type Config interface {
 	fmt.Stringer
+	CacheEnabled() bool
+	CacheExpire() int
+	CacheGCInterval() int
 	DBEnabled() bool
 	DBHost() string
 	DBName() string
@@ -46,6 +49,10 @@ type Config interface {
 
 type config struct {
 	Favorites struct {
+		Cache struct {
+			Enabled     bool
+			cacheConfig `mapstructure:",squash"`
+		}
 		DB struct {
 			Enabled  bool
 			dbConfig `mapstructure:",squash"`
@@ -71,12 +78,17 @@ type config struct {
 	}
 }
 
+type cacheConfig struct {
+	Expire     int `mapstructure:"expire_ms"`
+	GCInterval int `mapstructure:"gc_interval_sec"`
+}
+
 type dbConfig struct {
 	Name         string
 	Host         string
 	Port         int16
 	UserName     string
-	UserPassword string `mapstructure:"password" env:"DB_PASSWORD"`
+	UserPassword string `mapstructure:"password"`
 }
 
 type grpcConfig struct {
@@ -99,6 +111,30 @@ type tlsConfig struct {
 // moduleConfig could be in a module specific package
 type goFavoritesConfig struct {
 	Token string
+}
+
+func (y *config) CacheEnabled() bool {
+
+	if y != nil {
+		return y.Favorites.Cache.Enabled
+	}
+	return false
+}
+
+func (y *config) CacheExpire() int {
+
+	if y != nil {
+		return y.Favorites.Cache.Expire
+	}
+	return 0
+}
+
+func (y *config) CacheGCInterval() int {
+
+	if y != nil {
+		return y.Favorites.Cache.GCInterval
+	}
+	return 0
 }
 
 func (y *config) DBEnabled() bool {
@@ -287,7 +323,10 @@ func (y *config) Token() string {
 
 func (y *config) String() string {
 	return fmt.Sprintf(
-		`DBHost: %s
+		`CacheEnabled: %v
+CacheExpire: %d
+CacheGCInterval: %d
+DBHost: %s
 DBName: %s
 DBEnabled: %v
 DBPort: %d
@@ -310,6 +349,9 @@ HTTPTLSCertFile: %s
 HTTPTLSEnabled: %v
 HTTPTLSKeyFile: %s
 Token: %s`,
+		y.CacheEnabled(),
+		y.CacheExpire(),
+		y.CacheGCInterval(),
 		y.DBHost(),
 		y.DBName(),
 		y.DBEnabled(),

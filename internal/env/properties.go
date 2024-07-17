@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-11 11:30 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-17 11:10 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * properties.go
@@ -18,9 +18,11 @@ import (
 	"log/slog"
 	"net"
 	"sync"
+	"time"
 )
 
 const (
+	propertyCacheExpire              = "cache-expire"
 	propertyConfig                   = "config"
 	propertyDBPool                   = "db-pool"
 	propertyEnvironments             = "environments"
@@ -31,6 +33,8 @@ const (
 
 type Properties interface {
 	fmt.Stringer
+	CacheExpire() time.Duration
+	CacheGCInterval() time.Duration
 	Config() Config
 	DBPool() *pgxpool.Pool
 	Environments() environments
@@ -57,14 +61,20 @@ func GetProperties() Properties {
 		tool.IfErrorThenPanic(err)
 		flm := makeFlagsParse()
 
+		cacheExpire, err := getCacheExpire(flm, env, yml)
+		slog.Warn(MSG, "cacheExpire", cacheExpire, "err", err)
+		cacheGCInterval, err := getCacheGCInterval(flm, env, yml)
+		slog.Warn(MSG, "cacheGCInterval", cacheGCInterval, "err", err)
 		dbPool, err := makeDBPool(flm, env, yml)
 		slog.Warn(MSG, "dbDisable", err)
 		grpcAddress, err := getGRPCAddress(flm, env, yml)
-		slog.Warn(MSG, "grpcAddress", err)
+		slog.Warn(MSG, "grpcAddress", grpcAddress, "err", err)
 		tCredentials, err := getGRPCTransportCredentials(flm, env, yml)
-		slog.Warn(MSG, "grpcTransportCredentials", err)
+		slog.Warn(MSG, "grpcTransportCredentials", tCredentials, "err", err)
 
 		properties = getProperties(
+			WithCacheExpire(cacheExpire),
+			WithCacheGCInterval(cacheGCInterval),
 			WithConfig(yml),
 			WithEnvironments(*env),
 			WithFlags(flm),
@@ -74,6 +84,44 @@ func GetProperties() Properties {
 		)
 	})
 	return properties
+}
+
+// WithCacheExpire — TODO.
+func WithCacheExpire(cacheExpire time.Duration) func(*mapProperties) {
+	return func(p *mapProperties) {
+		if cacheExpire > 0 {
+			p.mp.Store(propertyCacheExpire, cacheExpire)
+		}
+	}
+}
+
+// CacheExpire — TODO.
+func (p *mapProperties) CacheExpire() time.Duration {
+	if a, ok := p.mp.Load(propertyCacheExpire); ok {
+		if cacheExpire, ok := a.(time.Duration); ok {
+			return cacheExpire
+		}
+	}
+	return 0
+}
+
+// WithCacheGCInterval — TODO.
+func WithCacheGCInterval(cacheGCInterval time.Duration) func(*mapProperties) {
+	return func(p *mapProperties) {
+		if cacheGCInterval > 0 {
+			p.mp.Store(propertyCacheExpire, cacheGCInterval)
+		}
+	}
+}
+
+// CacheGCInterval — TODO.
+func (p *mapProperties) CacheGCInterval() time.Duration {
+	if a, ok := p.mp.Load(propertyCacheExpire); ok {
+		if cacheGCInterval, ok := a.(time.Duration); ok {
+			return cacheGCInterval
+		}
+	}
+	return 0
 }
 
 // WithConfig — Конфигурация.
