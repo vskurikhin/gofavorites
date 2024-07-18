@@ -41,12 +41,11 @@ func TestUser(t *testing.T) {
 }
 
 func testUserCloneable(t *testing.T) {
-	expected := User{
-		tool.RandStringBytes(32),
+	expected := MakeUser(tool.RandStringBytes(32), MakeTAttributes(
 		sql.NullBool{true, true},
 		time.Time{},
 		sql.NullTime{time.Time{}, false},
-	}
+	))
 	got := expected.Copy()
 	assert.NotNil(t, got)
 	assert.Equal(t, &expected, got)
@@ -54,12 +53,11 @@ func testUserCloneable(t *testing.T) {
 
 func testUserJSON(t *testing.T) {
 	upk := tool.RandStringBytes(32)
-	expected := User{
-		upk,
+	expected := MakeUser(upk, MakeTAttributes(
 		sql.NullBool{true, true},
 		time.Time{},
 		sql.NullTime{time.Time{}, false},
-	}
+	))
 	j, err := expected.ToJSON()
 	assert.Nil(t, err)
 	assert.NotNil(t, j)
@@ -80,7 +78,7 @@ func testIsUserNotFound(t *testing.T) {
 
 func testUserRepoOk(t *testing.T) {
 	upk := tool.RandStringBytes(32)
-	user := NewUser(upk, time.Time{})
+	user := MakeUser(upk, DefaultTAttributes())
 	err := user.Insert(context.TODO(), &stubRepoOk[*User]{})
 	assert.Nil(t, err)
 	assert.False(t, user.Deleted().Valid)
@@ -102,7 +100,7 @@ func testUserRepoOk(t *testing.T) {
 
 func testUserRepoErr(t *testing.T) {
 	upk := tool.RandStringBytes(32)
-	user := NewUser(upk, time.Time{})
+	user := MakeUser(upk, DefaultTAttributes())
 	err := user.Insert(context.TODO(), &stubRepoErr[*User]{})
 	assert.NotNil(t, err)
 	_, err = GetUser(context.TODO(), &stubRepoErr[*User]{}, upk)

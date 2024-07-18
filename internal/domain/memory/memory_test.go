@@ -107,7 +107,7 @@ func Test_Storage_Memory_Reset(t *testing.T) {
 	err = testStore.Set("john2", val, 0)
 	utils.AssertEqual(t, nil, err)
 
-	err = testStore.Reset()
+	err = testStore.Invalidate()
 	utils.AssertEqual(t, nil, err)
 
 	result, err := testStore.Get("john1")

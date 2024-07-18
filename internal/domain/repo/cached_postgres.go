@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-17 11:20 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-19 11:25 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * cached_postgres.go
@@ -21,8 +21,11 @@ import (
 	"time"
 )
 
-type Cache interface {
-	Reset() error
+type cache[E domain.Entity] interface {
+	delete(entity E) error
+	get(entity E) (E, error)
+	invalidate() error
+	set(entity E) (E, error)
 }
 
 type CachedPostgres[E domain.Entity] struct {
@@ -31,7 +34,7 @@ type CachedPostgres[E domain.Entity] struct {
 	exp   time.Duration
 }
 
-var _ Cache = (*CachedPostgres[domain.Entity])(nil)
+var _ cache[domain.Entity] = (*CachedPostgres[domain.Entity])(nil)
 var _ domain.Repo[domain.Entity] = (*CachedPostgres[domain.Entity])(nil)
 var (
 	onceAssetCachedRepo     = new(sync.Once)
@@ -44,7 +47,11 @@ var (
 	userCachedRepo          *CachedPostgres[*entity.User]
 )
 
-func GetAssetCachedPostgresRepo(prop env.Properties) domain.Repo[*entity.Asset] {
+func getAssetCache(prop env.Properties) cache[*entity.Asset] {
+	return getAssetCachedPostgresRepo(prop)
+}
+
+func getAssetCachedPostgresRepo(prop env.Properties) *CachedPostgres[*entity.Asset] {
 	onceAssetCachedRepo.Do(func() {
 		assetCachedRepo = new(CachedPostgres[*entity.Asset])
 		assetCachedRepo.cache = memory.New(memory.Config{GCInterval: prop.CacheGCInterval()})
@@ -54,7 +61,11 @@ func GetAssetCachedPostgresRepo(prop env.Properties) domain.Repo[*entity.Asset] 
 	return assetCachedRepo
 }
 
-func GetAssetTypeCachedPostgresRepo(prop env.Properties) domain.Repo[*entity.AssetType] {
+func GetAssetTypePostgresCachedRepo(prop env.Properties) domain.Repo[*entity.AssetType] {
+	return getAssetTypeCachedPostgresRepo(prop)
+}
+
+func getAssetTypeCachedPostgresRepo(prop env.Properties) *CachedPostgres[*entity.AssetType] {
 	onceAssetTypeCachedRepo.Do(func() {
 		assetTypeCachedRepo = new(CachedPostgres[*entity.AssetType])
 		assetTypeCachedRepo.cache = memory.New(memory.Config{GCInterval: prop.CacheGCInterval()})
@@ -64,7 +75,11 @@ func GetAssetTypeCachedPostgresRepo(prop env.Properties) domain.Repo[*entity.Ass
 	return assetTypeCachedRepo
 }
 
-func GetFavoritesCachedPostgresRepo(prop env.Properties) domain.Repo[*entity.Favorites] {
+func getFavoritesCache(prop env.Properties) cache[*entity.Favorites] {
+	return getFavoritesCachedPostgresRepo(prop)
+}
+
+func getFavoritesCachedPostgresRepo(prop env.Properties) *CachedPostgres[*entity.Favorites] {
 	onceFavoritesCachedRepo.Do(func() {
 		favoritesCachedRepo = new(CachedPostgres[*entity.Favorites])
 		favoritesCachedRepo.cache = memory.New(memory.Config{GCInterval: prop.CacheGCInterval()})
@@ -74,7 +89,11 @@ func GetFavoritesCachedPostgresRepo(prop env.Properties) domain.Repo[*entity.Fav
 	return favoritesCachedRepo
 }
 
-func GetUserCachedPostgresRepo(prop env.Properties) domain.Repo[*entity.User] {
+func GetUserPostgresCachedRepo(prop env.Properties) domain.Repo[*entity.User] {
+	return getUserCachedPostgresRepo(prop)
+}
+
+func getUserCachedPostgresRepo(prop env.Properties) *CachedPostgres[*entity.User] {
 	onceUserCachedRepo.Do(func() {
 		userCachedRepo = new(CachedPostgres[*entity.User])
 		userCachedRepo.cache = memory.New(memory.Config{GCInterval: prop.CacheGCInterval()})
@@ -87,12 +106,48 @@ func GetUserCachedPostgresRepo(prop env.Properties) domain.Repo[*entity.User] {
 func (p *CachedPostgres[E]) Delete(ctx context.Context, entity E, scan func(domain.Scanner)) (E, error) {
 
 	_ = p.cache.Delete(entity.Key())
-	err := rowScanPostgreSQL(ctx, p.pool, scan, entity.DeleteSQL(), entity.DeleteArgs()...)
+	err := scanPostgreSQL(ctx, p.pool, scan, entity.DeleteSQL(), entity.DeleteArgs()...)
 
 	return entity, err
 }
 
-func (p *CachedPostgres[E]) Get(ctx context.Context, entity E, scan func(domain.Scanner)) (E, error) {
+func (p *CachedPostgres[E]) Get(ctx context.Context, entity E, scan func(domain.Scanner)) (e E, err error) {
+
+	entity, err = p.get(entity)
+
+	if err == nil {
+		return entity, nil
+	}
+	err = scanPostgreSQL(ctx, p.pool, scan, entity.GetSQL(), entity.GetArgs()...)
+
+	return entity, err
+}
+
+func (p *CachedPostgres[E]) Insert(ctx context.Context, entity E, scan func(domain.Scanner)) (E, error) {
+
+	err := scanPostgreSQL(ctx, p.pool, scan, entity.InsertSQL(), entity.InsertArgs()...)
+
+	if err == nil {
+		return p.set(entity)
+	}
+	return entity, err
+}
+
+func (p *CachedPostgres[E]) Update(ctx context.Context, entity E, scan func(domain.Scanner)) (E, error) {
+
+	err := scanPostgreSQL(ctx, p.pool, scan, entity.UpdateSQL(), entity.UpdateArgs()...)
+
+	if data, e := entity.ToJSON(); e == nil {
+		_ = p.cache.Set(entity.Key(), data, time.Second)
+	}
+	return entity, err
+}
+
+func (p *CachedPostgres[E]) delete(entity E) error {
+	return p.cache.Delete(entity.Key())
+}
+
+func (p *CachedPostgres[E]) get(entity E) (E, error) {
 
 	t := entity.Copy()
 	data, err := p.cache.Get(entity.Key())
@@ -104,33 +159,19 @@ func (p *CachedPostgres[E]) Get(ctx context.Context, entity E, scan func(domain.
 			return entity, nil
 		}
 	}
-	err = rowScanPostgreSQL(ctx, p.pool, scan, entity.GetSQL(), entity.GetArgs()...)
-
 	return entity, err
 }
 
-func (p *CachedPostgres[E]) Insert(ctx context.Context, entity E, scan func(domain.Scanner)) (E, error) {
+func (p *CachedPostgres[E]) invalidate() error {
+	return p.cache.Invalidate()
+}
 
-	err := rowScanPostgreSQL(ctx, p.pool, scan, entity.InsertSQL(), entity.InsertArgs()...)
+func (p *CachedPostgres[E]) set(entity E) (e E, err error) {
 
 	if data, e := entity.ToJSON(); e == nil {
-		_ = p.cache.Set(entity.Key(), data, time.Second)
+		err = p.cache.Set(entity.Key(), data, p.exp)
 	}
 	return entity, err
-}
-
-func (p *CachedPostgres[E]) Update(ctx context.Context, entity E, scan func(domain.Scanner)) (E, error) {
-
-	err := rowScanPostgreSQL(ctx, p.pool, scan, entity.UpdateSQL(), entity.UpdateArgs()...)
-
-	if data, e := entity.ToJSON(); e == nil {
-		_ = p.cache.Set(entity.Key(), data, time.Second)
-	}
-	return entity, err
-}
-
-func (p *CachedPostgres[E]) Reset() error {
-	return p.cache.Reset()
 }
 
 //!-

@@ -14,10 +14,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"os"
 	"testing"
 	"time"
 )
@@ -43,34 +41,35 @@ func TestFavorites(t *testing.T) {
 }
 
 func testFavoritesCloneable(t *testing.T) {
-	expected := Favorites{
+	expected := MakeFavorites(
 		uuid.New(),
 		Asset{},
 		User{},
 		sql.NullInt64{},
-		sql.NullBool{true, true},
-		time.Time{},
-		sql.NullTime{time.Time{}, false},
-	}
+		MakeTAttributes(
+			sql.NullBool{true, true},
+			time.Time{},
+			sql.NullTime{time.Time{}, false},
+		))
 	got := expected.Copy()
 	assert.NotNil(t, got)
 	assert.Equal(t, &expected, got)
 }
 
 func testFavoritesJSON(t *testing.T) {
-	expected := Favorites{
+	expected := MakeFavorites(
 		uuid.New(),
 		Asset{},
 		User{},
 		sql.NullInt64{},
-		sql.NullBool{true, true},
-		time.Time{},
-		sql.NullTime{time.Time{}, false},
-	}
+		MakeTAttributes(
+			sql.NullBool{true, true},
+			time.Time{},
+			sql.NullTime{time.Time{}, false},
+		))
 	j, err := expected.ToJSON()
 	assert.Nil(t, err)
 	assert.NotNil(t, j)
-	fmt.Fprintf(os.Stderr, "j: %s\n", string(j))
 	got := Favorites{}
 	err = (&got).FromJSON(j)
 	assert.Nil(t, err)
@@ -87,8 +86,8 @@ func testIsFavoritesNotFound(t *testing.T) {
 }
 
 func testFavoritesRepoOk(t *testing.T) {
-	favorites := NewFavorites(Asset{}, User{}, time.Time{})
-	err := favorites.Insert(context.TODO(), &stubRepoOk[*Favorites]{})
+	favorites := MakeFavorites(uuid.New(), Asset{}, User{}, sql.NullInt64{}, DefaultTAttributes())
+	err := favorites.Upsert(context.TODO(), &stubTxRepoOk[*Favorites]{}, func() {})
 	assert.Nil(t, err)
 	assert.False(t, favorites.Deleted().Valid)
 	got, err := GetFavorites(context.TODO(), &stubRepoOk[*Favorites]{}, "", "")
@@ -96,24 +95,18 @@ func testFavoritesRepoOk(t *testing.T) {
 	assert.Equal(t, favorites.CreatedAt(), got.CreatedAt())
 	assert.Equal(t, favorites.Deleted(), got.Deleted())
 	assert.False(t, favorites.UpdatedAt().Valid)
-	err = favorites.Update(context.TODO(), &stubRepoOk[*Favorites]{})
-	assert.Nil(t, err)
-	assert.False(t, favorites.Deleted().Valid)
-	assert.False(t, favorites.UpdatedAt().Valid)
-	err = favorites.Delete(context.TODO(), &stubRepoOk[*Favorites]{})
+	err = favorites.Delete(context.TODO(), &stubTxRepoOk[*Favorites]{}, func() {})
 	assert.Nil(t, err)
 	assert.False(t, favorites.Deleted().Valid)
 }
 
 func testFavoritesRepoErr(t *testing.T) {
-	user := NewFavorites(Asset{}, User{}, time.Time{})
-	err := user.Insert(context.TODO(), &stubRepoErr[*Favorites]{})
+	favorites := MakeFavorites(uuid.New(), Asset{}, User{}, sql.NullInt64{}, DefaultTAttributes())
+	err := favorites.Upsert(context.TODO(), &stubTxRepoErr[*Favorites]{}, func() {})
 	assert.NotNil(t, err)
 	_, err = GetFavorites(context.TODO(), &stubRepoErr[*Favorites]{}, "", "")
 	assert.NotNil(t, err)
-	err = user.Update(context.TODO(), &stubRepoErr[*Favorites]{})
-	assert.NotNil(t, err)
-	err = user.Delete(context.TODO(), &stubRepoErr[*Favorites]{})
+	err = favorites.Delete(context.TODO(), &stubTxRepoErr[*Favorites]{}, func() {})
 	assert.NotNil(t, err)
 }
 

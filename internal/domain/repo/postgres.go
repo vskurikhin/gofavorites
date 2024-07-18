@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-16 20:58 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-18 13:42 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * postgres.go
@@ -77,26 +77,26 @@ func GetUserPostgresRepo(prop env.Properties) domain.Repo[*entity.User] {
 }
 
 func (p *Postgres[E]) Delete(ctx context.Context, entity E, scan func(domain.Scanner)) (E, error) {
-	err := rowScanPostgreSQL(ctx, p.pool, scan, entity.DeleteSQL(), entity.DeleteArgs()...)
+	err := scanPostgreSQL(ctx, p.pool, scan, entity.DeleteSQL(), entity.DeleteArgs()...)
 	return entity, err
 }
 
 func (p *Postgres[E]) Get(ctx context.Context, entity E, scan func(domain.Scanner)) (E, error) {
-	err := rowScanPostgreSQL(ctx, p.pool, scan, entity.GetSQL(), entity.GetArgs()...)
+	err := scanPostgreSQL(ctx, p.pool, scan, entity.GetSQL(), entity.GetArgs()...)
 	return entity, err
 }
 
 func (p *Postgres[E]) Insert(ctx context.Context, entity E, scan func(domain.Scanner)) (E, error) {
-	err := rowScanPostgreSQL(ctx, p.pool, scan, entity.InsertSQL(), entity.InsertArgs()...)
+	err := scanPostgreSQL(ctx, p.pool, scan, entity.InsertSQL(), entity.InsertArgs()...)
 	return entity, err
 }
 
 func (p *Postgres[E]) Update(ctx context.Context, entity E, scan func(domain.Scanner)) (E, error) {
-	err := rowScanPostgreSQL(ctx, p.pool, scan, entity.UpdateSQL(), entity.UpdateArgs()...)
+	err := scanPostgreSQL(ctx, p.pool, scan, entity.UpdateSQL(), entity.UpdateArgs()...)
 	return entity, err
 }
 
-func rowScanPostgreSQL(ctx context.Context, pool *pgxpool.Pool, scan func(domain.Scanner), sql string, args ...any) error {
+func scanPostgreSQL(ctx context.Context, pool *pgxpool.Pool, scan func(domain.Scanner), sql string, args ...any) error {
 
 	row, err := rowPostgreSQL(ctx, pool, sql, args...)
 

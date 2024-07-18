@@ -13,12 +13,10 @@ package entity
 import (
 	"context"
 	"fmt"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/vskurikhin/gofavorites/internal/domain"
 )
 
 type stubRepoOk[E domain.Entity] struct {
-	pool *pgxpool.Pool
 }
 
 var _ domain.Repo[domain.Entity] = (*stubRepoOk[domain.Entity])(nil)
@@ -67,8 +65,34 @@ func (p *stubRepoOk[E]) Update(_ context.Context, entity E, scan func(domain.Sca
 	return entity, nil
 }
 
+type stubTxRepoOk[S domain.Suite] struct {
+}
+
+var _ domain.Dft[domain.Suite] = (*stubTxRepoOk[domain.Suite])(nil)
+
+func (p *stubTxRepoOk[S]) DoDelete(ctx context.Context, entity S, scan func(domain.Scanner)) error {
+	if len(entity.DeleteTxArgs().Args) < 1 {
+		panic(`len(entity.DeleteTxArgs().Args) < 1`)
+	}
+	if len(entity.DeleteTxArgs().SQLs) < 1 {
+		panic(`len(entity.DeleteTxArgs().SQLs) < 1`)
+	}
+	scan(&stubScannerOk{})
+	return nil
+}
+
+func (p *stubTxRepoOk[S]) DoUpsert(ctx context.Context, entity S, scan func(domain.Scanner)) error {
+	if len(entity.UpsertTxArgs().Args) < 1 {
+		panic(`len(entity.UpsertTxArgs().Args) < 1`)
+	}
+	if len(entity.UpsertTxArgs().SQLs) < 1 {
+		panic(`len(entity.UpsertTxArgs().SQLs) < 1`)
+	}
+	scan(&stubScannerOk{})
+	return nil
+}
+
 type stubRepoErr[E domain.Entity] struct {
-	pool *pgxpool.Pool
 }
 
 var _ domain.Repo[domain.Entity] = (*stubRepoErr[domain.Entity])(nil)
@@ -91,6 +115,21 @@ func (p *stubRepoErr[E]) Insert(_ context.Context, entity E, scan func(domain.Sc
 func (p *stubRepoErr[E]) Update(_ context.Context, entity E, scan func(domain.Scanner)) (E, error) {
 	scan(&stubScannerErr{})
 	return entity, nil
+}
+
+type stubTxRepoErr[S domain.Suite] struct {
+}
+
+var _ domain.Dft[domain.Suite] = (*stubTxRepoErr[domain.Suite])(nil)
+
+func (p *stubTxRepoErr[S]) DoDelete(_ context.Context, _ S, scan func(domain.Scanner)) error {
+	scan(&stubScannerErr{})
+	return nil
+}
+
+func (p *stubTxRepoErr[S]) DoUpsert(_ context.Context, _ S, scan func(domain.Scanner)) error {
+	scan(&stubScannerErr{})
+	return nil
 }
 
 type stubScannerOk struct {

@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-16 23:18 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-18 23:28 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * user.go
@@ -21,10 +21,8 @@ import (
 )
 
 type User struct {
-	upk       string
-	deleted   sql.NullBool
-	createdAt time.Time
-	updatedAt sql.NullTime
+	TAttributes
+	upk string
 }
 
 var _ domain.Entity = (*Asset)(nil)
@@ -51,10 +49,18 @@ func GetUser(ctx context.Context, repo domain.Repo[*User], upk string) (User, er
 	return *result, nil
 }
 
-func NewUser(upk string, createdAt time.Time) User {
+func MakeUser(upk string, a TAttributes) User {
 	return User{
-		upk:       upk,
-		createdAt: createdAt,
+		TAttributes: struct {
+			deleted   sql.NullBool
+			createdAt time.Time
+			updatedAt sql.NullTime
+		}{
+			deleted:   a.deleted,
+			createdAt: a.createdAt,
+			updatedAt: a.updatedAt,
+		},
+		upk: upk,
 	}
 }
 

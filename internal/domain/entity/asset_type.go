@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-16 22:43 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-18 21:11 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * asset_type.go
@@ -21,10 +21,8 @@ import (
 )
 
 type AssetType struct {
-	name      string
-	deleted   sql.NullBool
-	createdAt time.Time
-	updatedAt sql.NullTime
+	TAttributes
+	name string
 }
 
 var _ domain.Entity = (*AssetType)(nil)
@@ -51,10 +49,18 @@ func GetAssetType(ctx context.Context, repo domain.Repo[*AssetType], name string
 	return *result, nil
 }
 
-func NewAssetType(name string, createdAt time.Time) AssetType {
+func MakeAssetType(name string, a TAttributes) AssetType {
 	return AssetType{
-		name:      name,
-		createdAt: createdAt,
+		TAttributes: struct {
+			deleted   sql.NullBool
+			createdAt time.Time
+			updatedAt sql.NullTime
+		}{
+			deleted:   a.deleted,
+			createdAt: a.createdAt,
+			updatedAt: a.updatedAt,
+		},
+		name: name,
 	}
 }
 

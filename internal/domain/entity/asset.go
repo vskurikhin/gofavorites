@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-16 23:18 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-19 11:38 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * asset.go
@@ -16,16 +16,50 @@ import (
 	"fmt"
 	"github.com/goccy/go-json"
 	"github.com/vskurikhin/gofavorites/internal/domain"
+	"github.com/vskurikhin/gofavorites/internal/env"
 	"github.com/vskurikhin/gofavorites/internal/tool"
+	"log/slog"
 	"time"
 )
 
+const (
+	AssetSelectSQL = `SELECT
+	a.isin, a.deleted, a.created_at, a.updated_at,
+	t.name, t.deleted, t.created_at, t.updated_at
+	FROM assets a
+	JOIN asset_types t ON a.asset_type = t.name
+	WHERE a.isin = $1`
+
+	AssetDeleteSQL = `UPDATE assets
+	SET deleted = true
+	WHERE isin = $1
+	RETURNING deleted, updated_at`
+
+	AssetDeleteTxSQL = `UPDATE assets
+	SET deleted = true WHERE isin = $1
+	RETURNING isin, asset_type, deleted, created_at, updated_at`
+
+	AssetInsertSQL = `INSERT INTO assets
+	(isin, asset_type, created_at)
+	VALUES ($1, $2, $3)
+	RETURNING isin, asset_type, created_at`
+
+	AssetUpdateSQL = `UPDATE assets
+	SET asset_type = $2, updated_at = $3
+	WHERE isin = $1
+	RETURNING asset_type, updated_at`
+
+	AssetUpsertTxAssetTypeSQL = `INSERT INTO asset_types
+	(name, created_at)
+	VALUES ($1, $2)
+	ON CONFLICT (name)
+	DO NOTHING`
+)
+
 type Asset struct {
+	TAttributes
 	isin      string
 	assetType AssetType
-	deleted   sql.NullBool
-	createdAt time.Time
-	updatedAt sql.NullTime
 }
 
 var _ domain.Entity = (*Asset)(nil)
@@ -56,11 +90,19 @@ func GetAsset(ctx context.Context, repo domain.Repo[*Asset], isin string) (Asset
 	return *result, nil
 }
 
-func NewAsset(isin string, assetType AssetType, createdAt time.Time) Asset {
+func MakeAsset(isin string, at AssetType, a TAttributes) Asset {
 	return Asset{
+		TAttributes: struct {
+			deleted   sql.NullBool
+			createdAt time.Time
+			updatedAt sql.NullTime
+		}{
+			deleted:   a.deleted,
+			createdAt: a.createdAt,
+			updatedAt: a.updatedAt,
+		},
 		isin:      isin,
-		assetType: assetType,
-		createdAt: createdAt,
+		assetType: at,
 	}
 }
 
@@ -84,25 +126,37 @@ func (a *Asset) UpdatedAt() sql.NullTime {
 	return a.updatedAt
 }
 
-// shallow copy and return same type
+// Copy shallow copy and return same type
 func (a *Asset) Copy() domain.Entity {
 	c := *a
 	return &c
 }
 
-func (a *Asset) Delete(ctx context.Context, repo domain.Repo[*Asset]) (err error) {
+func (a *Asset) Delete(ctx context.Context, dtf domain.Dft[*Asset], inTransaction func()) (err error) {
 
-	_, e := repo.Delete(ctx, a, func(s domain.Scanner) {
-		t := *a
-		err = s.Scan(&t.deleted, &t.updatedAt)
+	var isin, assetType string
+	var deleted sql.NullBool
+	var createdAt time.Time
+	var updatedAt sql.NullTime
+
+	e := dtf.DoDelete(ctx, a, func(scanner domain.Scanner) {
+		err = scanner.Scan(
+			&isin, &assetType, &deleted, &createdAt, &updatedAt,
+		)
 		if err == nil {
-			*a = t
+			inTransaction()
+		} else {
+			slog.Error(env.MSG+" Delete", "err", err)
 		}
 	})
 	if e != nil {
 		return e
 	}
-	return
+	if err == nil {
+		at := a.assetType
+		*a = MakeAsset(isin, at, MakeTAttributes(deleted, createdAt, updatedAt))
+	}
+	return err
 }
 
 func (a *Asset) DeleteArgs() []any {
@@ -110,7 +164,18 @@ func (a *Asset) DeleteArgs() []any {
 }
 
 func (a *Asset) DeleteSQL() string {
-	return `UPDATE assets SET deleted = true WHERE isin = $1 RETURNING deleted, updated_at`
+	return AssetDeleteSQL
+}
+
+func (a *Asset) DeleteTxArgs() domain.TxArgs {
+	return domain.TxArgs{
+		SQLs: []string{
+			AssetDeleteTxSQL,
+		},
+		Args: [][]any{
+			{a.isin},
+		},
+	}
 }
 
 type assetJSON struct {
@@ -147,24 +212,7 @@ func (a *Asset) GetArgs() []any {
 }
 
 func (a *Asset) GetSQL() string {
-	return `SELECT a.isin, a.deleted, a.created_at, a.updated_at,
-                   t.name, t.deleted, t.created_at, t.updated_at
-	FROM assets a JOIN asset_types t ON a.asset_type = t.name WHERE a.isin = $1`
-}
-
-func (a *Asset) Insert(ctx context.Context, repo domain.Repo[*Asset]) (err error) {
-
-	_, e := repo.Insert(ctx, a, func(s domain.Scanner) {
-		t := *a
-		err = s.Scan(&t.isin, &t.assetType.name, &t.createdAt)
-		if err == nil {
-			*a = t
-		}
-	})
-	if e != nil {
-		return e
-	}
-	return
+	return AssetSelectSQL
 }
 
 func (a *Asset) InsertArgs() []any {
@@ -172,10 +220,7 @@ func (a *Asset) InsertArgs() []any {
 }
 
 func (a *Asset) InsertSQL() string {
-	return `INSERT INTO assets
-	(isin, asset_type, created_at)
-	VALUES ($1, $2, $3)
-	RETURNING isin, asset_type, created_at`
+	return AssetInsertSQL
 }
 
 func (a *Asset) Key() string {
@@ -216,30 +261,58 @@ func (a *Asset) ToJSON() ([]byte, error) {
 	return result, nil
 }
 
-func (a *Asset) Update(ctx context.Context, repo domain.Repo[*Asset]) (err error) {
-
-	_, e := repo.Update(ctx, a, func(s domain.Scanner) {
-		t := *a
-		err = s.Scan(&t.assetType.name, &t.updatedAt)
-		if err == nil {
-			*a = t
-		}
-	})
-	if e != nil {
-		return e
-	}
-	return
-}
-
 func (a *Asset) UpdateArgs() []any {
 	return []any{a.isin, a.assetType.name, a.updatedAt}
 }
 
 func (a *Asset) UpdateSQL() string {
-	return `UPDATE assets
-	SET asset_type = $2, updated_at = $3
-	WHERE isin = $1
-	RETURNING asset_type, updated_at`
+	return AssetUpdateSQL
+}
+
+const AssetUpsertTxAssetSQL = `INSERT INTO assets
+	(isin, asset_type, created_at)
+	VALUES ($1, $2, $3)
+	ON CONFLICT (isin)
+	DO UPDATE SET asset_type = $2, updated_at = $4
+	RETURNING isin, asset_type, deleted, created_at, updated_at,
+	(SELECT created_at FROM asset_types WHERE name = $2)`
+
+func (a *Asset) Upsert(ctx context.Context, dtf domain.Dft[*Asset], inTransaction func()) (err error) {
+
+	var isin, assetType string
+	var deleted sql.NullBool
+	var createdAt, atCreatedAt time.Time
+	var updatedAt sql.NullTime
+
+	e := dtf.DoUpsert(ctx, a, func(scanner domain.Scanner) {
+		err = scanner.Scan(
+			&isin, &assetType, &deleted, &createdAt, &updatedAt, &atCreatedAt,
+		)
+		if err == nil {
+			at := a.assetType
+			*a = MakeAsset(isin, at, MakeTAttributes(deleted, createdAt, updatedAt))
+			inTransaction()
+		} else {
+			slog.Error(env.MSG+" Upsert", "err", err)
+		}
+	})
+	if e != nil {
+		return e
+	}
+	return err
+}
+
+func (a *Asset) UpsertTxArgs() domain.TxArgs {
+	return domain.TxArgs{
+		SQLs: []string{
+			AssetUpsertTxAssetTypeSQL,
+			AssetUpsertTxAssetSQL,
+		},
+		Args: [][]any{
+			{a.assetType.name, a.assetType.createdAt},
+			{a.isin, a.assetType.name, a.createdAt, a.updatedAt},
+		},
+	}
 }
 
 func IsAssetNotFound(a Asset, err error) bool {

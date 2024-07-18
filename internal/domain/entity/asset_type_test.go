@@ -39,12 +39,8 @@ func TestAssetType(t *testing.T) {
 }
 
 func testAssetTypeCloneable(t *testing.T) {
-	expected := AssetType{
-		tool.RandStringBytes(32),
-		sql.NullBool{true, true},
-		time.Time{},
-		sql.NullTime{time.Time{}, false},
-	}
+	ta := MakeTAttributes(sql.NullBool{true, true}, time.Time{}, sql.NullTime{time.Time{}, false})
+	expected := MakeAssetType(tool.RandStringBytes(32), ta)
 	got := expected.Copy()
 	assert.NotNil(t, got)
 	assert.Equal(t, &expected, got)
@@ -52,12 +48,8 @@ func testAssetTypeCloneable(t *testing.T) {
 
 func testAssetTypeJSON(t *testing.T) {
 	name := tool.RandStringBytes(32)
-	expected := AssetType{
-		name,
-		sql.NullBool{true, true},
-		time.Time{},
-		sql.NullTime{time.Time{}, false},
-	}
+	ta := MakeTAttributes(sql.NullBool{true, true}, time.Time{}, sql.NullTime{time.Time{}, false})
+	expected := MakeAssetType(name, ta)
 	j, err := expected.ToJSON()
 	assert.Nil(t, err)
 	assert.NotNil(t, j)
@@ -71,7 +63,7 @@ func testAssetTypeJSON(t *testing.T) {
 
 func testAssetTypeRepoOk(t *testing.T) {
 	name := tool.RandStringBytes(32)
-	assetType := NewAssetType(name, time.Time{})
+	assetType := MakeAssetType(name, DefaultTAttributes())
 	err := assetType.Insert(context.TODO(), &stubRepoOk[*AssetType]{})
 	assert.Nil(t, err)
 	assert.False(t, assetType.Deleted().Valid)
@@ -93,7 +85,7 @@ func testAssetTypeRepoOk(t *testing.T) {
 
 func testAssetTypeRepoErr(t *testing.T) {
 	name := tool.RandStringBytes(32)
-	assetType := NewAssetType(name, time.Time{})
+	assetType := MakeAssetType(name, DefaultTAttributes())
 	err := assetType.Insert(context.TODO(), &stubRepoErr[*AssetType]{})
 	assert.NotNil(t, err)
 	_, err = GetAssetType(context.TODO(), &stubRepoErr[*AssetType]{}, name)

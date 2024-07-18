@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-16 20:58 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-18 16:47 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * memory.go
@@ -98,7 +98,7 @@ func (s *Storage) Delete(key string) error {
 }
 
 // Reset all keys
-func (s *Storage) Reset() error {
+func (s *Storage) Invalidate() error {
 	ndb := make(map[string]entry)
 	s.mux.Lock()
 	s.db = ndb

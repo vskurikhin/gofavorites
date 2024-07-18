@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-17 12:01 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-19 11:47 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites.go
@@ -17,22 +17,66 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/google/uuid"
 	"github.com/vskurikhin/gofavorites/internal/domain"
+	"github.com/vskurikhin/gofavorites/internal/env"
 	"github.com/vskurikhin/gofavorites/internal/tool"
+	"log/slog"
 	"time"
 )
 
 const (
 	KeyFormat = "%32s%s"
+
+	FavoritesSelectSQL = `SELECT
+	f.id, f.version, f.deleted, f.created_at, f.updated_at,
+    a.isin, a.deleted, a.created_at, a.updated_at,
+    t.name, t.deleted, t.created_at, t.updated_at,
+    u.upk, u.deleted, u.created_at, u.updated_at
+    FROM favorites f
+    JOIN assets a ON f.isin = a.isin
+    JOIN asset_types t ON a.asset_type = t.name 
+    JOIN users u ON f.user_upk = u.upk 
+    WHERE f.isin = $1 AND f.user_upk = $2`
+
+	FavoritesDeleteSQL = `UPDATE favorites
+	SET deleted = true
+	WHERE isin = $1 AND user_upk = $2
+	RETURNING id, isin, user_upk, version, deleted, created_at, updated_at`
+
+	FavoritesInsertSQL = `INSERT INTO favorites
+    (isin, user_upk, version, created_at)
+    VALUES ($1, $2, $3, $4)
+    RETURNING id, version, created_at`
+
+	FavoritesUpdateSQL = `UPDATE favorites
+    SET version = $3, updated_at = $4
+    WHERE isin = $1 AND user_upk = $2
+    RETURNING version, updated_at`
+
+	FavoritesUpsertTxAssetSQL = `INSERT INTO assets
+	(isin, asset_type, created_at)
+	VALUES ($1, $2, $3)
+	ON CONFLICT (isin)
+	DO UPDATE SET asset_type = $2, updated_at = $4`
+
+	FavoritesUpsertTxAssetTypeSQL = `INSERT INTO asset_types
+	(name, created_at)
+	VALUES ($1, $2)
+	ON CONFLICT (name)
+	DO NOTHING`
+
+	FavoritesUpsertTxUserSQL = `INSERT INTO users
+	(upk, created_at)
+	VALUES ($1, $2)
+	ON CONFLICT (upk)
+	DO NOTHING`
 )
 
 type Favorites struct {
-	id        uuid.UUID
-	asset     Asset
-	user      User
-	version   sql.NullInt64
-	deleted   sql.NullBool
-	createdAt time.Time
-	updatedAt sql.NullTime
+	TAttributes
+	id      uuid.UUID
+	asset   Asset
+	user    User
+	version sql.NullInt64
 }
 
 var _ domain.Entity = (*Favorites)(nil)
@@ -75,12 +119,21 @@ func GetFavorites(ctx context.Context, repo domain.Repo[*Favorites], isin, upk s
 	return *result, nil
 }
 
-func NewFavorites(asset Asset, user User, createdAt time.Time) Favorites {
+func MakeFavorites(id uuid.UUID, asset Asset, user User, version sql.NullInt64, a TAttributes) Favorites {
 	return Favorites{
-		id:        uuid.New(),
-		asset:     asset,
-		user:      user,
-		createdAt: createdAt,
+		TAttributes: struct {
+			deleted   sql.NullBool
+			createdAt time.Time
+			updatedAt sql.NullTime
+		}{
+			deleted:   a.deleted,
+			createdAt: a.createdAt,
+			updatedAt: a.updatedAt,
+		},
+		id:      id,
+		asset:   asset,
+		user:    user,
+		version: version,
 	}
 }
 
@@ -117,19 +170,39 @@ func (f *Favorites) Copy() domain.Entity {
 	return &c
 }
 
-func (f *Favorites) Delete(ctx context.Context, repo domain.Repo[*Favorites]) (err error) {
+const FavoritesDeleteTxSQL = `UPDATE favorites
+	SET deleted = true
+	WHERE isin = $1 AND user_upk = $2
+	RETURNING id, isin, user_upk, version, deleted, created_at, updated_at`
 
-	_, e := repo.Delete(ctx, f, func(s domain.Scanner) {
-		t := *f
-		err = s.Scan(&t.deleted, &t.updatedAt)
+func (f *Favorites) Delete(ctx context.Context, dtf domain.Dft[*Favorites], inTransaction func()) (err error) {
+
+	var id uuid.UUID
+	var isin, userUpk string
+	var version sql.NullInt64
+	var deleted sql.NullBool
+	var createdAt time.Time
+	var updatedAt sql.NullTime
+
+	e := dtf.DoDelete(ctx, f, func(scanner domain.Scanner) {
+		err = scanner.Scan(
+			&id, &isin, &userUpk, &version, &deleted, &createdAt, &updatedAt,
+		)
 		if err == nil {
-			*f = t
+			inTransaction()
+		} else {
+			slog.Error(env.MSG+" Delete", "err", err)
 		}
 	})
 	if e != nil {
 		return e
 	}
-	return
+	if err == nil {
+		asset := f.asset
+		user := f.user
+		*f = MakeFavorites(id, asset, user, version, MakeTAttributes(deleted, createdAt, updatedAt))
+	}
+	return err
 }
 
 func (f *Favorites) DeleteArgs() []any {
@@ -137,10 +210,18 @@ func (f *Favorites) DeleteArgs() []any {
 }
 
 func (f *Favorites) DeleteSQL() string {
-	return `UPDATE favorites
-	SET deleted = true
-	WHERE isin = $1 AND user_upk = $2
-	RETURNING deleted, updated_at`
+	return FavoritesDeleteSQL
+}
+
+func (f *Favorites) DeleteTxArgs() domain.TxArgs {
+	return domain.TxArgs{
+		SQLs: []string{
+			FavoritesDeleteTxSQL,
+		},
+		Args: [][]any{
+			{f.asset.isin, f.user.upk},
+		},
+	}
 }
 
 type favoritesJSON struct {
@@ -189,30 +270,7 @@ func (f *Favorites) GetArgs() []any {
 }
 
 func (f *Favorites) GetSQL() string {
-	return `SELECT f.id, f.version, f.deleted, f.created_at, f.updated_at,
-                   a.isin, a.deleted, a.created_at, a.updated_at,
-                   t.name, t.deleted, t.created_at, t.updated_at,
-                   u.upk, u.deleted, u.created_at, u.updated_at
-    FROM favorites f
-    JOIN assets a ON f.isin = a.isin
-    JOIN asset_types t ON a.asset_type = t.name 
-    JOIN users u ON f.user_upk = u.upk 
-    WHERE f.isin = $1 AND f.user_upk = $2`
-}
-
-func (f *Favorites) Insert(ctx context.Context, repo domain.Repo[*Favorites]) (err error) {
-
-	_, e := repo.Insert(ctx, f, func(s domain.Scanner) {
-		t := *f
-		err = s.Scan(&t.id, &t.version, &t.createdAt)
-		if err == nil {
-			*f = t
-		}
-	})
-	if e != nil {
-		return e
-	}
-	return
+	return FavoritesSelectSQL
 }
 
 func (f *Favorites) InsertArgs() []any {
@@ -220,10 +278,7 @@ func (f *Favorites) InsertArgs() []any {
 }
 
 func (f *Favorites) InsertSQL() string {
-	return `INSERT INTO favorites
-    (isin, user_upk, version, created_at)
-    VALUES ($1, $2, $3, $4)
-    RETURNING id, version, created_at`
+	return FavoritesInsertSQL
 }
 
 func (f *Favorites) Key() string {
@@ -286,30 +341,73 @@ func (f *Favorites) ToJSON() ([]byte, error) {
 	return result, nil
 }
 
-func (f *Favorites) Update(ctx context.Context, repo domain.Repo[*Favorites]) (err error) {
-
-	_, e := repo.Update(ctx, f, func(s domain.Scanner) {
-		t := *f
-		err = s.Scan(&t.version, &t.updatedAt)
-		if err == nil {
-			*f = t
-		}
-	})
-	if e != nil {
-		return e
-	}
-	return
-}
-
 func (f *Favorites) UpdateArgs() []any {
 	return []any{f.asset.isin, f.user.upk, f.version, f.updatedAt}
 }
 
 func (f *Favorites) UpdateSQL() string {
-	return `UPDATE favorites
-    SET version = $3, updated_at = $4
-    WHERE isin = $1 AND user_upk = $2
-    RETURNING version, updated_at`
+	return FavoritesUpdateSQL
+}
+
+const FavoritesUpsertTxFavoritesSQL = `INSERT INTO favorites
+    (isin, user_upk, version, created_at)
+    VALUES ($1, $2, $3, $4)
+	ON CONFLICT (isin, user_upk)
+	DO UPDATE SET version = $3, updated_at = $5
+    RETURNING id, isin, user_upk, version, deleted, created_at, updated_at,
+	(SELECT created_at FROM asset_types WHERE name = $6),
+	(SELECT created_at FROM assets WHERE isin = $1),
+	(SELECT updated_at FROM assets WHERE isin = $1),
+	(SELECT created_at FROM users WHERE upk = $2)`
+
+func (f *Favorites) Upsert(ctx context.Context, dtf domain.Dft[*Favorites], inTransaction func()) (err error) {
+
+	var id uuid.UUID
+	var isin, userUpk string
+	var version sql.NullInt64
+	var deleted sql.NullBool
+	var createdAt, assetsCreatedAt, assetTypesCreatedAt, usersCreatedAt time.Time
+	var updatedAt, assetsUpdatedAt sql.NullTime
+
+	e := dtf.DoUpsert(ctx, f, func(scanner domain.Scanner) {
+		err = scanner.Scan(
+			&id, &isin, &userUpk, &version, &deleted, &createdAt, &updatedAt,
+			&assetTypesCreatedAt, &assetsCreatedAt, &assetsUpdatedAt, &usersCreatedAt,
+		)
+		if err == nil {
+			at := MakeAssetType(
+				f.asset.assetType.name,
+				MakeTAttributes(f.asset.assetType.deleted, assetTypesCreatedAt, f.asset.assetType.updatedAt),
+			)
+			asset := MakeAsset(isin, at, MakeTAttributes(f.asset.deleted, assetsCreatedAt, assetsUpdatedAt))
+			user := MakeUser(userUpk, MakeTAttributes(f.user.deleted, usersCreatedAt, f.user.updatedAt))
+			*f = MakeFavorites(id, asset, user, version, MakeTAttributes(deleted, createdAt, updatedAt))
+			inTransaction()
+		} else {
+			slog.Error(env.MSG+" Upsert", "err", err)
+		}
+	})
+	if e != nil {
+		return e
+	}
+	return err
+}
+
+func (f *Favorites) UpsertTxArgs() domain.TxArgs {
+	return domain.TxArgs{
+		SQLs: []string{
+			FavoritesUpsertTxAssetTypeSQL,
+			FavoritesUpsertTxAssetSQL,
+			FavoritesUpsertTxUserSQL,
+			FavoritesUpsertTxFavoritesSQL,
+		},
+		Args: [][]any{
+			{f.asset.assetType.name, f.asset.assetType.createdAt},
+			{f.asset.isin, f.asset.assetType.name, f.asset.createdAt, f.asset.updatedAt},
+			{f.user.upk, f.user.createdAt},
+			{f.asset.isin, f.user.upk, f.version, f.createdAt, f.updatedAt, f.asset.assetType.name},
+		},
+	}
 }
 
 func IsFavoritesNotFound(f Favorites, err error) bool {

@@ -41,13 +41,14 @@ func TestAsset(t *testing.T) {
 }
 
 func testAssetCloneable(t *testing.T) {
-	expected := Asset{
+	expected := MakeAsset(
 		tool.RandStringBytes(32),
 		AssetType{},
-		sql.NullBool{true, true},
-		time.Time{},
-		sql.NullTime{time.Time{}, false},
-	}
+		MakeTAttributes(
+			sql.NullBool{true, true},
+			time.Time{},
+			sql.NullTime{time.Time{}, false},
+		))
 	got := expected.Copy()
 	assert.NotNil(t, got)
 	assert.Equal(t, &expected, got)
@@ -55,13 +56,14 @@ func testAssetCloneable(t *testing.T) {
 
 func testAssetJSON(t *testing.T) {
 	isin := tool.RandStringBytes(32)
-	expected := Asset{
+	expected := MakeAsset(
 		isin,
 		AssetType{},
-		sql.NullBool{true, true},
-		time.Time{},
-		sql.NullTime{time.Time{}, false},
-	}
+		MakeTAttributes(
+			sql.NullBool{true, true},
+			time.Time{},
+			sql.NullTime{time.Time{}, false},
+		))
 	j, err := expected.ToJSON()
 	assert.Nil(t, err)
 	assert.NotNil(t, j)
@@ -81,37 +83,30 @@ func testIsAssetNotFound(t *testing.T) {
 }
 
 func testAssetRepoOk(t *testing.T) {
-	isin := tool.RandStringBytes(32)
-	asset := NewAsset(isin, AssetType{}, time.Time{})
-	err := asset.Insert(context.TODO(), &stubRepoOk[*Asset]{})
+	asset := MakeAsset("", AssetType{}, MakeTAttributes(sql.NullBool{}, time.Time{}, sql.NullTime{}))
+	err := asset.Upsert(context.TODO(), &stubTxRepoOk[*Asset]{}, func() {})
 	assert.Nil(t, err)
 	assert.False(t, asset.Deleted().Valid)
-	got, err := GetAsset(context.TODO(), &stubRepoOk[*Asset]{}, isin)
+	got, err := GetAsset(context.TODO(), &stubRepoOk[*Asset]{}, "")
 	assert.Nil(t, err)
 	assert.Equal(t, asset, got)
 	assert.Equal(t, asset.CreatedAt(), got.CreatedAt())
 	assert.Equal(t, asset.Isin(), got.Isin())
 	assert.Equal(t, asset.Deleted(), got.Deleted())
 	assert.False(t, asset.UpdatedAt().Valid)
-	err = asset.Update(context.TODO(), &stubRepoOk[*Asset]{})
-	assert.Nil(t, err)
-	assert.False(t, asset.Deleted().Valid)
-	assert.False(t, asset.UpdatedAt().Valid)
-	err = asset.Delete(context.TODO(), &stubRepoOk[*Asset]{})
+	err = asset.Delete(context.TODO(), &stubTxRepoOk[*Asset]{}, func() {})
 	assert.Nil(t, err)
 	assert.False(t, asset.Deleted().Valid)
 }
 
 func testAssetRepoErr(t *testing.T) {
 	isin := tool.RandStringBytes(32)
-	asset := NewAsset(isin, AssetType{}, time.Time{})
-	err := asset.Insert(context.TODO(), &stubRepoErr[*Asset]{})
+	asset := MakeAsset(isin, AssetType{}, MakeTAttributes(sql.NullBool{}, time.Time{}, sql.NullTime{}))
+	err := asset.Upsert(context.TODO(), &stubTxRepoErr[*Asset]{}, func() {})
 	assert.NotNil(t, err)
 	_, err = GetAsset(context.TODO(), &stubRepoErr[*Asset]{}, isin)
 	assert.NotNil(t, err)
-	err = asset.Update(context.TODO(), &stubRepoErr[*Asset]{})
-	assert.NotNil(t, err)
-	err = asset.Delete(context.TODO(), &stubRepoErr[*Asset]{})
+	err = asset.Delete(context.TODO(), &stubTxRepoErr[*Asset]{}, func() {})
 	assert.NotNil(t, err)
 }
 
