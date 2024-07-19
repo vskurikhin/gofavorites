@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-19 15:01 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-20 11:16 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * cached_postgres.go
@@ -131,6 +131,25 @@ func (p *CachedPostgres[E]) Get(ctx context.Context, entity E, scan func(domain.
 	return entity, err
 }
 
+func (p *CachedPostgres[E]) GetByFilter(ctx context.Context, entity E, scan func(domain.Scanner) E) ([]E, error) {
+
+	result := make([]E, 0)
+	rows, err := rowsPostgreSQL(ctx, p.pool, entity.GetByFilterSQL(), entity.GetByFilterArgs()...)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		e := scan(rows)
+		result = append(result, e)
+		if data, err := e.ToJSON(); err == nil {
+			_ = p.cache.Set(e.Key(), data, p.exp)
+		}
+	}
+	return result, err
+}
+
 func (p *CachedPostgres[E]) Insert(ctx context.Context, entity E, scan func(domain.Scanner)) (E, error) {
 
 	err := scanPostgreSQL(ctx, p.pool, scan, entity.InsertSQL(), entity.InsertArgs()...)
@@ -146,7 +165,7 @@ func (p *CachedPostgres[E]) Update(ctx context.Context, entity E, scan func(doma
 	err := scanPostgreSQL(ctx, p.pool, scan, entity.UpdateSQL(), entity.UpdateArgs()...)
 
 	if data, e := entity.ToJSON(); e == nil {
-		_ = p.cache.Set(entity.Key(), data, time.Second)
+		_ = p.cache.Set(entity.Key(), data, p.exp)
 	}
 	return entity, err
 }

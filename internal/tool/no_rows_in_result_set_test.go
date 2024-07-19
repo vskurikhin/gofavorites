@@ -11,7 +11,7 @@
 package tool
 
 import (
-	"errors"
+	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -33,7 +33,7 @@ func TestNoRowsInResultSet(t *testing.T) {
 }
 
 func testNoRowsInResultSet(t *testing.T) {
-	assert.True(t, NoRowsInResultSet(errors.New("no rows in result set")))
+	assert.True(t, NoRowsInResultSet(pgx.ErrNoRows))
 }
 
 //!-

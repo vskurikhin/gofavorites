@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-11 11:30 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-19 18:04 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * load_tls.go
@@ -12,9 +12,32 @@ package tool
 
 import (
 	"crypto/tls"
+	"crypto/x509"
+	"fmt"
+	"os"
 
 	"google.golang.org/grpc/credentials"
 )
+
+func LoadAgentTLSCredentials(caCertFile string) (credentials.TransportCredentials, error) {
+	// Загрузка сертификата центра сертификации, подписавшего сертификат сервера.
+	pemServerCA, err := os.ReadFile(caCertFile)
+	if err != nil {
+		return nil, err
+	}
+
+	certPool := x509.NewCertPool()
+	if !certPool.AppendCertsFromPEM(pemServerCA) {
+		return nil, fmt.Errorf("failed to add server CA's certificate")
+	}
+
+	// Создание учётных данных для конфигурации TLS.
+	config := &tls.Config{
+		RootCAs: certPool,
+	}
+
+	return credentials.NewTLS(config), nil
+}
 
 func LoadServerTLSCredentials(certFile, keyFile string) (credentials.TransportCredentials, error) {
 

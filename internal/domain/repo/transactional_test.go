@@ -99,6 +99,12 @@ func testFavoritesTxPostgres(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, expected, got)
 
+	list, err := entity.GetFavoritesForUser(context.TODO(), repo, upk)
+	assert.Nil(t, err)
+	assert.NotNil(t, list)
+	assert.Equal(t, 1, len(list))
+	assert.Equal(t, expected, list[0])
+
 	err = expected.Delete(context.TODO(), dft, inTransaction)
 	assert.Nil(t, err)
 	assert.False(t, ok)

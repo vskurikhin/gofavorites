@@ -15,6 +15,7 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -79,8 +80,7 @@ func testFavoritesJSON(t *testing.T) {
 }
 
 func testIsFavoritesNotFound(t *testing.T) {
-	assert.True(t, IsFavoritesNotFound(Favorites{}, errors.New("no rows in result set")))
-	assert.True(t, IsFavoritesNotFound(Favorites{id: uuid.New()}, errors.New("no rows in result set")))
+	assert.True(t, IsFavoritesNotFound(Favorites{id: uuid.New()}, pgx.ErrNoRows))
 	assert.True(t, IsFavoritesNotFound(Favorites{}, errors.New("")))
 	assert.False(t, IsFavoritesNotFound(Favorites{id: uuid.New()}, errors.New("")))
 }

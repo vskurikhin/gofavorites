@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-18 23:28 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-20 11:01 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * user.go
@@ -25,7 +25,7 @@ type User struct {
 	upk string
 }
 
-var _ domain.Entity = (*Asset)(nil)
+var _ domain.Entity = (*User)(nil)
 
 func GetUser(ctx context.Context, repo domain.Repo[*User], upk string) (User, error) {
 
@@ -62,6 +62,10 @@ func MakeUser(upk string, a TAttributes) User {
 		},
 		upk: upk,
 	}
+}
+
+func IsUserNotFound(u User, err error) bool {
+	return tool.NoRowsInResultSet(err) || u == User{}
 }
 
 func (u *User) Upk() string {
@@ -133,6 +137,14 @@ func (u *User) FromJSON(data []byte) (err error) {
 
 func (u *User) GetArgs() []any {
 	return []any{u.upk}
+}
+
+func (u *User) GetByFilterArgs() []any {
+	return []any{}
+}
+
+func (u *User) GetByFilterSQL() string {
+	return `SELECT upk, deleted, created_at, updated_at FROM users WHERE deleted IS NOT TRUE`
 }
 
 func (u *User) GetSQL() string {
@@ -211,10 +223,6 @@ func (u *User) UpdateArgs() []any {
 
 func (u *User) UpdateSQL() string {
 	return `UPDATE users SET updated_at = $2 WHERE upk = $1 RETURNING updated_at`
-}
-
-func IsUserNotFound(u User, err error) bool {
-	return u == User{} || tool.NoRowsInResultSet(err)
 }
 
 //!-

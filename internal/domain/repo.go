@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-16 17:09 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-20 10:23 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * repo.go
@@ -15,6 +15,7 @@ import "context"
 type Repo[E Entity] interface {
 	Delete(ctx context.Context, entity E, scan func(Scanner)) (E, error)
 	Get(ctx context.Context, entity E, scan func(Scanner)) (E, error)
+	GetByFilter(ctx context.Context, entity E, scan func(Scanner) E) ([]E, error)
 	Insert(ctx context.Context, entity E, scan func(Scanner)) (E, error)
 	Update(ctx context.Context, entity E, scan func(Scanner)) (E, error)
 }

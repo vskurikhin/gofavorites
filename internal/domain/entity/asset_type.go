@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-18 21:11 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-20 11:01 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * asset_type.go
@@ -133,6 +133,14 @@ func (a *AssetType) FromJSON(data []byte) (err error) {
 
 func (a *AssetType) GetArgs() []any {
 	return []any{a.name}
+}
+
+func (a *AssetType) GetByFilterArgs() []any {
+	return []any{}
+}
+
+func (a *AssetType) GetByFilterSQL() string {
+	return `SELECT name, deleted, created_at, updated_at FROM asset_types WHERE deleted IS NOT TRUE`
 }
 
 func (a *AssetType) GetSQL() string {

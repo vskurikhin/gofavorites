@@ -14,16 +14,21 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"log"
+	"log/slog"
+	"net"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
 	"github.com/vskurikhin/gofavorites/internal/env"
-	"log"
-	"log/slog"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
+	"github.com/vskurikhin/gofavorites/internal/services"
+	"google.golang.org/grpc"
+
+	pb "github.com/vskurikhin/gofavorites/proto"
 )
 
 var (
@@ -53,32 +58,23 @@ func run(ctx context.Context) {
 	prop := env.GetProperties()
 	_, _ = fmt.Fprintf(os.Stderr, "PROPERTIES%s\n", prop)
 	dbMigrations(prop)
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-sigint:
-			return
-		default:
-			time.Sleep(time.Millisecond * 500)
-		}
-	}
+	serve(ctx, prop)
 }
 
 func dbMigrations(prop env.Properties) {
+
 	pool := prop.DBPool()
 	if pool == nil {
 		slog.Warn(env.MSG+" dbMigrations", "pool", pool)
 		return
 	}
-
 	goose.SetBaseFS(embedMigrations)
 
 	if err := goose.SetDialect("postgres"); err != nil {
 		panic(err)
 	}
-
 	db := stdlib.OpenDBFromPool(pool)
+
 	if err := goose.Up(db, "migrations"); err != nil {
 		panic(err)
 	}
@@ -88,6 +84,50 @@ func dbMigrations(prop env.Properties) {
 	if err := db.Close(); err != nil {
 		panic(err)
 	}
+}
+
+func serve(ctx context.Context, prop env.Properties) {
+
+	// определяем порт для gRPC сервера
+	listen, err := net.Listen("tcp", prop.GRPCAddress())
+	fmt.Println(prop.GRPCAddress())
+	if err != nil {
+		log.Fatal(err)
+	}
+	opts := []grpc.ServerOption{}
+	tlsCredentials := prop.GRPCTransportCredentials()
+
+	if err != nil {
+		log.Println("Не удалось загрузить сертификаты для сервера gRPC")
+	} else {
+		opts = append(opts, grpc.Creds(tlsCredentials))
+	}
+	grpcServer := grpc.NewServer(opts...)
+	favoritesService := services.GetFavoritesService(prop)
+	pb.RegisterFavoritesServiceServer(grpcServer, favoritesService)
+
+	idleConnsClosed := make(chan struct{})
+	sigint := make(chan os.Signal, 1)
+	signal.Notify(sigint, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
+	go func() {
+		<-sigint
+		grpcServer.Stop()
+		log.Println("Выключение сервера gRPC")
+		close(idleConnsClosed)
+	}()
+	go func() {
+		<-ctx.Done()
+		grpcServer.Stop()
+		log.Println("Выключение сервера gRPC")
+		close(idleConnsClosed)
+	}()
+
+	log.Println("Сервер gRPC начал работу")
+	if err := grpcServer.Serve(listen); err != nil {
+		log.Fatal(err)
+	}
+	<-idleConnsClosed
+	log.Println("Корректное завершение работы сервера")
 }
 
 //!-

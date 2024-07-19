@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-17 11:10 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-19 18:13 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * properties_tool.go
@@ -60,11 +60,11 @@ func getGRPCAddress(flm map[string]interface{}, env *environments, yml Config) (
 				address = *a
 			}
 		}
-		address = fmt.Sprintf("%s:%s:%d", yml.GRPCProto(), yml.GRPCAddress(), yml.GRPCPort())
+		address = fmt.Sprintf("%s:%d", yml.GRPCAddress(), yml.GRPCPort())
 
 		if len(env.GRPCAddress) > 0 {
 			address = parseEnvAddress(env.GRPCAddress)
-		} else if yml.GRPCProto() == "" && yml.GRPCAddress() == "" && yml.GRPCPort() == 0 {
+		} else if yml.GRPCAddress() == "" && yml.GRPCPort() == 0 {
 			getFlagGRPCAddress()
 		}
 		setIfFlagChanged(flagGRPCAddress, getFlagGRPCAddress)

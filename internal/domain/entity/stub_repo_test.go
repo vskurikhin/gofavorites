@@ -43,6 +43,14 @@ func (p *stubRepoOk[E]) Get(_ context.Context, entity E, scan func(domain.Scanne
 	return entity, nil
 }
 
+func (p *stubRepoOk[E]) GetByFilter(_ context.Context, entity E, scan func(domain.Scanner) E) ([]E, error) {
+	if entity.GetByFilterSQL() == "" {
+		panic(`entity.GetByFilterSQL() == ""`)
+	}
+	scan(&stubScannerOk{})
+	return make([]E, 0), nil
+}
+
 func (p *stubRepoOk[E]) Insert(_ context.Context, entity E, scan func(domain.Scanner)) (E, error) {
 	if entity.InsertSQL() == "" {
 		panic(`entity.InsertSQL() == ""`)
@@ -105,6 +113,11 @@ func (p *stubRepoErr[E]) Delete(_ context.Context, entity E, scan func(domain.Sc
 func (p *stubRepoErr[E]) Get(_ context.Context, entity E, scan func(domain.Scanner)) (E, error) {
 	scan(&stubScannerErr{})
 	return entity, nil
+}
+
+func (p *stubRepoErr[E]) GetByFilter(_ context.Context, entity E, scan func(domain.Scanner) E) ([]E, error) {
+	scan(&stubScannerErr{})
+	return make([]E, 0), nil
 }
 
 func (p *stubRepoErr[E]) Insert(_ context.Context, entity E, scan func(domain.Scanner)) (E, error) {

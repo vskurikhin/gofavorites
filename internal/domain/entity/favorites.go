@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-19 15:41 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-20 10:57 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites.go
@@ -37,6 +37,17 @@ const (
     JOIN asset_types t ON a.asset_type = t.name 
     JOIN users u ON f.user_upk = u.upk 
     WHERE f.isin = $1 AND f.user_upk = $2`
+
+	FavoritesSelectForUserSQL = `SELECT
+	f.id, f.version, f.deleted, f.created_at, f.updated_at,
+    a.isin, a.deleted, a.created_at, a.updated_at,
+    t.name, t.deleted, t.created_at, t.updated_at,
+    u.upk, u.deleted, u.created_at, u.updated_at
+    FROM favorites f
+    JOIN assets a ON f.isin = a.isin
+    JOIN asset_types t ON a.asset_type = t.name 
+    JOIN users u ON f.user_upk = u.upk
+    WHERE f.user_upk = $1 AND f.deleted IS NOT TRUE AND a.deleted IS NOT TRUE AND t.deleted IS NOT TRUE AND u.deleted IS NOT TRUE`
 
 	FavoritesDeleteSQL = `UPDATE favorites
 	SET deleted = true
@@ -120,6 +131,40 @@ func GetFavorites(ctx context.Context, repo domain.Repo[*Favorites], isin, upk s
 	return *result, nil
 }
 
+func GetFavoritesForUser(ctx context.Context, repo domain.Repo[*Favorites], upk string) ([]Favorites, error) {
+
+	var err error
+	results := make([]Favorites, 0)
+	_, _ = repo.GetByFilter(ctx, &Favorites{user: User{upk: upk}}, func(scanner domain.Scanner) *Favorites {
+		result := Favorites{}
+		err = scanner.Scan(
+			&result.id,
+			&result.version,
+			&result.deleted,
+			&result.createdAt,
+			&result.updatedAt,
+
+			&result.asset.isin,
+			&result.asset.deleted,
+			&result.asset.createdAt,
+			&result.asset.updatedAt,
+
+			&result.asset.assetType.name,
+			&result.asset.assetType.deleted,
+			&result.asset.assetType.createdAt,
+			&result.asset.assetType.updatedAt,
+
+			&result.user.upk,
+			&result.user.deleted,
+			&result.user.createdAt,
+			&result.user.updatedAt,
+		)
+		results = append(results, result)
+		return &result
+	})
+	return results, err
+}
+
 func FavoritesFromProto(proto *pb.Favorites, upk string) Favorites {
 
 	assetType := proto.GetAsset().GetAssetType().GetName()
@@ -148,6 +193,10 @@ func MakeFavorites(id uuid.UUID, asset Asset, user User, version sql.NullInt64, 
 		user:    user,
 		version: version,
 	}
+}
+
+func IsFavoritesNotFound(f Favorites, err error) bool {
+	return tool.NoRowsInResultSet(err) || f == Favorites{}
 }
 
 func (f *Favorites) ID() uuid.UUID {
@@ -280,6 +329,14 @@ func (f *Favorites) FromJSON(data []byte) (err error) {
 
 func (f *Favorites) GetArgs() []any {
 	return []any{f.asset.isin, f.user.upk}
+}
+
+func (f *Favorites) GetByFilterArgs() []any {
+	return []any{f.user.upk}
+}
+
+func (f *Favorites) GetByFilterSQL() string {
+	return FavoritesSelectForUserSQL
 }
 
 func (f *Favorites) GetSQL() string {
@@ -435,10 +492,6 @@ func (f *Favorites) UpsertTxArgs() domain.TxArgs {
 			{f.asset.isin, f.user.upk, f.version, f.createdAt, f.updatedAt, f.asset.assetType.name},
 		},
 	}
-}
-
-func IsFavoritesNotFound(f Favorites, err error) bool {
-	return f == Favorites{} || tool.NoRowsInResultSet(err)
 }
 
 //!-

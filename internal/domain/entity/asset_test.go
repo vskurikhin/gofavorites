@@ -14,6 +14,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/vskurikhin/gofavorites/internal/tool"
 	"testing"
@@ -76,8 +77,7 @@ func testAssetJSON(t *testing.T) {
 }
 
 func testIsAssetNotFound(t *testing.T) {
-	assert.True(t, IsAssetNotFound(Asset{}, errors.New("no rows in result set")))
-	assert.True(t, IsAssetNotFound(Asset{isin: "test"}, errors.New("no rows in result set")))
+	assert.True(t, IsAssetNotFound(Asset{isin: "test"}, pgx.ErrNoRows))
 	assert.True(t, IsAssetNotFound(Asset{}, errors.New("")))
 	assert.False(t, IsAssetNotFound(Asset{isin: "test"}, errors.New("")))
 }

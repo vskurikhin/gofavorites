@@ -14,6 +14,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/vskurikhin/gofavorites/internal/tool"
 	"testing"
@@ -70,8 +71,7 @@ func testUserJSON(t *testing.T) {
 }
 
 func testIsUserNotFound(t *testing.T) {
-	assert.True(t, IsUserNotFound(User{}, errors.New("no rows in result set")))
-	assert.True(t, IsUserNotFound(User{upk: "test"}, errors.New("no rows in result set")))
+	assert.True(t, IsUserNotFound(User{upk: "test"}, pgx.ErrNoRows))
 	assert.True(t, IsUserNotFound(User{}, errors.New("")))
 	assert.False(t, IsUserNotFound(User{upk: "test"}, errors.New("")))
 }

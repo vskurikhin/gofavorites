@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-18 13:42 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-20 10:48 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * postgres.go
@@ -86,6 +86,21 @@ func (p *Postgres[E]) Get(ctx context.Context, entity E, scan func(domain.Scanne
 	return entity, err
 }
 
+func (p *Postgres[E]) GetByFilter(ctx context.Context, entity E, scan func(domain.Scanner) E) ([]E, error) {
+
+	result := make([]E, 0)
+	rows, err := rowsPostgreSQL(ctx, p.pool, entity.GetByFilterSQL(), entity.GetByFilterArgs()...)
+
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		e := scan(rows)
+		result = append(result, e)
+	}
+	return result, err
+}
+
 func (p *Postgres[E]) Insert(ctx context.Context, entity E, scan func(domain.Scanner)) (E, error) {
 	err := scanPostgreSQL(ctx, p.pool, scan, entity.InsertSQL(), entity.InsertArgs()...)
 	return entity, err
@@ -126,6 +141,26 @@ func rowPostgreSQL(ctx context.Context, pool *pgxpool.Pool, sql string, args ...
 		return nil, fmt.Errorf(" while connecting %v", err)
 	}
 	return conn.QueryRow(ctx, sql, args...), nil
+}
+
+func rowsPostgreSQL(ctx context.Context, pool *pgxpool.Pool, sql string, args ...any) (pgx.Rows, error) {
+
+	conn, err := pool.Acquire(ctx)
+
+	for i := 1; err != nil && i < tries*increase; i += increase {
+		time.Sleep(time.Duration(i) * time.Second)
+		slog.Warn(env.MSG+" retry pool acquire", "err", err)
+		conn, err = pool.Acquire(ctx)
+	}
+	defer func() {
+		if conn != nil {
+			conn.Release()
+		}
+	}()
+	if conn == nil || err != nil {
+		return nil, fmt.Errorf(" while connecting %v", err)
+	}
+	return conn.Query(ctx, sql, args...)
 }
 
 //!-

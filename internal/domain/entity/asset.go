@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-19 11:38 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-20 11:01 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * asset.go
@@ -29,6 +29,13 @@ const (
 	FROM assets a
 	JOIN asset_types t ON a.asset_type = t.name
 	WHERE a.isin = $1`
+
+	AssetSelectByAssetTypeSQL = `SELECT
+	a.isin, a.deleted, a.created_at, a.updated_at,
+	t.name, t.deleted, t.created_at, t.updated_at
+	FROM assets a
+	JOIN asset_types t ON a.asset_type = t.name
+	WHERE a.asset_type = $1 AND a.deleted IS NOT TRUE AND t.deleted IS NOT TRUE`
 
 	AssetDeleteSQL = `UPDATE assets
 	SET deleted = true
@@ -104,6 +111,10 @@ func MakeAsset(isin string, at AssetType, a TAttributes) Asset {
 		isin:      isin,
 		assetType: at,
 	}
+}
+
+func IsAssetNotFound(a Asset, err error) bool {
+	return tool.NoRowsInResultSet(err) || a == Asset{}
 }
 
 func (a *Asset) Isin() string {
@@ -211,6 +222,14 @@ func (a *Asset) GetArgs() []any {
 	return []any{a.isin}
 }
 
+func (a *Asset) GetByFilterArgs() []any {
+	return []any{a.assetType.name}
+}
+
+func (a *Asset) GetByFilterSQL() string {
+	return AssetSelectByAssetTypeSQL
+}
+
 func (a *Asset) GetSQL() string {
 	return AssetSelectSQL
 }
@@ -313,10 +332,6 @@ func (a *Asset) UpsertTxArgs() domain.TxArgs {
 			{a.isin, a.assetType.name, a.createdAt, a.updatedAt},
 		},
 	}
-}
-
-func IsAssetNotFound(a Asset, err error) bool {
-	return a == Asset{} || tool.NoRowsInResultSet(err)
 }
 
 //!-
