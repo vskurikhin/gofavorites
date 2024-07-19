@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "github.com/vskurikhin/gofavorites/proto";
+
+enum Status {
+  UNKNOWN = 0;
+  OK = 1;
+  FAIL = 2;
+  SUSPENDED = 3;
+}

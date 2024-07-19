@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-19 11:47 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-19 15:41 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites.go
@@ -19,6 +19,7 @@ import (
 	"github.com/vskurikhin/gofavorites/internal/domain"
 	"github.com/vskurikhin/gofavorites/internal/env"
 	"github.com/vskurikhin/gofavorites/internal/tool"
+	pb "github.com/vskurikhin/gofavorites/proto"
 	"log/slog"
 	"time"
 )
@@ -117,6 +118,18 @@ func GetFavorites(ctx context.Context, repo domain.Repo[*Favorites], isin, upk s
 		return Favorites{}, err
 	}
 	return *result, nil
+}
+
+func FavoritesFromProto(proto *pb.Favorites, upk string) Favorites {
+
+	assetType := proto.GetAsset().GetAssetType().GetName()
+	isin := proto.GetAsset().GetIsin()
+	id := uuid.New()
+	at := MakeAssetType(assetType, DefaultTAttributes())
+	asset := MakeAsset(isin, at, DefaultTAttributes())
+	user := MakeUser(upk, DefaultTAttributes())
+
+	return MakeFavorites(id, asset, user, sql.NullInt64{}, DefaultTAttributes())
 }
 
 func MakeFavorites(id uuid.UUID, asset Asset, user User, version sql.NullInt64, a TAttributes) Favorites {
@@ -339,6 +352,20 @@ func (f *Favorites) ToJSON() ([]byte, error) {
 		return nil, err
 	}
 	return result, nil
+}
+
+func (f *Favorites) ToProto() pb.Favorites {
+	return pb.Favorites{
+		Asset: &pb.Asset{
+			Isin: f.asset.isin,
+			AssetType: &pb.AssetType{
+				Name: f.asset.assetType.name,
+			},
+		},
+		User: &pb.User{
+			Upk: f.user.upk,
+		},
+	}
 }
 
 func (f *Favorites) UpdateArgs() []any {

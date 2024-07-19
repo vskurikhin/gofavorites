@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package proto;
+
+import "proto/user.proto";
+
+option go_package = "github.com/vskurikhin/gofavorites/proto";
+
+service UserService {
+  rpc Get(UserRequest) returns (UserResponse);
+}

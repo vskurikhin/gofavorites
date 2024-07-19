@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-19 11:25 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-19 15:01 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * cached_postgres.go
@@ -51,6 +51,10 @@ func getAssetCache(prop env.Properties) cache[*entity.Asset] {
 	return getAssetCachedPostgresRepo(prop)
 }
 
+func GetAssetPostgresCachedRepo(prop env.Properties) domain.Repo[*entity.Asset] {
+	return getAssetCachedPostgresRepo(prop)
+}
+
 func getAssetCachedPostgresRepo(prop env.Properties) *CachedPostgres[*entity.Asset] {
 	onceAssetCachedRepo.Do(func() {
 		assetCachedRepo = new(CachedPostgres[*entity.Asset])
@@ -76,6 +80,10 @@ func getAssetTypeCachedPostgresRepo(prop env.Properties) *CachedPostgres[*entity
 }
 
 func getFavoritesCache(prop env.Properties) cache[*entity.Favorites] {
+	return getFavoritesCachedPostgresRepo(prop)
+}
+
+func GetFavoritesPostgresCachedRepo(prop env.Properties) domain.Repo[*entity.Favorites] {
 	return getFavoritesCachedPostgresRepo(prop)
 }
 

@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package proto;
+
+import "proto/favorites.proto";
+
+option go_package = "github.com/vskurikhin/gofavorites/proto";
+
+service FavoritesService {
+  rpc Get(FavoritesRequest) returns (FavoritesResponse);
+  rpc GetForUser(UserFavoritesRequest) returns (UserFavoritesResponse);
+  rpc Set(FavoritesRequest) returns (FavoritesResponse);
+}

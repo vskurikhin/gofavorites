@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package proto;
+
+import "proto/asset_type.proto";
+import "proto/status.proto";
+
+option go_package = "github.com/vskurikhin/gofavorites/proto";
+
+message Asset {
+  string isin = 1; // International Securities Identification Numbers
+  AssetType assetType = 2; // тип инструмента
+}
+
+message AssetRequest {
+  Asset asset = 1;  // инструмент
+}
+
+message AssetResponse {
+  Asset metric = 1;
+  Status status = 2;
+  string error = 3;
+}

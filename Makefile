@@ -75,6 +75,21 @@ cert:
 	@echo "Server's signed certificate"
 	@cd cert; openssl x509 -in server-cert.pem -noout -text
 
+##################
+# Implicit targets
+##################
+
+# This rulle is used to generate the message source files based
+# on the *.proto files.
+%.pb.go: %.proto
+	@protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ./$<
+
+####################################
+# Major source code-generate targets
+####################################
+generate: $(PROTO_PB_GO) $(MODEL_EASY_JSON_GO)
+	@echo "  >  Done generating source files based on *.proto and *.model.go files."
+
 test:
 	@echo "  > Test Iteration ..."
 	go vet -vettool=$(which statictest) ./...
