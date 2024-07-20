@@ -11,23 +11,27 @@ favorites:
     port: 5432
     username: dbuser
     password: password
+  external:
+    asset_grpc_address: localhost:8444
+    auth_grpc_address: localhost:8444
+    request_timeout_interval_ms: 3333
   grpc:
     address: localhost
     enabled: true
-        port: 8443
-        proto: tcp
-        tls:
-            enabled: true
-            ca_file: cert/grpc-ca-cert.pem
-            cert_file: cert/grpc-server-cert.pem
-            key_file: cert/grpc-server-key.pem
-    http:
-        address: localhost
-        enabled: true
-        port: 443
-        tls:
-            enabled: true
-            ca_file: cert/http-ca-cert.pem
-            cert_file: cert/http-server-cert.pem
-            key_file: cert/http-server-key.pem
-    token: 89h3f98hbwf987h3f98wenf89ehf
+    port: 8443
+    proto: tcp
+    tls:
+      enabled: true
+      ca_file: cert/grpc-ca-cert.pem
+      cert_file: cert/grpc-server-cert.pem
+      key_file: cert/grpc-server-key.pem
+  http:
+    address: localhost
+    enabled: true
+    port: 443
+    tls:
+      enabled: true
+      ca_file: cert/http-ca-cert.pem
+      cert_file: cert/http-server-cert.pem
+      key_file: cert/http-server-key.pem
+  token: 89h3f98hbwf987h3f98wenf89ehf

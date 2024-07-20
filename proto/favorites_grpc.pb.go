@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.4.0
 // - protoc             v5.27.1
-// source: proto/favorites_service.proto
+// source: proto/favorites.proto
 
 package proto
 
@@ -182,5 +182,5 @@ var FavoritesService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/favorites_service.proto",
+	Metadata: "proto/favorites.proto",
 }

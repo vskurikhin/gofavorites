@@ -1,11 +1,13 @@
 /*
- * This file was last modified at 2024-07-20 13:43 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-21 08:50 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites_service.go
  * $Id$
  */
+//!+
 
+// Package services TODO.
 package services
 
 import (
@@ -23,10 +25,6 @@ import (
 
 type FavoritesService interface {
 	pb.FavoritesServiceServer
-}
-
-type UserSearchService interface {
-	Lookup(ctx context.Context, personalKey, upk string) bool
 }
 
 type favoritesService struct {
@@ -82,8 +80,12 @@ func (f *favoritesService) GetForUser(ctx context.Context, request *pb.UserFavor
 
 	var response pb.UserFavoritesResponse
 	userProto := request.GetUser()
-	personalKey := userProto.GetPersonalKey()
-	upk := base64.StdEncoding.EncodeToString([]byte(personalKey)) // TODO RSA Encrypt
+	upk := userProto.GetUpk()
+
+	if upk == "" {
+		personalKey := userProto.GetPersonalKey()
+		upk = base64.StdEncoding.EncodeToString([]byte(personalKey)) // TODO RSA Encrypt
+	}
 	favorites, err := entity.GetFavoritesForUser(ctx, f.repoFavorites, upk)
 
 	if err != nil {
@@ -106,7 +108,6 @@ func (f *favoritesService) Set(ctx context.Context, request *pb.FavoritesRequest
 	var err error
 	var response pb.FavoritesResponse
 	favoritesProto := request.GetFavorites()
-	favoritesProto.GetAsset()
 	personalKey := favoritesProto.GetUser().GetPersonalKey()
 	upk := base64.StdEncoding.EncodeToString([]byte(personalKey)) // TODO RSA Encrypt
 	isin := favoritesProto.GetAsset().GetIsin()

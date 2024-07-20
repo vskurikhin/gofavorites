@@ -1,11 +1,13 @@
 /*
- * This file was last modified at 2024-07-20 14:05 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-21 08:50 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * asset_search_service.go
  * $Id$
  */
+//!+
 
+// Package services TODO.
 package services
 
 import (
@@ -20,6 +22,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
+	"log/slog"
 	"sync"
 	"time"
 )
@@ -65,23 +68,12 @@ func GetAssetSearchService(prop env.Properties) AssetSearchService {
 
 func (a *assetSearchService) Lookup(ctx context.Context, isin string) bool {
 
-	var dones = make(chan bool, 2)
-	defer func() { close(dones) }()
-
-	go func() {
-		dones <- a.dbLookup(ctx, isin)
-	}()
-
-	go func() {
-		dones <- a.grpcLookup(ctx, isin)
-	}()
-
-	for done := range dones {
-		if done {
-			return done
-		}
+	if a.dbLookup(ctx, isin) {
+		return true
 	}
-
+	if a.grpcLookup(ctx, isin) {
+		return true
+	}
 	return false
 }
 
@@ -113,10 +105,11 @@ func (a *assetSearchService) grpcLookup(ctx context.Context, isin string) bool {
 	resp, err := c.Get(ctx, &request)
 
 	for i := 1; err != nil && tool.IsUpperBound(i, a.requestInterval); i++ {
+		slog.Warn(env.MSG+" AssetSearchService.grpcLookup", "err", err)
 		time.Sleep(100 * time.Millisecond * time.Duration(i))
 		resp, err = c.Get(ctx, &request)
 	}
-	if resp.Status == pb.Status_OK {
+	if err == nil && resp.Status == pb.Status_OK {
 		return true
 	}
 	return false

@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-20 11:16 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-20 19:34 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * cached_postgres.go
@@ -12,6 +12,7 @@ package repo
 
 import (
 	"context"
+	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/vskurikhin/gofavorites/internal/domain"
 	"github.com/vskurikhin/gofavorites/internal/domain/entity"
@@ -37,6 +38,7 @@ type CachedPostgres[E domain.Entity] struct {
 var _ cache[domain.Entity] = (*CachedPostgres[domain.Entity])(nil)
 var _ domain.Repo[domain.Entity] = (*CachedPostgres[domain.Entity])(nil)
 var (
+	ErrNotFound             = fmt.Errorf("not found in cache")
 	onceAssetCachedRepo     = new(sync.Once)
 	assetCachedRepo         *CachedPostgres[*entity.Asset]
 	onceAssetTypeCachedRepo = new(sync.Once)
@@ -179,14 +181,14 @@ func (p *CachedPostgres[E]) get(entity E) (E, error) {
 	t := entity.Copy()
 	data, err := p.cache.Get(entity.Key())
 
-	if err == nil && data != nil {
-		err = t.FromJSON(data)
-		if err == nil {
-			_ = entity.FromJSON(data)
-			return entity, nil
+	if err == nil && data != nil && len(data) <= 0 {
+		if err = t.FromJSON(data); err != nil {
+			return entity, err
 		}
+		_ = entity.FromJSON(data)
+		return entity, nil
 	}
-	return entity, err
+	return entity, ErrNotFound
 }
 
 func (p *CachedPostgres[E]) invalidate() error {

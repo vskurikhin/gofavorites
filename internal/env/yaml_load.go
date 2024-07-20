@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-11 11:30 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-21 08:50 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * yaml_load.go
@@ -10,7 +10,10 @@
 // Package env работа с настройками и окружением.
 package env
 
-import "github.com/spf13/viper"
+import (
+	"github.com/spf13/viper"
+	"os"
+)
 
 // LoadConfig - TODO.
 // Example:
@@ -47,6 +50,9 @@ import "github.com/spf13/viper"
 //	token: 89h3f98hbwf987h3f98wenf89ehf
 func LoadConfig(path string) (cfg Config, err error) {
 
+	if os.Getenv("GO_FAVORITES_SKIP_LOAD_CONFIG") != "" {
+		return &config{}, err
+	}
 	viper.SetConfigName("go-favorites.yaml")  // name of yamlConfig file (without extension)
 	viper.SetConfigType("yaml")               // REQUIRED if the yamlConfig file does not have the extension in the name
 	viper.AddConfigPath("/etc/go-favorites/") // path to look for the yamlConfig file in

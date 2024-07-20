@@ -1,0 +1,14 @@
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+        mavenLocal()
+    }
+    plugins {
+        id "${quarkusPluginId}" version "${quarkusPluginVersion}"
+    }
+}
+rootProject.name = 'GoFavorites'
+rootProject.buildFileName = 'build.gradle'
+include 'api-gateway'
+include 'spi-mapstruct-impl'

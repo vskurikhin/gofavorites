@@ -94,14 +94,7 @@ func serve(ctx context.Context, prop env.Properties) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	opts := []grpc.ServerOption{}
-	tlsCredentials := prop.GRPCTransportCredentials()
-
-	if err != nil {
-		log.Println("Не удалось загрузить сертификаты для сервера gRPC")
-	} else {
-		opts = append(opts, grpc.Creds(tlsCredentials))
-	}
+	opts := []grpc.ServerOption{grpc.Creds(prop.GRPCTransportCredentials())}
 	grpcServer := grpc.NewServer(opts...)
 	favoritesService := services.GetFavoritesService(prop)
 	pb.RegisterFavoritesServiceServer(grpcServer, favoritesService)

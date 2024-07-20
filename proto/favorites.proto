@@ -7,6 +7,15 @@ import "proto/status.proto";
 import "proto/user.proto";
 
 option go_package = "github.com/vskurikhin/gofavorites/proto";
+option java_multiple_files = true;
+option java_package = "su.svn.gateway";
+option java_outer_classname = "FavoritesGrpcProto";
+
+service FavoritesService {
+  rpc Get(FavoritesRequest) returns (FavoritesResponse);
+  rpc GetForUser(UserFavoritesRequest) returns (UserFavoritesResponse);
+  rpc Set(FavoritesRequest) returns (FavoritesResponse);
+}
 
 message Favorites {
   Asset asset = 1; // инструмент

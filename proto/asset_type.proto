@@ -1,9 +1,0 @@
-syntax = "proto3";
-
-package proto;
-
-option go_package = "github.com/vskurikhin/gofavorites/proto";
-
-message AssetType {
-  string name = 1;  // тип инструмента
-}

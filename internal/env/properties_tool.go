@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-20 13:37 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-21 09:02 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * properties_tool.go
@@ -54,7 +54,7 @@ func getExternalAuthGRPCAddress(flm map[string]interface{}, env *environments, y
 	return stringFromFlagOrEnvironment(
 		flagExternalAuthGRPCAddress,
 		flm[flagExternalAuthGRPCAddress],
-		env.ExternalAssetGRPCAddress,
+		env.ExternalAuthGRPCAddress,
 		yml.ExternalAuthGRPCAddress(),
 	)
 }

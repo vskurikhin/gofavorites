@@ -5,12 +5,16 @@ favorites:
         expire_ms: 1000
         gc_interval_sec: 10
     db:
-        enabled: true
+        enabled: false
         name: db
         host: localhost
         port: 5432
         username: dbuser
         password: password
+    external:
+        asset_grpc_address: localhost:8444
+        auth_grpc_address: localhost:8444
+        request_timeout_interval_ms: 3333
     grpc:
         address: localhost
         enabled: true
