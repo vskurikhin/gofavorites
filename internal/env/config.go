@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-17 10:29 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-20 13:24 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * config.go
@@ -29,6 +29,9 @@ type Config interface {
 	DBUserName() string
 	DBUserPassword() string
 	Enabled() bool
+	ExternalAssetGRPCAddress() string
+	ExternalAuthGRPCAddress() string
+	ExternalRequestTimeoutInterval() int
 	GRPCAddress() string
 	GRPCEnabled() bool
 	GRPCPort() int
@@ -57,8 +60,11 @@ type config struct {
 			Enabled  bool
 			dbConfig `mapstructure:",squash"`
 		}
-		Enabled bool
-		GRPC    struct {
+		Enabled  bool
+		External struct {
+			externalConfig `mapstructure:",squash"`
+		}
+		GRPC struct {
 			Enabled    bool
 			grpcConfig `mapstructure:",squash"`
 			TLS        struct {
@@ -89,6 +95,12 @@ type dbConfig struct {
 	Port         int16
 	UserName     string
 	UserPassword string `mapstructure:"password"`
+}
+
+type externalConfig struct {
+	AssetGRPCAddress       string `mapstructure:"asset_grpc_address"`
+	AuthGRPCAddress        string `mapstructure:"auth_grpc_address"`
+	RequestTimeoutInterval int    `mapstructure:"request_timeout_interval_ms"`
 }
 
 type grpcConfig struct {
@@ -191,6 +203,28 @@ func (y *config) Enabled() bool {
 		return y.Favorites.Enabled
 	}
 	return false
+}
+
+func (y *config) ExternalAssetGRPCAddress() string {
+	if y != nil {
+		return y.Favorites.External.AssetGRPCAddress
+	}
+	return ""
+}
+
+func (y *config) ExternalAuthGRPCAddress() string {
+	if y != nil {
+		return y.Favorites.External.AuthGRPCAddress
+	}
+	return ""
+}
+
+func (y *config) ExternalRequestTimeoutInterval() int {
+
+	if y != nil {
+		return y.Favorites.External.RequestTimeoutInterval
+	}
+	return 0
 }
 
 func (y *config) GRPCAddress() string {
@@ -333,6 +367,9 @@ DBPort: %d
 DBUserName: %s
 DBUserPassword: %s
 Enabled: %v
+ExternalAssetGRPCAddress: %s
+ExternalAuthGRPCAddress: %s
+ExternalRequestTimeoutInterval: %d
 GRPCAddress: %s
 GRPCEnabled: %v
 GRPCPort: %d
@@ -359,6 +396,9 @@ Token: %s`,
 		y.DBUserName(),
 		base64.StdEncoding.EncodeToString([]byte(y.DBUserPassword())),
 		y.Enabled(),
+		y.ExternalAssetGRPCAddress(),
+		y.ExternalAuthGRPCAddress(),
+		y.ExternalRequestTimeoutInterval(),
 		y.GRPCAddress(),
 		y.GRPCEnabled(),
 		y.GRPCPort(),

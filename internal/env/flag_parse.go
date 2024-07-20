@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-17 10:34 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-20 13:37 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * flag_parse.go
@@ -13,17 +13,20 @@ package env
 import "github.com/spf13/pflag"
 
 const (
-	flagCacheExpireMs      = "cache-expire-ms"
-	flagCacheGCIntervalSec = "cache-gc-interval-sec"
-	flagDatabaseDSN        = "database-dsn"
-	flagGRPCAddress        = "grpc-address"
-	flagGRPCCAFile         = "grpc-ca-file"
-	flagGRPCCertFile       = "grpc-cert-file"
-	flagGRPCKeyFile        = "grpc-key-file"
-	flagHTTPAddress        = "http-address"
-	flagHTTPCAFile         = "http-ca-file"
-	flagHTTPCertFile       = "http-cert-file"
-	flagHTTPKeyFile        = "http-key-file"
+	flagCacheExpireMs                  = "cache-expire-ms"
+	flagCacheGCIntervalSec             = "cache-gc-interval-sec"
+	flagDatabaseDSN                    = "database-dsn"
+	flagExternalAssetGRPCAddress       = "asset-grpc-address"
+	flagExternalAuthGRPCAddress        = "auth-grpc-address"
+	flagExternalRequestTimeoutInterval = "request-timeout-interval"
+	flagGRPCAddress                    = "grpc-address"
+	flagGRPCCAFile                     = "grpc-ca-file"
+	flagGRPCCertFile                   = "grpc-cert-file"
+	flagGRPCKeyFile                    = "grpc-key-file"
+	flagHTTPAddress                    = "http-address"
+	flagHTTPCAFile                     = "http-ca-file"
+	flagHTTPCertFile                   = "http-cert-file"
+	flagHTTPKeyFile                    = "http-key-file"
 )
 
 func makeFlagsParse() map[string]interface{} {
@@ -46,6 +49,22 @@ func makeFlagsParse() map[string]interface{} {
 			"d",
 			"postgres://dbuser:password@localhost:5432/db?sslmode=disable",
 			"database DSN",
+		)
+		flagsMap[flagExternalAssetGRPCAddress] = pflag.String(
+			flagExternalAssetGRPCAddress,
+			"localhost:8444",
+			"asset gRPC server host and port",
+		)
+		flagsMap[flagExternalAuthGRPCAddress] = pflag.String(
+			flagExternalAuthGRPCAddress,
+			"localhost:8444",
+			"asset gRPC server host and port",
+		)
+		flagsMap[flagExternalRequestTimeoutInterval] = pflag.IntP(
+			flagExternalRequestTimeoutInterval,
+			"t",
+			5000,
+			"timeout in millisecond via gRPC clients for external services",
 		)
 		flagsMap[flagGRPCAddress] = pflag.StringP(
 			flagGRPCAddress,

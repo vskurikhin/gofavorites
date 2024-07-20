@@ -37,6 +37,9 @@ DBPort: 0
 DBUserName: 
 DBUserPassword: 
 Enabled: false
+ExternalAssetGRPCAddress: 
+ExternalAuthGRPCAddress: 
+ExternalRequestTimeoutInterval: 0
 GRPCAddress: 
 GRPCEnabled: false
 GRPCPort: 0
@@ -67,6 +70,9 @@ DBPort: 0
 DBUserName: 
 DBUserPassword: 
 Enabled: false
+ExternalAssetGRPCAddress: 
+ExternalAuthGRPCAddress: 
+ExternalRequestTimeoutInterval: 0
 GRPCAddress: 
 GRPCEnabled: false
 GRPCPort: 0

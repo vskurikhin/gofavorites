@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-19 18:13 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-20 13:37 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * properties_tool.go
@@ -21,33 +21,52 @@ import (
 	"time"
 )
 
-func getCacheExpire(flm map[string]interface{}, env *environments, yml Config) (expire time.Duration, err error) {
-	expire = time.Duration(yml.CacheExpire()) * time.Millisecond
-	return timeFromFlagOrEnvironment(flm[flagCacheExpireMs], env, time.Millisecond)
+func getCacheExpire(flm map[string]interface{}, env *environments, yml Config) (time.Duration, error) {
+	return timeFromFlagOrEnvironment(
+		flagCacheExpireMs,
+		flm[flagCacheExpireMs],
+		env.CacheExpire,
+		yml.CacheExpire(),
+		time.Millisecond,
+	)
 }
 
-func getCacheGCInterval(flm map[string]interface{}, env *environments, yml Config) (gcInterval time.Duration, err error) {
-	gcInterval = time.Duration(yml.CacheGCInterval()) * time.Second
-	return timeFromFlagOrEnvironment(flm[flagCacheGCIntervalSec], env, time.Second)
+func getCacheGCInterval(flm map[string]interface{}, env *environments, yml Config) (time.Duration, error) {
+	return timeFromFlagOrEnvironment(
+		flagCacheGCIntervalSec,
+		flm[flagCacheGCIntervalSec],
+		env.CacheGCInterval,
+		yml.CacheGCInterval(),
+		time.Second,
+	)
 }
 
-func timeFromFlagOrEnvironment(flm interface{}, env *environments, scale time.Duration) (result time.Duration, err error) {
+func getExternalAssetGRPCAddress(flm map[string]interface{}, env *environments, yml Config) (result string, err error) {
+	return stringFromFlagOrEnvironment(
+		flagExternalAssetGRPCAddress,
+		flm[flagExternalAssetGRPCAddress],
+		env.ExternalAssetGRPCAddress,
+		yml.ExternalAssetGRPCAddress(),
+	)
+}
 
-	getFlagCacheExpire := func() {
-		if a, ok := flm.(*int); !ok {
-			err = fmt.Errorf("bad value")
-		} else {
-			result = time.Duration(*a) * scale
-		}
-	}
-	if env.CacheExpire > 0 {
-		result = time.Duration(env.CacheExpire) * scale
-	} else if result == 0 {
-		getFlagCacheExpire()
-	}
-	setIfFlagChanged(flagCacheExpireMs, getFlagCacheExpire)
+func getExternalAuthGRPCAddress(flm map[string]interface{}, env *environments, yml Config) (result string, err error) {
+	return stringFromFlagOrEnvironment(
+		flagExternalAuthGRPCAddress,
+		flm[flagExternalAuthGRPCAddress],
+		env.ExternalAssetGRPCAddress,
+		yml.ExternalAuthGRPCAddress(),
+	)
+}
 
-	return result, err
+func getExternalRequestTimeoutInterval(flm map[string]interface{}, env *environments, yml Config) (time.Duration, error) {
+	return timeFromFlagOrEnvironment(
+		flagExternalRequestTimeoutInterval,
+		flm[flagExternalRequestTimeoutInterval],
+		env.ExternalRequestTimeoutInterval,
+		yml.ExternalRequestTimeoutInterval(),
+		time.Millisecond,
+	)
 }
 
 func getGRPCAddress(flm map[string]interface{}, env *environments, yml Config) (address string, err error) {
@@ -159,6 +178,56 @@ func parseEnvAddress(address []string) string {
 		bb.WriteRune(':')
 	}
 	return fmt.Sprintf("%s%d", bb.String(), port)
+}
+
+func stringFromFlagOrEnvironment(name string, flag interface{}, yml, env string) (result string, err error) {
+
+	getFlag := func() {
+		if a, ok := flag.(*string); !ok {
+			err = fmt.Errorf("bad value")
+		} else {
+			result = *a
+		}
+	}
+	if yml != "" {
+		result = yml
+	}
+	if env != "" {
+		result = env
+	} else if result == "" {
+		getFlag()
+	}
+	setIfFlagChanged(name, getFlag)
+
+	return result, err
+}
+
+func timeFromFlagOrEnvironment(
+	name string,
+	flag interface{},
+	env int,
+	yaml int,
+	scale time.Duration,
+) (result time.Duration, err error) {
+
+	getFlag := func() {
+		if a, ok := flag.(*int); !ok {
+			err = fmt.Errorf("bad value")
+		} else {
+			result = time.Duration(*a) * scale
+		}
+	}
+	if yaml > 0 {
+		result = time.Duration(yaml) * scale
+	}
+	if env > 0 {
+		result = time.Duration(env) * scale
+	} else if result == 0 {
+		getFlag()
+	}
+	setIfFlagChanged(name, getFlag)
+
+	return result, err
 }
 
 //!-

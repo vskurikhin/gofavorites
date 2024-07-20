@@ -42,8 +42,11 @@ func TestLoadConfig(t *testing.T) {
 						Enabled  bool
 						dbConfig `mapstructure:",squash"`
 					}
-					Enabled bool
-					GRPC    struct {
+					Enabled  bool
+					External struct {
+						externalConfig `mapstructure:",squash"`
+					}
+					GRPC struct {
 						Enabled    bool
 						grpcConfig `mapstructure:",squash"`
 						TLS        struct {
@@ -61,7 +64,6 @@ func TestLoadConfig(t *testing.T) {
 					}
 					goFavoritesConfig `mapstructure:",squash"`
 				}{
-
 					Cache: struct {
 						Enabled     bool
 						cacheConfig `mapstructure:",squash"`
@@ -86,6 +88,15 @@ func TestLoadConfig(t *testing.T) {
 						},
 					},
 					Enabled: true,
+					External: struct {
+						externalConfig `mapstructure:",squash"`
+					}{
+						externalConfig: externalConfig{
+							AssetGRPCAddress:       "localhost:8444",
+							AuthGRPCAddress:        "localhost:8444",
+							RequestTimeoutInterval: 3333,
+						},
+					},
 					GRPC: struct {
 						Enabled    bool
 						grpcConfig `mapstructure:",squash"`

@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-17 11:10 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-20 13:37 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * properties.go
@@ -22,13 +22,16 @@ import (
 )
 
 const (
-	propertyCacheExpire              = "cache-expire"
-	propertyConfig                   = "config"
-	propertyDBPool                   = "db-pool"
-	propertyEnvironments             = "environments"
-	propertyFlags                    = "flags"
-	propertyGRPCAddress              = "grpc-address"
-	propertyGRPCTransportCredentials = "grpc-transport-credentials"
+	propertyCacheExpire                    = "cache-expire"
+	propertyConfig                         = "config"
+	propertyDBPool                         = "db-pool"
+	propertyEnvironments                   = "environments"
+	propertyExternalAssetGRPCAddress       = "external-asset-grpc-address"
+	propertyExternalAuthGRPCAddress        = "external-auth-grpc-address"
+	propertyExternalRequestTimeoutInterval = "external-request-timeout-interval"
+	propertyFlags                          = "flags"
+	propertyGRPCAddress                    = "grpc-address"
+	propertyGRPCTransportCredentials       = "grpc-transport-credentials"
 )
 
 type Properties interface {
@@ -38,6 +41,9 @@ type Properties interface {
 	Config() Config
 	DBPool() *pgxpool.Pool
 	Environments() environments
+	ExternalAssetGRPCAddress() string
+	ExternalAuthGRPCAddress() string
+	ExternalRequestTimeoutInterval() time.Duration
 	Flags() map[string]interface{}
 	GRPCAddress() string
 	GRPCTransportCredentials() credentials.TransportCredentials
@@ -62,21 +68,30 @@ func GetProperties() Properties {
 		flm := makeFlagsParse()
 
 		cacheExpire, err := getCacheExpire(flm, env, yml)
-		slog.Warn(MSG, "cacheExpire", cacheExpire, "err", err)
+		slog.Warn(MSG+" GetProperties", "cacheExpire", cacheExpire, "err", err)
 		cacheGCInterval, err := getCacheGCInterval(flm, env, yml)
-		slog.Warn(MSG, "cacheGCInterval", cacheGCInterval, "err", err)
+		slog.Warn(MSG+" GetProperties", "cacheGCInterval", cacheGCInterval, "err", err)
 		dbPool, err := makeDBPool(flm, env, yml)
-		slog.Warn(MSG, "dbDisable", err)
+		slog.Warn(MSG+" GetProperties", "dbDisable", err)
 		grpcAddress, err := getGRPCAddress(flm, env, yml)
-		slog.Warn(MSG, "grpcAddress", grpcAddress, "err", err)
+		slog.Warn(MSG+" GetProperties", "grpcAddress", grpcAddress, "err", err)
 		tCredentials, err := getGRPCTransportCredentials(flm, env, yml)
-		slog.Warn(MSG, "grpcTransportCredentials", tCredentials, "err", err)
+		slog.Warn(MSG+" GetProperties", "grpcTransportCredentials", tCredentials, "err", err)
+		assetGRPCAddress, err := getExternalAssetGRPCAddress(flm, env, yml)
+		slog.Warn(MSG+" GetProperties", "assetGRPCAddress", assetGRPCAddress, "err", err)
+		authGRPCAddress, err := getExternalAuthGRPCAddress(flm, env, yml)
+		slog.Warn(MSG+" GetProperties", "authGRPCAddress", authGRPCAddress, "err", err)
+		requestTimeoutInterval, err := getExternalRequestTimeoutInterval(flm, env, yml)
+		slog.Warn(MSG+" GetProperties", "requestTimeoutInterval", requestTimeoutInterval, "err", err)
 
 		properties = getProperties(
 			WithCacheExpire(cacheExpire),
 			WithCacheGCInterval(cacheGCInterval),
 			WithConfig(yml),
 			WithEnvironments(*env),
+			WithExternalAssetGRPCAddress(assetGRPCAddress),
+			WithExternalAuthGRPCAddress(authGRPCAddress),
+			WithExternalRequestTimeoutInterval(requestTimeoutInterval),
 			WithFlags(flm),
 			withDBPool(dbPool),
 			WithGRPCAddress(grpcAddress),
@@ -158,6 +173,57 @@ func (p *mapProperties) Environments() environments {
 		}
 	}
 	return environments{}
+}
+
+// WithExternalAssetGRPCAddress — Окружение.
+func WithExternalAssetGRPCAddress(address string) func(*mapProperties) {
+	return func(p *mapProperties) {
+		p.mp.Store(propertyExternalAssetGRPCAddress, address)
+	}
+}
+
+// ExternalAssetGRPCAddress — флаги командной строки.
+func (p *mapProperties) ExternalAssetGRPCAddress() string {
+	if a, ok := p.mp.Load(propertyExternalAssetGRPCAddress); ok {
+		if address, ok := a.(string); ok {
+			return address
+		}
+	}
+	return ""
+}
+
+// WithExternalAuthGRPCAddress — Окружение.
+func WithExternalAuthGRPCAddress(address string) func(*mapProperties) {
+	return func(p *mapProperties) {
+		p.mp.Store(propertyExternalAuthGRPCAddress, address)
+	}
+}
+
+// ExternalAuthGRPCAddress — флаги командной строки.
+func (p *mapProperties) ExternalAuthGRPCAddress() string {
+	if a, ok := p.mp.Load(propertyExternalAuthGRPCAddress); ok {
+		if address, ok := a.(string); ok {
+			return address
+		}
+	}
+	return ""
+}
+
+// WithExternalRequestTimeoutInterval — Окружение.
+func WithExternalRequestTimeoutInterval(timeoutInterval time.Duration) func(*mapProperties) {
+	return func(p *mapProperties) {
+		p.mp.Store(propertyExternalRequestTimeoutInterval, timeoutInterval)
+	}
+}
+
+// ExternalRequestTimeoutInterval — флаги командной строки.
+func (p *mapProperties) ExternalRequestTimeoutInterval() time.Duration {
+	if a, ok := p.mp.Load(propertyExternalRequestTimeoutInterval); ok {
+		if timeoutInterval, ok := a.(time.Duration); ok {
+			return timeoutInterval
+		}
+	}
+	return 0
 }
 
 // WithFlags — Флаги.
@@ -244,6 +310,9 @@ func (p *mapProperties) String() string {
 %s
 DBPool: %v
 Environments: %v
+ExternalAssetGRPCAddress: %s
+ExternalAuthGRPCAddress: %s
+ExternalRequestTimeoutInterval: %d
 Flags: %v
 GRPCAddress: %s
 GRPCTransportCredentials: %v
@@ -253,6 +322,9 @@ OutboundIP: %v
 		p.Config(),
 		p.DBPool(),
 		p.Environments(),
+		p.ExternalAssetGRPCAddress(),
+		p.ExternalAuthGRPCAddress(),
+		p.ExternalRequestTimeoutInterval(),
 		p.Flags(),
 		p.GRPCAddress(),
 		p.GRPCTransportCredentials(),
