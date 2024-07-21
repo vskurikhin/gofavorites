@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-20 13:37 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-21 11:24 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * environments.go
@@ -18,8 +18,8 @@ type environments struct {
 	CacheExpire                    int      `env:"CACHE_EXPIRE_MS"`
 	CacheGCInterval                int      `env:"CACHE_GC_INTERVAL_SEC"`
 	DataBaseDSN                    string   `env:"DATABASE_DSN"`
-	ExternalAssetGRPCAddress       string   `env:"ASSET_GRPC_ADDRESS"`
-	ExternalAuthGRPCAddress        string   `env:"AUTH_GRPC_ADDRESS"`
+	ExternalAssetGRPCAddress       []string `env:"ASSET_GRPC_ADDRESS" envSeparator:":"`
+	ExternalAuthGRPCAddress        []string `env:"AUTH_GRPC_ADDRESS" envSeparator:":"`
 	ExternalRequestTimeoutInterval int      `env:"REQUEST_TIMEOUT_INTERVAL_MS"`
 	GRPCAddress                    []string `env:"GRPC_ADDRESS" envSeparator:":"`
 	GRPCCAFile                     string   `env:"GRPC_CA_FILE"`

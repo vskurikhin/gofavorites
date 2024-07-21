@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-21 09:02 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-21 11:30 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * properties_tool.go
@@ -22,7 +22,7 @@ import (
 )
 
 func getCacheExpire(flm map[string]interface{}, env *environments, yml Config) (time.Duration, error) {
-	return timeFromFlagOrEnvironment(
+	return timePrepareProperty(
 		flagCacheExpireMs,
 		flm[flagCacheExpireMs],
 		env.CacheExpire,
@@ -32,7 +32,7 @@ func getCacheExpire(flm map[string]interface{}, env *environments, yml Config) (
 }
 
 func getCacheGCInterval(flm map[string]interface{}, env *environments, yml Config) (time.Duration, error) {
-	return timeFromFlagOrEnvironment(
+	return timePrepareProperty(
 		flagCacheGCIntervalSec,
 		flm[flagCacheGCIntervalSec],
 		env.CacheGCInterval,
@@ -42,7 +42,7 @@ func getCacheGCInterval(flm map[string]interface{}, env *environments, yml Confi
 }
 
 func getExternalAssetGRPCAddress(flm map[string]interface{}, env *environments, yml Config) (result string, err error) {
-	return stringFromFlagOrEnvironment(
+	return stringsAddressPrepareProperty(
 		flagExternalAssetGRPCAddress,
 		flm[flagExternalAssetGRPCAddress],
 		env.ExternalAssetGRPCAddress,
@@ -51,7 +51,7 @@ func getExternalAssetGRPCAddress(flm map[string]interface{}, env *environments, 
 }
 
 func getExternalAuthGRPCAddress(flm map[string]interface{}, env *environments, yml Config) (result string, err error) {
-	return stringFromFlagOrEnvironment(
+	return stringsAddressPrepareProperty(
 		flagExternalAuthGRPCAddress,
 		flm[flagExternalAuthGRPCAddress],
 		env.ExternalAuthGRPCAddress,
@@ -60,7 +60,7 @@ func getExternalAuthGRPCAddress(flm map[string]interface{}, env *environments, y
 }
 
 func getExternalRequestTimeoutInterval(flm map[string]interface{}, env *environments, yml Config) (time.Duration, error) {
-	return timeFromFlagOrEnvironment(
+	return timePrepareProperty(
 		flagExternalRequestTimeoutInterval,
 		flm[flagExternalRequestTimeoutInterval],
 		env.ExternalRequestTimeoutInterval,
@@ -180,7 +180,12 @@ func parseEnvAddress(address []string) string {
 	return fmt.Sprintf("%s%d", bb.String(), port)
 }
 
-func stringFromFlagOrEnvironment(name string, flag interface{}, yml, env string) (result string, err error) {
+func stringsAddressPrepareProperty(
+	name string,
+	flag interface{},
+	env []string,
+	yaml string,
+) (result string, err error) {
 
 	getFlag := func() {
 		if a, ok := flag.(*string); !ok {
@@ -189,11 +194,11 @@ func stringFromFlagOrEnvironment(name string, flag interface{}, yml, env string)
 			result = *a
 		}
 	}
-	if yml != "" {
-		result = yml
+	if yaml != "" {
+		result = yaml
 	}
-	if env != "" {
-		result = env
+	if len(env) > 0 {
+		result = parseEnvAddress(env)
 	} else if result == "" {
 		getFlag()
 	}
@@ -202,7 +207,7 @@ func stringFromFlagOrEnvironment(name string, flag interface{}, yml, env string)
 	return result, err
 }
 
-func timeFromFlagOrEnvironment(
+func timePrepareProperty(
 	name string,
 	flag interface{},
 	env int,

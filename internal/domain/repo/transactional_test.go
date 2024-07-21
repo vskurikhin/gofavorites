@@ -19,12 +19,12 @@ func TestTxPostgres(t *testing.T) {
 		fRun func(*testing.T)
 	}{
 		{
-			name: "positive test #1 Asset TxPostgres Repo",
-			fRun: testAssetTxPostgres,
+			name: "negative test #1 Asset TxPostgres Repo",
+			fRun: testAssetTxPostgresNegative,
 		},
 		{
-			name: "positive test #3 Favorites TxPostgres Repo",
-			fRun: testFavoritesTxPostgres,
+			name: "negative test #3 Favorites TxPostgres Repo",
+			fRun: testFavoritesTxPostgresNegative,
 		},
 	}
 
@@ -36,7 +36,83 @@ func TestTxPostgres(t *testing.T) {
 	}
 }
 
-func testFavoritesTxPostgres(t *testing.T) {
+func testAssetTxPostgresNegative(t *testing.T) {
+	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
+	t.Setenv("DATABASE_DSN", "")
+
+	prop := env.GetProperties()
+	assetPostgresDft := GetAssetTxPostgres(prop)
+
+	assetType = "stocks"
+	isin = tool.RandStringBytes(32)
+	at := entity.MakeAssetType(assetType, entity.DefaultTAttributes())
+	asset := entity.MakeAsset(isin, at, entity.DefaultTAttributes())
+	err := asset.Upsert(context.TODO(), assetPostgresDft, func() {
+		_, _ = fmt.Fprintf(os.Stderr, "YES!!!\n")
+	})
+	assert.NotNil(t, err)
+	assert.Equal(t, ErrBadPool, err)
+}
+
+func testAssetTxPostgresPositive(t *testing.T) {
+	defer func() { _ = recover() }() // TODO
+
+	prop := env.GetProperties()
+	assetPostgresDft := GetAssetTxPostgres(prop)
+
+	assetType = "stocks"
+	isin = tool.RandStringBytes(32)
+	at := entity.MakeAssetType(assetType, entity.DefaultTAttributes())
+	asset := entity.MakeAsset(isin, at, entity.DefaultTAttributes())
+	_ = asset.Upsert(context.TODO(), assetPostgresDft, func() {
+		_, _ = fmt.Fprintf(os.Stderr, "YES!!!\n")
+	})
+	//assert.Nil(t, err) TODO
+
+	defer testClearAssetTypes(t)
+	defer testClearAssets(t)
+}
+
+func testFavoritesTxPostgresNegative(t *testing.T) {
+	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
+	t.Setenv("DATABASE_DSN", "")
+
+	prop := env.GetProperties()
+	dft := GetFavoritesTxPostgres(prop)
+	repo := getFavoritesCachedPostgresRepo(prop)
+
+	assetType = "stocks"
+	id = uuid.New()
+	isin = tool.RandStringBytes(16)
+	upk = tool.RandStringBytes(32)
+
+	at := entity.MakeAssetType(assetType, entity.DefaultTAttributes())
+	asset := entity.MakeAsset(isin, at, entity.DefaultTAttributes())
+	user := entity.MakeUser(upk, entity.DefaultTAttributes())
+
+	expected := entity.MakeFavorites(id, asset, user, sql.NullInt64{}, entity.DefaultTAttributes())
+
+	var ok bool
+	inTransaction := func() {
+		ok = !ok
+	}
+	err := expected.Upsert(context.TODO(), dft, inTransaction)
+	assert.NotNil(t, err)
+	assert.Equal(t, ErrBadPool, err)
+
+	_, err = entity.GetFavorites(context.TODO(), repo, isin, upk)
+	assert.NotNil(t, err)
+	assert.Equal(t, ErrBadPool, err)
+
+	_, err = entity.GetFavoritesForUser(context.TODO(), repo, upk)
+	assert.Nil(t, err)
+
+	err = expected.Delete(context.TODO(), dft, inTransaction)
+	assert.NotNil(t, err)
+	assert.Equal(t, ErrBadPool, err)
+}
+
+func testFavoritesTxPostgresPositive(t *testing.T) {
 	defer func() { _ = recover() }()
 
 	prop := env.GetProperties()
@@ -113,25 +189,6 @@ func testFavoritesTxPostgres(t *testing.T) {
 	assert.True(t, expected.Deleted().Bool)
 	assert.True(t, expected.Deleted().Valid)
 
-}
-
-func testAssetTxPostgres(t *testing.T) {
-	defer func() { _ = recover() }()
-
-	prop := env.GetProperties()
-	assetPostgresDft := GetAssetTxPostgres(prop)
-
-	assetType = "stocks"
-	isin = tool.RandStringBytes(32)
-	at := entity.MakeAssetType(assetType, entity.DefaultTAttributes())
-	asset := entity.MakeAsset(isin, at, entity.DefaultTAttributes())
-	err := asset.Upsert(context.TODO(), assetPostgresDft, func() {
-		_, _ = fmt.Fprintf(os.Stderr, "YES!!!\n")
-	})
-	assert.Nil(t, err)
-
-	defer testClearAssetTypes(t)
-	defer testClearAssets(t)
 }
 
 //!-

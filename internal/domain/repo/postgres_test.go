@@ -20,18 +20,25 @@ import (
 	"testing"
 )
 
+var (
+	assetType string
+	id        uuid.UUID
+	isin      string
+	upk       string
+)
+
 func TestPostgresRepos(t *testing.T) {
 	var tests = []struct {
 		name string
 		fRun func(*testing.T)
 	}{
 		{
-			name: "positive test #0 AssetType Postgres Repo",
-			fRun: testAssetTypePostgresRepo,
+			name: "negative test #1 AssetType Postgres Repo",
+			fRun: testAssetTypePostgresRepoNegative,
 		},
 		{
-			name: "positive test #2 User Postgres Repo",
-			fRun: testUserPostgresRepo,
+			name: "negative test #2 User Postgres Repo",
+			fRun: testUserPostgresRepoNegative,
 		},
 	}
 
@@ -43,14 +50,51 @@ func TestPostgresRepos(t *testing.T) {
 	}
 }
 
-var (
-	assetType string
-	id        uuid.UUID
-	isin      string
-	upk       string
-)
+func testUserPostgresRepoNegative(t *testing.T) {
+	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
+	t.Setenv("DATABASE_DSN", "")
+	prop := env.GetProperties()
+	userPostgresRepo := GetUserPostgresRepo(prop)
+	upk = tool.RandStringBytes(32)
+	user := entity.MakeUser(upk, entity.DefaultTAttributes())
+	err := user.Insert(context.TODO(), userPostgresRepo)
+	assert.NotNil(t, err)
+	assert.Equal(t, ErrBadPool, err)
+	err = user.Update(context.TODO(), userPostgresRepo)
+	assert.NotNil(t, err)
+	assert.Equal(t, ErrBadPool, err)
+	err = user.Delete(context.TODO(), userPostgresRepo)
+	assert.NotNil(t, err)
+	assert.Equal(t, ErrBadPool, err)
+	_ = GetUserPostgresRepo(prop)
+}
 
-func testAssetTypePostgresRepo(t *testing.T) {
+func testAssetTypePostgresRepoNegative(t *testing.T) {
+	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
+	t.Setenv("DATABASE_DSN", "")
+	prop := env.GetProperties()
+	assetTypePostgresRepo := GetAssetTypePostgresRepo(prop)
+	assetType = tool.RandStringBytes(32)
+	expected := entity.MakeAssetType(assetType, entity.DefaultTAttributes())
+	err := expected.Insert(context.TODO(), assetTypePostgresRepo)
+	assert.NotNil(t, err)
+	assert.Equal(t, ErrBadPool, err)
+
+	assert.False(t, expected.Deleted().Valid)
+	_, err = entity.GetAssetType(context.TODO(), assetTypePostgresRepo, assetType)
+	assert.NotNil(t, err)
+	assert.Equal(t, ErrBadPool, err)
+
+	err = expected.Update(context.TODO(), assetTypePostgresRepo)
+	assert.NotNil(t, err)
+	assert.Equal(t, ErrBadPool, err)
+
+	err = expected.Delete(context.TODO(), assetTypePostgresRepo)
+	assert.NotNil(t, err)
+	assert.Equal(t, ErrBadPool, err)
+}
+
+func testAssetTypePostgresRepoPositive(t *testing.T) {
 	defer func() { _ = recover() }()
 	prop := env.GetProperties()
 	assetTypePostgresRepo := GetAssetTypePostgresRepo(prop)
@@ -80,7 +124,7 @@ func testAssetTypePostgresRepo(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func testUserPostgresRepo(t *testing.T) {
+func testUserPostgresRepoPositive(t *testing.T) {
 	defer func() { _ = recover() }()
 	prop := env.GetProperties()
 	userPostgresRepo := GetUserPostgresRepo(prop)

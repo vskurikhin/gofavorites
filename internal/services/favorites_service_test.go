@@ -11,13 +11,22 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/vskurikhin/gofavorites/internal/domain"
 	"github.com/vskurikhin/gofavorites/internal/domain/entity"
+	"github.com/vskurikhin/gofavorites/internal/tool"
 	pb "github.com/vskurikhin/gofavorites/proto"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/credentials/local"
+	"log"
+	"math/rand"
+	"net"
 	"testing"
+	"time"
 )
 
 func TestFavoritesService(t *testing.T) {
@@ -262,6 +271,262 @@ func getTestFavoritesService(
 	favoritesSrv.repoFavorites = repoFavorites
 	favoritesSrv.userLookup = userLookup
 	return favoritesSrv
+}
+
+func TestGRPCFavoritesService(t *testing.T) {
+	var tests = []struct {
+		name string
+		fRun func(*testing.T)
+	}{
+		{
+			name: "positive test #1 Favorites Service Get",
+			fRun: testGRPCFavoritesServiceGetPositive,
+		},
+		{
+			name: "positive test #2 Favorites Service GetForUser",
+			fRun: testGRPCFavoritesServiceGetForUserPositive,
+		},
+		{
+			name: "positive test #3 Favorites Service Set",
+			fRun: testGRPCFavoritesServiceSetPositive,
+		},
+		{
+			name: "negative test #4 Favorites Service Get",
+			fRun: testGRPCFavoritesServiceGetNegative,
+		},
+		{
+			name: "negative test #5 Favorites Service Get",
+			fRun: testGRPCFavoritesServiceGetForUserNegative,
+		},
+		{
+			name: "negative test #6 Favorites Service Get",
+			fRun: testGRPCFavoritesServiceSetNegative,
+		},
+	}
+
+	assert.NotNil(t, t)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			test.fRun(t)
+		})
+	}
+}
+
+func testGRPCFavoritesServiceGetPositive(t *testing.T) {
+
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
+	address := fmt.Sprintf("localhost:%d", 65500+rnd.Intn(34))
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
+	defer func() {
+		cancel()
+		ctx.Done()
+		time.Sleep(100 * time.Millisecond)
+	}()
+	go grpcServeFavoritesServiceServer(ctx, address, favoritesServicePositive{})
+
+	conn, client, err := makeFavoritesServiceClient(t, address)
+	defer func() { _ = conn.Close() }()
+
+	var request pb.FavoritesRequest
+	resp, err := client.Get(ctx, &request)
+	assert.Nil(t, err)
+	assert.NotNil(t, resp)
+}
+
+func testGRPCFavoritesServiceGetForUserPositive(t *testing.T) {
+
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
+	address := fmt.Sprintf("localhost:%d", 65500+rnd.Intn(34))
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
+	defer func() {
+		cancel()
+		ctx.Done()
+		time.Sleep(100 * time.Millisecond)
+	}()
+	go grpcServeFavoritesServiceServer(ctx, address, favoritesServicePositive{})
+
+	conn, client, err := makeFavoritesServiceClient(t, address)
+	defer func() { _ = conn.Close() }()
+
+	var request pb.UserFavoritesRequest
+	resp, err := client.GetForUser(ctx, &request)
+	assert.Nil(t, err)
+	assert.NotNil(t, resp)
+}
+
+func testGRPCFavoritesServiceSetPositive(t *testing.T) {
+
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
+	address := fmt.Sprintf("localhost:%d", 65500+rnd.Intn(34))
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
+	defer func() {
+		cancel()
+		ctx.Done()
+		time.Sleep(100 * time.Millisecond)
+	}()
+	go grpcServeFavoritesServiceServer(ctx, address, favoritesServicePositive{})
+
+	conn, client, err := makeFavoritesServiceClient(t, address)
+	defer func() { _ = conn.Close() }()
+
+	var request pb.FavoritesRequest
+	resp, err := client.Set(ctx, &request)
+	assert.Nil(t, err)
+	assert.NotNil(t, resp)
+}
+
+func testGRPCFavoritesServiceGetNegative(t *testing.T) {
+
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
+	address := fmt.Sprintf("localhost:%d", 65500+rnd.Intn(34))
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
+	defer func() {
+		cancel()
+		ctx.Done()
+		time.Sleep(100 * time.Millisecond)
+	}()
+	go grpcServeFavoritesServiceServer(ctx, address, favoritesServiceNegative{})
+
+	conn, client, err := makeFavoritesServiceClient(t, address)
+	defer func() { _ = conn.Close() }()
+
+	var request pb.FavoritesRequest
+	resp, err := client.Get(ctx, &request)
+	assert.NotNil(t, err)
+	assert.Nil(t, resp)
+}
+
+func testGRPCFavoritesServiceGetForUserNegative(t *testing.T) {
+
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
+	address := fmt.Sprintf("localhost:%d", 65500+rnd.Intn(34))
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
+	defer func() {
+		cancel()
+		ctx.Done()
+		time.Sleep(100 * time.Millisecond)
+	}()
+	go grpcServeFavoritesServiceServer(ctx, address, favoritesServiceNegative{})
+
+	conn, client, err := makeFavoritesServiceClient(t, address)
+	defer func() { _ = conn.Close() }()
+
+	var request pb.UserFavoritesRequest
+	resp, err := client.GetForUser(ctx, &request)
+	assert.NotNil(t, err)
+	assert.Nil(t, resp)
+}
+
+func testGRPCFavoritesServiceSetNegative(t *testing.T) {
+
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
+	address := fmt.Sprintf("localhost:%d", 65500+rnd.Intn(34))
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
+	defer func() {
+		cancel()
+		ctx.Done()
+		time.Sleep(100 * time.Millisecond)
+	}()
+	go grpcServeFavoritesServiceServer(ctx, address, favoritesServiceNegative{})
+
+	conn, client, err := makeFavoritesServiceClient(t, address)
+	defer func() { _ = conn.Close() }()
+
+	var request pb.FavoritesRequest
+	resp, err := client.Set(ctx, &request)
+	assert.NotNil(t, err)
+	assert.Nil(t, resp)
+}
+
+func makeFavoritesServiceClient(t *testing.T, address string) (*grpc.ClientConn, pb.FavoritesServiceClient, error) {
+
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+
+	conn, err := grpc.NewClient(address, opts...)
+	if err != nil {
+		t.Fail()
+	}
+	client := pb.NewFavoritesServiceClient(conn)
+
+	return conn, client, err
+}
+
+func grpcServeFavoritesServiceServer(ctx context.Context, address string, srv pb.FavoritesServiceServer) {
+	listen, err := net.Listen("tcp", address)
+	tool.IfErrorThenPanic(err)
+	opts := []grpc.ServerOption{grpc.Creds(local.NewCredentials())}
+	grpcServer := grpc.NewServer(opts...)
+	pb.RegisterFavoritesServiceServer(grpcServer, srv)
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				grpcServer.Stop()
+				return
+			default:
+				time.Sleep(100 * time.Millisecond)
+			}
+		}
+	}()
+	if err := grpcServer.Serve(listen); err != nil {
+		log.Fatal(err)
+	}
+}
+
+type FavoritesServicePositive interface {
+	pb.FavoritesServiceServer
+}
+
+type favoritesServicePositive struct {
+	pb.UnimplementedFavoritesServiceServer
+}
+
+var _ FavoritesServicePositive = (*favoritesServicePositive)(nil)
+
+func (f favoritesServicePositive) Get(_ context.Context, _ *pb.FavoritesRequest) (*pb.FavoritesResponse, error) {
+	return &pb.FavoritesResponse{}, nil
+}
+
+func (f favoritesServicePositive) GetForUser(_ context.Context, _ *pb.UserFavoritesRequest) (*pb.UserFavoritesResponse, error) {
+	return &pb.UserFavoritesResponse{}, nil
+}
+
+func (f favoritesServicePositive) Set(_ context.Context, _ *pb.FavoritesRequest) (*pb.FavoritesResponse, error) {
+	return &pb.FavoritesResponse{}, nil
+}
+
+type FavoritesServiceNegative interface {
+	pb.FavoritesServiceServer
+}
+
+type favoritesServiceNegative struct {
+	pb.UnimplementedFavoritesServiceServer
+}
+
+var _ FavoritesServiceNegative = (*favoritesServiceNegative)(nil)
+
+func (f favoritesServiceNegative) Get(_ context.Context, request *pb.FavoritesRequest) (*pb.FavoritesResponse, error) {
+	return nil, fmt.Errorf("test")
+}
+
+func (f favoritesServiceNegative) GetForUser(_ context.Context, request *pb.UserFavoritesRequest) (*pb.UserFavoritesResponse, error) {
+	return nil, fmt.Errorf("test")
+}
+
+func (f favoritesServiceNegative) Set(_ context.Context, request *pb.FavoritesRequest) (*pb.FavoritesResponse, error) {
+	return nil, fmt.Errorf("test")
 }
 
 //!-

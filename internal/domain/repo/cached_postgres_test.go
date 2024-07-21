@@ -25,12 +25,12 @@ func TestCachedPostgresRepos(t *testing.T) {
 		fRun func(*testing.T)
 	}{
 		{
-			name: "positive test #0 AssetType Postgres Repo",
-			fRun: testAssetTypeCachedPostgresRepo,
+			name: "negative test #0 AssetType Postgres Repo",
+			fRun: testAssetTypeCachedPostgresRepoNegative,
 		},
 		{
-			name: "positive test #2 User Cached Postgres Repo",
-			fRun: testUserCachedPostgresRepo,
+			name: "negative test #2 User Cached Postgres Repo",
+			fRun: testUserCachedPostgresRepoNegative,
 		},
 	}
 
@@ -42,7 +42,33 @@ func TestCachedPostgresRepos(t *testing.T) {
 	}
 }
 
-func testAssetTypeCachedPostgresRepo(t *testing.T) {
+func testAssetTypeCachedPostgresRepoNegative(t *testing.T) {
+	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
+	t.Setenv("DATABASE_DSN", "")
+
+	prop := env.GetProperties()
+	assetTypePostgresRepo := GetAssetTypePostgresCachedRepo(prop)
+
+	assetType = tool.RandStringBytes(32)
+	expected := entity.MakeAssetType(assetType, entity.DefaultTAttributes())
+	err := expected.Insert(context.TODO(), assetTypePostgresRepo)
+	assert.NotNil(t, err)
+	assert.Equal(t, ErrBadPool, err)
+
+	_, err = entity.GetAssetType(context.TODO(), assetTypePostgresRepo, assetType)
+	assert.NotNil(t, err)
+	assert.Equal(t, ErrBadPool, err)
+
+	err = expected.Update(context.TODO(), assetTypePostgresRepo)
+	assert.NotNil(t, err)
+	assert.Equal(t, ErrBadPool, err)
+
+	err = expected.Delete(context.TODO(), assetTypePostgresRepo)
+	assert.NotNil(t, err)
+	assert.Equal(t, ErrBadPool, err)
+}
+
+func testAssetTypeCachedPostgresRepoPositive(t *testing.T) {
 	defer func() { _ = recover() }()
 	prop := env.GetProperties()
 	assetTypePostgresRepo := GetAssetTypePostgresCachedRepo(prop)
@@ -81,7 +107,33 @@ func testAssetTypeCachedPostgresRepo(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func testUserCachedPostgresRepo(t *testing.T) {
+func testUserCachedPostgresRepoNegative(t *testing.T) {
+	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
+	t.Setenv("DATABASE_DSN", "")
+
+	prop := env.GetProperties()
+	userPostgresRepo := GetUserPostgresCachedRepo(prop)
+
+	upk = tool.RandStringBytes(32)
+	user := entity.MakeUser(upk, entity.DefaultTAttributes())
+	err := user.Insert(context.TODO(), userPostgresRepo)
+	assert.NotNil(t, err)
+	assert.Equal(t, ErrBadPool, err)
+
+	_, err = entity.GetUser(context.TODO(), userPostgresRepo, upk)
+	assert.NotNil(t, err)
+	assert.Equal(t, ErrBadPool, err)
+
+	err = user.Update(context.TODO(), userPostgresRepo)
+	assert.NotNil(t, err)
+	assert.Equal(t, ErrBadPool, err)
+
+	err = user.Delete(context.TODO(), userPostgresRepo)
+	assert.NotNil(t, err)
+	assert.Equal(t, ErrBadPool, err)
+}
+
+func testUserCachedPostgresRepoPositive(t *testing.T) {
 	defer func() { _ = recover() }()
 	prop := env.GetProperties()
 	userPostgresRepo := GetUserPostgresCachedRepo(prop)

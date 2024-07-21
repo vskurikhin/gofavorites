@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-20 13:37 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-21 10:37 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * properties.go
@@ -308,6 +308,8 @@ func (p *mapProperties) OutboundIP() net.IP {
 func (p *mapProperties) String() string {
 	format := `
 %s
+CacheExpire: %v
+CacheGCInterval: %v
 DBPool: %v
 Environments: %v
 ExternalAssetGRPCAddress: %s
@@ -320,6 +322,8 @@ OutboundIP: %v
 `
 	return fmt.Sprintf(format,
 		p.Config(),
+		p.CacheExpire(),
+		p.CacheGCInterval(),
 		p.DBPool(),
 		p.Environments(),
 		p.ExternalAssetGRPCAddress(),

@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-21 08:50 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-21 10:37 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * asset_search_service.go
@@ -52,7 +52,7 @@ func GetAssetSearchService(prop env.Properties) AssetSearchService {
 		opts := []grpc.DialOption{
 			grpc.WithDefaultCallOptions(grpc.UseCompressor(gzip.Name)),
 		}
-		tlsCredentials, err := tool.LoadAgentTLSCredentials(prop.Config().GRPCTLSCAFile())
+		tlsCredentials, err := tool.LoadClientTLSCredentials(prop.Config().GRPCTLSCAFile())
 		if err != nil {
 			opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		} else {

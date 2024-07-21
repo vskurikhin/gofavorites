@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-20 10:48 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-21 11:42 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * postgres.go
@@ -34,23 +34,12 @@ type Postgres[E domain.Entity] struct {
 
 var _ domain.Repo[domain.Entity] = (*Postgres[domain.Entity])(nil)
 var (
-	onceAssetRepo     = new(sync.Once)
-	assetRepo         *Postgres[*entity.Asset]
+	ErrBadPool        = fmt.Errorf("bad Database pool")
 	onceAssetTypeRepo = new(sync.Once)
 	assetTypeRepo     *Postgres[*entity.AssetType]
-	onceFavoritesRepo = new(sync.Once)
-	favoritesRepo     *Postgres[*entity.Favorites]
 	onceUserRepo      = new(sync.Once)
 	userRepo          *Postgres[*entity.User]
 )
-
-func GetAssetPostgresRepo(prop env.Properties) domain.Repo[*entity.Asset] {
-	onceAssetRepo.Do(func() {
-		assetRepo = new(Postgres[*entity.Asset])
-		assetRepo.pool = prop.DBPool()
-	})
-	return assetRepo
-}
 
 func GetAssetTypePostgresRepo(prop env.Properties) domain.Repo[*entity.AssetType] {
 	onceAssetTypeRepo.Do(func() {
@@ -58,14 +47,6 @@ func GetAssetTypePostgresRepo(prop env.Properties) domain.Repo[*entity.AssetType
 		assetTypeRepo.pool = prop.DBPool()
 	})
 	return assetTypeRepo
-}
-
-func GetFavoritesPostgresRepo(prop env.Properties) domain.Repo[*entity.Favorites] {
-	onceFavoritesRepo.Do(func() {
-		favoritesRepo = new(Postgres[*entity.Favorites])
-		favoritesRepo.pool = prop.DBPool()
-	})
-	return favoritesRepo
 }
 
 func GetUserPostgresRepo(prop env.Properties) domain.Repo[*entity.User] {
@@ -125,6 +106,9 @@ func scanPostgreSQL(ctx context.Context, pool *pgxpool.Pool, scan func(domain.Sc
 
 func rowPostgreSQL(ctx context.Context, pool *pgxpool.Pool, sql string, args ...any) (pgx.Row, error) {
 
+	if pool == nil {
+		return nil, ErrBadPool
+	}
 	conn, err := pool.Acquire(ctx)
 
 	for i := 1; err != nil && i < tries*increase; i += increase {
@@ -145,6 +129,9 @@ func rowPostgreSQL(ctx context.Context, pool *pgxpool.Pool, sql string, args ...
 
 func rowsPostgreSQL(ctx context.Context, pool *pgxpool.Pool, sql string, args ...any) (pgx.Rows, error) {
 
+	if pool == nil {
+		return nil, ErrBadPool
+	}
 	conn, err := pool.Acquire(ctx)
 
 	for i := 1; err != nil && i < tries*increase; i += increase {

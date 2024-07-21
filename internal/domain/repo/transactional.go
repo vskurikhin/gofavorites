@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-19 11:07 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-21 11:42 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * transactional.go
@@ -81,6 +81,9 @@ func (p *TxPostgres[S]) DoUpsert(ctx context.Context, entity S, scan func(domain
 
 func scanPostgreTxArgs(ctx context.Context, pool *pgxpool.Pool, txArgs domain.TxArgs, scan func(domain.Scanner)) (err error) {
 
+	if pool == nil {
+		return ErrBadPool
+	}
 	conn, err := pool.Acquire(ctx)
 
 	for i := 1; err != nil && i < tries*increase; i += increase {
