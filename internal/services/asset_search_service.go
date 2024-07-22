@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-21 10:37 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-23 14:43 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * asset_search_service.go
@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
 	"log/slog"
+	"os"
 	"sync"
 	"time"
 )
@@ -42,13 +43,13 @@ type assetSearchService struct {
 var _ AssetSearchService = (*assetSearchService)(nil)
 var (
 	onceAssetSearch = new(sync.Once)
-	assetSearchSrv  *assetSearchService
+	assetSearchServ *assetSearchService
 )
 
 func GetAssetSearchService(prop env.Properties) AssetSearchService {
 
 	onceAssetSearch.Do(func() {
-		assetSearchSrv = new(assetSearchService)
+		assetSearchServ = new(assetSearchService)
 		opts := []grpc.DialOption{
 			grpc.WithDefaultCallOptions(grpc.UseCompressor(gzip.Name)),
 		}
@@ -58,12 +59,12 @@ func GetAssetSearchService(prop env.Properties) AssetSearchService {
 		} else {
 			opts = append(opts, grpc.WithTransportCredentials(tlsCredentials))
 		}
-		assetSearchSrv.assetGRPCAddress = prop.ExternalAssetGRPCAddress()
-		assetSearchSrv.opts = opts
-		assetSearchSrv.repoAsset = repo.GetAssetPostgresCachedRepo(prop)
-		assetSearchSrv.requestInterval = prop.ExternalRequestTimeoutInterval()
+		assetSearchServ.assetGRPCAddress = prop.ExternalAssetGRPCAddress()
+		assetSearchServ.opts = opts
+		assetSearchServ.repoAsset = repo.GetAssetPostgresCachedRepo(prop)
+		assetSearchServ.requestInterval = prop.ExternalRequestTimeoutInterval()
 	})
-	return assetSearchSrv
+	return assetSearchServ
 }
 
 func (a *assetSearchService) Lookup(ctx context.Context, isin string) bool {
@@ -88,6 +89,7 @@ func (a *assetSearchService) dbLookup(ctx context.Context, isin string) bool {
 }
 
 func (a *assetSearchService) grpcLookup(ctx context.Context, isin string) bool {
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	conn, err := grpc.NewClient(a.assetGRPCAddress, a.opts...)
 	if err != nil {
@@ -95,18 +97,17 @@ func (a *assetSearchService) grpcLookup(ctx context.Context, isin string) bool {
 	}
 	defer func() { _ = conn.Close() }()
 	c := pb.NewAssetServiceClient(conn)
+	var request pb.AssetRequest
+	request.Asset = &pb.Asset{Isin: isin}
 	ctx, cancel := context.WithTimeout(ctx, a.requestInterval)
 	defer func() {
 		cancel()
-		ctx.Done()
 	}()
-	var request pb.AssetRequest
-	request.Asset = &pb.Asset{Isin: isin}
 	resp, err := c.Get(ctx, &request)
 
 	for i := 1; err != nil && tool.IsUpperBound(i, a.requestInterval); i++ {
-		slog.Warn(env.MSG+" AssetSearchService.grpcLookup", "err", err)
-		time.Sleep(100 * time.Millisecond * time.Duration(i))
+		logger.Warn(env.MSG+" AssetSearchService.grpcLookup", "err", err)
+		time.Sleep(200 * time.Millisecond * time.Duration(i))
 		resp, err = c.Get(ctx, &request)
 	}
 	if err == nil && resp.Status == pb.Status_OK {

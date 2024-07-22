@@ -34,4 +34,8 @@ favorites:
             ca_file: cert/http-ca-cert.pem
             cert_file: cert/http-server-cert.pem
             key_file: cert/http-server-key.pem
-    token: 89h3f98hbwf987h3f98wenf89ehf
+    jwt:
+        jwt_secret: RlMCEknHyZPFEaf5he4zeLWy5QdSvdOBWoAgJq5wy5QdSvOBWoAgJq5wtUH06TY
+        jwt_expired_in: 60m
+        jwt_max_age_sec: 60
+    token: $2a$11$ZTzzVGdLUJGcYKJws9UoUug3Q3kCMELVziajBSJPY3k0pNu2XWHBy

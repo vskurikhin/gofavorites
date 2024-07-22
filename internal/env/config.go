@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-20 13:24 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-22 23:58 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * config.go
@@ -13,6 +13,7 @@ package env
 import (
 	"encoding/base64"
 	"fmt"
+	"time"
 )
 
 var _ Config = (*config)(nil)
@@ -20,8 +21,8 @@ var _ Config = (*config)(nil)
 type Config interface {
 	fmt.Stringer
 	CacheEnabled() bool
-	CacheExpire() int
-	CacheGCInterval() int
+	CacheExpireMs() int
+	CacheGCIntervalSec() int
 	DBEnabled() bool
 	DBHost() string
 	DBName() string
@@ -47,6 +48,9 @@ type Config interface {
 	HTTPTLSCertFile() string
 	HTTPTLSEnabled() bool
 	HTTPTLSKeyFile() string
+	JwtExpiresIn() time.Duration
+	JwtMaxAgeSec() int
+	JwtSecret() string
 	Token() string
 }
 
@@ -80,13 +84,16 @@ type config struct {
 				tlsConfig `mapstructure:",squash"`
 			}
 		}
+		JWT struct {
+			jwtConfig `mapstructure:",squash"`
+		}
 		goFavoritesConfig `mapstructure:",squash"`
 	}
 }
 
 type cacheConfig struct {
-	Expire     int `mapstructure:"expire_ms"`
-	GCInterval int `mapstructure:"gc_interval_sec"`
+	ExpireMs      int `mapstructure:"expire_ms"`
+	GCIntervalSec int `mapstructure:"gc_interval_sec"`
 }
 
 type dbConfig struct {
@@ -114,6 +121,12 @@ type httpConfig struct {
 	Port    int16
 }
 
+type jwtConfig struct {
+	JwtSecret    string        `mapstructure:"jwt_secret"`
+	JwtExpiresIn time.Duration `mapstructure:"jwt_expired_in"`
+	JwtMaxAgeSec int           `mapstructure:"jwt_max_age_sec"`
+}
+
 type tlsConfig struct {
 	CAFile   string `mapstructure:"ca_file"`
 	CertFile string `mapstructure:"cert_file"`
@@ -122,7 +135,7 @@ type tlsConfig struct {
 
 // moduleConfig could be in a module specific package
 type goFavoritesConfig struct {
-	Token string
+	Token string `mapstructure:"token"`
 }
 
 func (y *config) CacheEnabled() bool {
@@ -133,18 +146,18 @@ func (y *config) CacheEnabled() bool {
 	return false
 }
 
-func (y *config) CacheExpire() int {
+func (y *config) CacheExpireMs() int {
 
 	if y != nil {
-		return y.Favorites.Cache.Expire
+		return y.Favorites.Cache.ExpireMs
 	}
 	return 0
 }
 
-func (y *config) CacheGCInterval() int {
+func (y *config) CacheGCIntervalSec() int {
 
 	if y != nil {
-		return y.Favorites.Cache.GCInterval
+		return y.Favorites.Cache.GCIntervalSec
 	}
 	return 0
 }
@@ -347,6 +360,30 @@ func (y *config) HTTPTLSEnabled() bool {
 	return false
 }
 
+func (y *config) JwtExpiresIn() time.Duration {
+
+	if y != nil {
+		return y.Favorites.JWT.JwtExpiresIn
+	}
+	return 0
+}
+
+func (y *config) JwtMaxAgeSec() int {
+
+	if y != nil {
+		return y.Favorites.JWT.JwtMaxAgeSec
+	}
+	return 0
+}
+
+func (y *config) JwtSecret() string {
+
+	if y != nil {
+		return y.Favorites.JWT.JwtSecret
+	}
+	return ""
+}
+
 func (y *config) Token() string {
 
 	if y != nil {
@@ -387,8 +424,8 @@ HTTPTLSEnabled: %v
 HTTPTLSKeyFile: %s
 Token: %s`,
 		y.CacheEnabled(),
-		y.CacheExpire(),
-		y.CacheGCInterval(),
+		y.CacheExpireMs(),
+		y.CacheGCIntervalSec(),
 		y.DBHost(),
 		y.DBName(),
 		y.DBEnabled(),

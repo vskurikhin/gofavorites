@@ -14,6 +14,7 @@ package env
 import (
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
 )
 
 func TestLoadConfig(t *testing.T) {
@@ -62,6 +63,9 @@ func TestLoadConfig(t *testing.T) {
 							tlsConfig `mapstructure:",squash"`
 						}
 					}
+					JWT struct {
+						jwtConfig `mapstructure:",squash"`
+					}
 					goFavoritesConfig `mapstructure:",squash"`
 				}{
 					Cache: struct {
@@ -70,8 +74,8 @@ func TestLoadConfig(t *testing.T) {
 					}{
 						Enabled: true,
 						cacheConfig: cacheConfig{
-							Expire:     1000,
-							GCInterval: 10,
+							ExpireMs:      1000,
+							GCIntervalSec: 10,
 						},
 					},
 					DB: struct {
@@ -148,8 +152,17 @@ func TestLoadConfig(t *testing.T) {
 							},
 						},
 					},
+					JWT: struct {
+						jwtConfig `mapstructure:",squash"`
+					}{
+						jwtConfig: jwtConfig{
+							JwtSecret:    "HyZPFEaRf5he4zezLWy5QdSvAdOBWoAgJq5wTvoUH06TYVucOnSGPhSRPp7mkFF",
+							JwtExpiresIn: time.Duration(60) * time.Minute,
+							JwtMaxAgeSec: 60,
+						},
+					},
 					goFavoritesConfig: goFavoritesConfig{
-						Token: "89h3f98hbwf987h3f98wenf89ehf",
+						Token: "$2a$11$ZTzzVGdLUJGcYKJws9UoUug3Q3kCMELVziajBSJPY3k0pNu2XWHBy",
 					},
 				}},
 				err: nil,

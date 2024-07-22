@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-21 10:37 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-23 14:43 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * user_search_service.go
@@ -42,13 +42,13 @@ type userSearchService struct {
 var _ UserSearchService = (*userSearchService)(nil)
 var (
 	onceUserSearch = new(sync.Once)
-	userSearchSrv  *userSearchService
+	userSearchServ *userSearchService
 )
 
 func GetUserSearchService(prop env.Properties) UserSearchService {
 
 	onceUserSearch.Do(func() {
-		userSearchSrv = new(userSearchService)
+		userSearchServ = new(userSearchService)
 		opts := []grpc.DialOption{
 			grpc.WithDefaultCallOptions(grpc.UseCompressor(gzip.Name)),
 		}
@@ -58,12 +58,12 @@ func GetUserSearchService(prop env.Properties) UserSearchService {
 		} else {
 			opts = append(opts, grpc.WithTransportCredentials(tlsCredentials))
 		}
-		userSearchSrv.authGRPCAddress = prop.ExternalAuthGRPCAddress()
-		userSearchSrv.opts = opts
-		userSearchSrv.repoUser = repo.GetUserPostgresCachedRepo(prop)
-		userSearchSrv.requestInterval = prop.ExternalRequestTimeoutInterval()
+		userSearchServ.authGRPCAddress = prop.ExternalAuthGRPCAddress()
+		userSearchServ.opts = opts
+		userSearchServ.repoUser = repo.GetUserPostgresCachedRepo(prop)
+		userSearchServ.requestInterval = prop.ExternalRequestTimeoutInterval()
 	})
-	return userSearchSrv
+	return userSearchServ
 }
 
 func (u *userSearchService) Lookup(ctx context.Context, personalKey, upk string) bool {
@@ -101,14 +101,13 @@ func (u *userSearchService) grpcLookupPersonalKey(ctx context.Context, personalK
 	ctx, cancel := context.WithTimeout(ctx, u.requestInterval)
 	defer func() {
 		cancel()
-		ctx.Done()
 	}()
 	var request pb.UserRequest
 	request.User = &pb.User{PersonalKey: personalKey}
 	resp, err := c.Get(ctx, &request)
 
 	for i := 1; err != nil && tool.IsUpperBound(i, u.requestInterval); i++ {
-		time.Sleep(100 * time.Millisecond * time.Duration(i))
+		time.Sleep(200 * time.Millisecond * time.Duration(i))
 		resp, err = c.Get(ctx, &request)
 	}
 	if resp != nil && resp.Status == pb.Status_OK {
@@ -128,7 +127,6 @@ func (u *userSearchService) grpcLookupUpk(ctx context.Context, upk string) bool 
 	ctx, cancel := context.WithTimeout(ctx, u.requestInterval)
 	defer func() {
 		cancel()
-		ctx.Done()
 	}()
 	var request pb.UserRequest
 	request.User = &pb.User{Upk: upk}
@@ -136,7 +134,7 @@ func (u *userSearchService) grpcLookupUpk(ctx context.Context, upk string) bool 
 
 	for i := 1; err != nil && tool.IsUpperBound(i, u.requestInterval); i++ {
 		slog.Warn(env.MSG+" UserSearchService.grpcLookup", "err", err)
-		time.Sleep(100 * time.Millisecond * time.Duration(i))
+		time.Sleep(200 * time.Millisecond * time.Duration(i))
 		resp, err = c.Get(ctx, &request)
 	}
 	if err == nil && resp.Status == pb.Status_OK {

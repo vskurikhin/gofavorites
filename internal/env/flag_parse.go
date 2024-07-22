@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-20 13:37 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-22 23:58 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * flag_parse.go
@@ -10,7 +10,10 @@
 // Package env работа с настройками и окружением.
 package env
 
-import "github.com/spf13/pflag"
+import (
+	"github.com/spf13/pflag"
+	"time"
+)
 
 const (
 	flagCacheExpireMs                  = "cache-expire-ms"
@@ -27,6 +30,9 @@ const (
 	flagHTTPCAFile                     = "http-ca-file"
 	flagHTTPCertFile                   = "http-cert-file"
 	flagHTTPKeyFile                    = "http-key-file"
+	flagJwtExpiresIn                   = "jwt-expires-in"
+	flagJwtMaxAgeSec                   = "Jwt-max-age-sec"
+	flagJwtSecret                      = "jwt-secret"
 )
 
 func makeFlagsParse() map[string]interface{} {
@@ -107,6 +113,21 @@ func makeFlagsParse() map[string]interface{} {
 			flagHTTPKeyFile,
 			"cert/http-server-key.pem",
 			"HTTP server key file",
+		)
+		flagsMap[flagJwtExpiresIn] = pflag.Duration(
+			flagJwtExpiresIn,
+			time.Duration(60)*time.Second,
+			"JWT expires in in second",
+		)
+		flagsMap[flagJwtMaxAgeSec] = pflag.Int(
+			flagJwtMaxAgeSec,
+			60,
+			"JWT max age",
+		)
+		flagsMap[flagJwtSecret] = pflag.String(
+			flagJwtSecret,
+			"",
+			"JWT secret",
 		)
 		pflag.Parse()
 	}

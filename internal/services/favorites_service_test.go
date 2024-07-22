@@ -265,12 +265,12 @@ func getTestFavoritesService(
 	repoFavorites domain.Repo[*entity.Favorites],
 	userLookup UserSearchService,
 ) FavoritesService {
-	favoritesSrv = new(favoritesService)
-	favoritesSrv.assetLookup = assetLookup
-	favoritesSrv.dftFavorites = dftFavorites
-	favoritesSrv.repoFavorites = repoFavorites
-	favoritesSrv.userLookup = userLookup
-	return favoritesSrv
+	favoritesServ = new(favoritesService)
+	favoritesServ.assetLookup = assetLookup
+	favoritesServ.dftFavorites = dftFavorites
+	favoritesServ.repoFavorites = repoFavorites
+	favoritesServ.userLookup = userLookup
+	return favoritesServ
 }
 
 func TestGRPCFavoritesService(t *testing.T) {
@@ -316,21 +316,24 @@ func testGRPCFavoritesServiceGetPositive(t *testing.T) {
 
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
-	address := fmt.Sprintf("localhost:%d", 65500+rnd.Intn(34))
+	address := fmt.Sprintf("127.0.0.1:%d", 65501+rnd.Intn(34))
 
-	ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
 	defer func() {
 		cancel()
 		ctx.Done()
 		time.Sleep(100 * time.Millisecond)
 	}()
-	go grpcServeFavoritesServiceServer(ctx, address, favoritesServicePositive{})
+	up := make(chan struct{})
+	go grpcServeFavoritesServiceServer(ctx, address, favoritesServicePositive{}, up)
+	<-up
 
 	conn, client, err := makeFavoritesServiceClient(t, address)
 	defer func() { _ = conn.Close() }()
 
 	var request pb.FavoritesRequest
 	resp, err := client.Get(ctx, &request)
+
 	assert.Nil(t, err)
 	assert.NotNil(t, resp)
 }
@@ -339,15 +342,17 @@ func testGRPCFavoritesServiceGetForUserPositive(t *testing.T) {
 
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
-	address := fmt.Sprintf("localhost:%d", 65500+rnd.Intn(34))
+	address := fmt.Sprintf("127.0.0.1:%d", 65501+rnd.Intn(34))
 
-	ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
 	defer func() {
 		cancel()
 		ctx.Done()
 		time.Sleep(100 * time.Millisecond)
 	}()
-	go grpcServeFavoritesServiceServer(ctx, address, favoritesServicePositive{})
+	up := make(chan struct{})
+	go grpcServeFavoritesServiceServer(ctx, address, favoritesServicePositive{}, up)
+	<-up
 
 	conn, client, err := makeFavoritesServiceClient(t, address)
 	defer func() { _ = conn.Close() }()
@@ -362,15 +367,17 @@ func testGRPCFavoritesServiceSetPositive(t *testing.T) {
 
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
-	address := fmt.Sprintf("localhost:%d", 65500+rnd.Intn(34))
+	address := fmt.Sprintf("127.0.0.1:%d", 65501+rnd.Intn(34))
 
-	ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
 	defer func() {
 		cancel()
 		ctx.Done()
 		time.Sleep(100 * time.Millisecond)
 	}()
-	go grpcServeFavoritesServiceServer(ctx, address, favoritesServicePositive{})
+	up := make(chan struct{})
+	go grpcServeFavoritesServiceServer(ctx, address, favoritesServicePositive{}, up)
+	<-up
 
 	conn, client, err := makeFavoritesServiceClient(t, address)
 	defer func() { _ = conn.Close() }()
@@ -385,15 +392,17 @@ func testGRPCFavoritesServiceGetNegative(t *testing.T) {
 
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
-	address := fmt.Sprintf("localhost:%d", 65500+rnd.Intn(34))
+	address := fmt.Sprintf("127.0.0.1:%d", 65501+rnd.Intn(34))
 
-	ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
 	defer func() {
 		cancel()
 		ctx.Done()
 		time.Sleep(100 * time.Millisecond)
 	}()
-	go grpcServeFavoritesServiceServer(ctx, address, favoritesServiceNegative{})
+	up := make(chan struct{})
+	go grpcServeFavoritesServiceServer(ctx, address, favoritesServiceNegative{}, up)
+	<-up
 
 	conn, client, err := makeFavoritesServiceClient(t, address)
 	defer func() { _ = conn.Close() }()
@@ -408,15 +417,17 @@ func testGRPCFavoritesServiceGetForUserNegative(t *testing.T) {
 
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
-	address := fmt.Sprintf("localhost:%d", 65500+rnd.Intn(34))
+	address := fmt.Sprintf("127.0.0.1:%d", 65501+rnd.Intn(34))
 
-	ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
 	defer func() {
 		cancel()
 		ctx.Done()
 		time.Sleep(100 * time.Millisecond)
 	}()
-	go grpcServeFavoritesServiceServer(ctx, address, favoritesServiceNegative{})
+	up := make(chan struct{})
+	go grpcServeFavoritesServiceServer(ctx, address, favoritesServiceNegative{}, up)
+	<-up
 
 	conn, client, err := makeFavoritesServiceClient(t, address)
 	defer func() { _ = conn.Close() }()
@@ -431,15 +442,16 @@ func testGRPCFavoritesServiceSetNegative(t *testing.T) {
 
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
-	address := fmt.Sprintf("localhost:%d", 65500+rnd.Intn(34))
+	address := fmt.Sprintf("127.0.0.1:%d", 65501+rnd.Intn(34))
 
-	ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
 	defer func() {
 		cancel()
-		ctx.Done()
 		time.Sleep(100 * time.Millisecond)
 	}()
-	go grpcServeFavoritesServiceServer(ctx, address, favoritesServiceNegative{})
+	up := make(chan struct{})
+	go grpcServeFavoritesServiceServer(ctx, address, favoritesServiceNegative{}, up)
+	<-up
 
 	conn, client, err := makeFavoritesServiceClient(t, address)
 	defer func() { _ = conn.Close() }()
@@ -463,23 +475,19 @@ func makeFavoritesServiceClient(t *testing.T, address string) (*grpc.ClientConn,
 	return conn, client, err
 }
 
-func grpcServeFavoritesServiceServer(ctx context.Context, address string, srv pb.FavoritesServiceServer) {
+func grpcServeFavoritesServiceServer(ctx context.Context, address string, srv pb.FavoritesServiceServer, up chan struct{}) {
 	listen, err := net.Listen("tcp", address)
 	tool.IfErrorThenPanic(err)
 	opts := []grpc.ServerOption{grpc.Creds(local.NewCredentials())}
 	grpcServer := grpc.NewServer(opts...)
 	pb.RegisterFavoritesServiceServer(grpcServer, srv)
 	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				grpcServer.Stop()
-				return
-			default:
-				time.Sleep(100 * time.Millisecond)
-			}
-		}
+		<-ctx.Done()
+		grpcServer.GracefulStop()
 	}()
+	if up != nil {
+		close(up)
+	}
 	if err := grpcServer.Serve(listen); err != nil {
 		log.Fatal(err)
 	}

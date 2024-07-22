@@ -14,19 +14,23 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/requestid"
+	"github.com/jackc/pgx/v5/stdlib"
+	"github.com/pressly/goose/v3"
+	"google.golang.org/grpc"
 	"log"
 	"log/slog"
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/jackc/pgx/v5/stdlib"
-	"github.com/pressly/goose/v3"
+	"github.com/vskurikhin/gofavorites/internal/controllers"
 	"github.com/vskurikhin/gofavorites/internal/env"
 	"github.com/vskurikhin/gofavorites/internal/services"
-	"google.golang.org/grpc"
 
 	pb "github.com/vskurikhin/gofavorites/proto"
 )
@@ -45,7 +49,6 @@ func main() {
 }
 
 func run(ctx context.Context) {
-	_ = fiber.New()
 	slog.Info(env.MSG,
 		"build_version", buildVersion,
 		"build_date", buildDate,
@@ -88,39 +91,100 @@ func dbMigrations(prop env.Properties) {
 
 func serve(ctx context.Context, prop env.Properties) {
 
-	// определяем порт для gRPC сервера
 	listen, err := net.Listen("tcp", prop.GRPCAddress())
-	fmt.Println(prop.GRPCAddress())
+
 	if err != nil {
 		log.Fatal(err)
 	}
+	idleConnsClosed := make(chan struct{})
+	sigint := make(chan os.Signal, 1)
+	signal.Notify(sigint, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
+
+	httpServer := makeHTTP(prop)
+	grpcServer := makeGRPC(prop)
+
+	go func() {
+		<-sigint
+		grpcServer.GracefulStop()
+		log.Println("Выключение сервера gRPC")
+		if err := httpServer.Shutdown(); err != nil {
+			log.Printf("Ошибка при выключение сервера HTTP: %v\n", err)
+		}
+		log.Println("Выключение сервера HTTP")
+		close(idleConnsClosed)
+	}()
+	go func() {
+		<-ctx.Done()
+		grpcServer.GracefulStop()
+		log.Println("Выключение сервера gRPC")
+		if err := httpServer.Shutdown(); err != nil {
+			log.Printf("Ошибка при выключение сервера HTTP: %v\n", err)
+		}
+		log.Println("Выключение сервера HTTP")
+		close(idleConnsClosed)
+	}()
+	go func() {
+		log.Println("Сервер gRPC начал работу")
+		if err := grpcServer.Serve(listen); err != nil {
+			log.Fatal(err)
+		}
+	}()
+	log.Println("Сервер HTTP начал работу")
+	if err := httpServer.Listen(":8000"); err != nil {
+		log.Printf("Ошибка при выключение сервера HTTP: %v\n", err)
+	}
+	<-idleConnsClosed
+	log.Println("Корректное завершение работы сервера")
+}
+
+func makeHTTP(prop env.Properties) *fiber.App {
+
+	logHandler := logger.New(logger.Config{
+		Format:       "${pid} | ${time} | ${status} | ${locals:requestid} | ${latency} | ${ip} | ${method} | ${path} | ${error}\n",
+		TimeFormat:   "15:04:05.999",
+		TimeZone:     "Local",
+		TimeInterval: 500 * time.Millisecond,
+		Output:       os.Stdout,
+	})
+
+	app := fiber.New()
+	micro := fiber.New()
+	app.Mount("/api", micro)
+	app.Use(logHandler)
+	app.Use(requestid.New())
+	micro.Use(logHandler)
+	micro.Use(requestid.New())
+
+	micro.Route("/auth", func(router fiber.Router) {
+		router.Post("/login", controllers.GetAuthController(prop).SignInUser)
+	})
+
+	// micro.Get("/users/me", middleware.DeserializeUser, controllers.GetMe)
+
+	micro.Get("/health", func(c *fiber.Ctx) error {
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"status":  "success",
+			"message": "JWT Authentication with Golang and Fiber",
+		})
+	})
+	micro.All("*", func(c *fiber.Ctx) error {
+		path := c.Path()
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"status":  "fail",
+			"message": fmt.Sprintf("Path: %v does not exists on this server", path),
+		})
+	})
+	return app
+}
+
+func makeGRPC(prop env.Properties) *grpc.Server {
+
 	opts := []grpc.ServerOption{grpc.Creds(prop.GRPCTransportCredentials())}
 	grpcServer := grpc.NewServer(opts...)
 	favoritesService := services.GetFavoritesService(prop)
 	pb.RegisterFavoritesServiceServer(grpcServer, favoritesService)
 
-	idleConnsClosed := make(chan struct{})
-	sigint := make(chan os.Signal, 1)
-	signal.Notify(sigint, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
-	go func() {
-		<-sigint
-		grpcServer.Stop()
-		log.Println("Выключение сервера gRPC")
-		close(idleConnsClosed)
-	}()
-	go func() {
-		<-ctx.Done()
-		grpcServer.Stop()
-		log.Println("Выключение сервера gRPC")
-		close(idleConnsClosed)
-	}()
-
-	log.Println("Сервер gRPC начал работу")
-	if err := grpcServer.Serve(listen); err != nil {
-		log.Fatal(err)
-	}
-	<-idleConnsClosed
-	log.Println("Корректное завершение работы сервера")
+	return grpcServer
 }
 
 //!-

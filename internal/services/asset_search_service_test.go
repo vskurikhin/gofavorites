@@ -53,6 +53,12 @@ func TestAssetSearchService(t *testing.T) {
 			fRun: testGetAssetSearchService,
 		},
 	}
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
+	t.Setenv("ASSET_GRPC_ADDRESS", fmt.Sprintf("127.0.0.1:%d", 65501+rnd.Intn(34)))
+	t.Setenv("AUTH_GRPC_ADDRESS", fmt.Sprintf("127.0.0.1:%d", 65501+rnd.Intn(34)))
+	t.Setenv("REQUEST_TIMEOUT_INTERVAL_MS", "500")
 
 	assert.NotNil(t, t)
 	for _, test := range tests {
@@ -63,88 +69,78 @@ func TestAssetSearchService(t *testing.T) {
 }
 
 func testGetAssetSearchService(t *testing.T) {
-	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
-	t.Setenv("ASSET_GRPC_ADDRESS", fmt.Sprintf("localhost:%d", 65500+rnd.Intn(34)))
-	t.Setenv("REQUEST_TIMEOUT_INTERVAL_MS", "500")
 	prop := env.GetProperties()
 	got := GetAssetSearchService(prop)
 	assert.NotNil(t, got)
 }
 
 func testAssetSearchServiceLookupPositiveCase1(t *testing.T) {
-	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
-	t.Setenv("ASSET_GRPC_ADDRESS", fmt.Sprintf("localhost:%d", 65500+rnd.Intn(34)))
-	t.Setenv("REQUEST_TIMEOUT_INTERVAL_MS", "500")
 	prop := env.GetProperties()
 	ctrl := gomock.NewController(t)
 	repoAsset := NewMockRepo[*entity.Asset](ctrl)
 	asset := entity.MakeAsset("test", entity.AssetType{}, entity.DefaultTAttributes())
 	repoAsset.
 		EXPECT().
-		Get(context.TODO(), gomock.Any(), gomock.Any()).
+		Get(context.Background(), gomock.Any(), gomock.Any()).
 		Return(&asset, nil).
 		AnyTimes()
 	assetSearchService := getAssetSearchService(prop, repoAsset)
-	got := assetSearchService.Lookup(context.TODO(), asset.Isin())
+	got := assetSearchService.Lookup(context.Background(), asset.Isin())
 	assert.True(t, got)
 }
 
 func testAssetSearchServiceLookupPositiveCase2(t *testing.T) {
-	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
-	t.Setenv("ASSET_GRPC_ADDRESS", fmt.Sprintf("localhost:%d", 65500+rnd.Intn(34)))
-	t.Setenv("REQUEST_TIMEOUT_INTERVAL_MS", "500")
 	prop := env.GetProperties()
-	ctrl := gomock.NewController(t)
-	repoAsset := NewMockRepo[*entity.Asset](ctrl)
-	asset := entity.MakeAsset("test", entity.AssetType{}, entity.DefaultTAttributes())
-	repoAsset.
-		EXPECT().
-		Get(context.TODO(), gomock.Any(), gomock.Any()).
-		Return(&asset, repo.ErrNotFound).
-		AnyTimes()
-	ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Millisecond)
 	defer func() {
 		cancel()
 		time.Sleep(100 * time.Millisecond)
 	}()
-	go grpcServeAssetServiceServer(ctx, prop, assetServicePositive{})
+	up := make(chan struct{})
+	go grpcServeAssetServiceServer(ctx, prop, assetServicePositive{}, up)
+	<-up
+
+	ctrl := gomock.NewController(t)
+	repoAsset := NewMockRepo[*entity.Asset](ctrl)
+	asset := entity.MakeAsset("test", entity.AssetType{}, entity.DefaultTAttributes())
+	repoAsset.
+		EXPECT().
+		Get(context.Background(), gomock.Any(), gomock.Any()).
+		Return(&asset, repo.ErrNotFound).
+		AnyTimes()
+
 	assetSearchService := getAssetSearchService(prop, repoAsset)
-	got := assetSearchService.Lookup(context.TODO(), asset.Isin())
+	got := assetSearchService.Lookup(context.Background(), asset.Isin())
 	assert.True(t, got)
 }
 
 func testAssetSearchServiceLookupNegativeCase2(t *testing.T) {
-	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
-	t.Setenv("ASSET_GRPC_ADDRESS", fmt.Sprintf("localhost:%d", 65500+rnd.Intn(34)))
-	t.Setenv("REQUEST_TIMEOUT_INTERVAL_MS", "500")
 	prop := env.GetProperties()
 	ctrl := gomock.NewController(t)
 	repoAsset := NewMockRepo[*entity.Asset](ctrl)
 	asset := entity.MakeAsset("test", entity.AssetType{}, entity.DefaultTAttributes())
 	repoAsset.
 		EXPECT().
-		Get(context.TODO(), gomock.Any(), gomock.Any()).
+		Get(context.Background(), gomock.Any(), gomock.Any()).
 		Return(nil, repo.ErrNotFound).
 		AnyTimes()
 	assetSearchService := getAssetSearchService(prop, repoAsset)
-	got := assetSearchService.Lookup(context.TODO(), asset.Isin())
+	got := assetSearchService.Lookup(context.Background(), asset.Isin())
 	assert.False(t, got)
 }
 
 func getAssetSearchService(prop env.Properties, repoAsset domain.Repo[*entity.Asset]) AssetSearchService {
-	assetSearchSrv = new(assetSearchService)
+	assetSearchServ = new(assetSearchService)
 	opts := []grpc.DialOption{
+		grpc.WithBlock(),
+		grpc.WithNoProxy(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	}
-	assetSearchSrv.assetGRPCAddress = prop.ExternalAssetGRPCAddress()
-	assetSearchSrv.opts = opts
-	assetSearchSrv.repoAsset = repoAsset
-	assetSearchSrv.requestInterval = prop.ExternalRequestTimeoutInterval()
-	return assetSearchSrv
+	assetSearchServ.assetGRPCAddress = prop.ExternalAssetGRPCAddress()
+	assetSearchServ.opts = opts
+	assetSearchServ.repoAsset = repoAsset
+	assetSearchServ.requestInterval = prop.ExternalRequestTimeoutInterval()
+	return assetSearchServ
 }
 
 type assetServicePositive struct {
@@ -155,24 +151,21 @@ func (a assetServicePositive) Get(_ context.Context, request *pb.AssetRequest) (
 	return &pb.AssetResponse{Asset: &pb.Asset{Isin: request.GetAsset().GetIsin()}, Status: pb.Status_OK}, nil
 }
 
-func grpcServeAssetServiceServer(ctx context.Context, prop env.Properties, srv pb.AssetServiceServer) {
+func grpcServeAssetServiceServer(ctx context.Context, prop env.Properties, srv pb.AssetServiceServer, up chan struct{}) {
 	listen, err := net.Listen("tcp", prop.ExternalAssetGRPCAddress())
 	tool.IfErrorThenPanic(err)
 	opts := []grpc.ServerOption{grpc.Creds(local.NewCredentials())}
 	grpcServer := grpc.NewServer(opts...)
 	pb.RegisterAssetServiceServer(grpcServer, srv)
 	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				grpcServer.Stop()
-				return
-			default:
-				time.Sleep(100 * time.Millisecond)
-			}
-		}
+		<-ctx.Done()
+		grpcServer.GracefulStop()
 	}()
-	if err := grpcServer.Serve(listen); err != nil {
+	if up != nil {
+		close(up)
+	}
+	err = grpcServer.Serve(listen)
+	if err != nil {
 		log.Fatal(err)
 	}
 }

@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-21 11:30 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-22 23:58 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * properties_tool.go
@@ -21,22 +21,24 @@ import (
 	"time"
 )
 
+var ErrEmptyAddress = fmt.Errorf("can't configure epmty address")
+
 func getCacheExpire(flm map[string]interface{}, env *environments, yml Config) (time.Duration, error) {
-	return timePrepareProperty(
+	return toTimePrepareProperty(
 		flagCacheExpireMs,
 		flm[flagCacheExpireMs],
-		env.CacheExpire,
-		yml.CacheExpire(),
+		env.CacheExpireMs,
+		yml.CacheExpireMs(),
 		time.Millisecond,
 	)
 }
 
 func getCacheGCInterval(flm map[string]interface{}, env *environments, yml Config) (time.Duration, error) {
-	return timePrepareProperty(
+	return toTimePrepareProperty(
 		flagCacheGCIntervalSec,
 		flm[flagCacheGCIntervalSec],
-		env.CacheGCInterval,
-		yml.CacheGCInterval(),
+		env.CacheGCIntervalSec,
+		yml.CacheGCIntervalSec(),
 		time.Second,
 	)
 }
@@ -60,7 +62,7 @@ func getExternalAuthGRPCAddress(flm map[string]interface{}, env *environments, y
 }
 
 func getExternalRequestTimeoutInterval(flm map[string]interface{}, env *environments, yml Config) (time.Duration, error) {
-	return timePrepareProperty(
+	return toTimePrepareProperty(
 		flagExternalRequestTimeoutInterval,
 		flm[flagExternalRequestTimeoutInterval],
 		env.ExternalRequestTimeoutInterval,
@@ -71,27 +73,11 @@ func getExternalRequestTimeoutInterval(flm map[string]interface{}, env *environm
 
 func getGRPCAddress(flm map[string]interface{}, env *environments, yml Config) (address string, err error) {
 	if yml.GRPCEnabled() {
-
-		getFlagGRPCAddress := func() {
-			if a, ok := flm[flagGRPCAddress].(*string); !ok {
-				err = fmt.Errorf("bad value of %s : %v", flagGRPCAddress, flm[flagGRPCAddress])
-			} else {
-				address = *a
-			}
-		}
-		address = fmt.Sprintf("%s:%d", yml.GRPCAddress(), yml.GRPCPort())
-
-		if len(env.GRPCAddress) > 0 {
-			address = parseEnvAddress(env.GRPCAddress)
-		} else if yml.GRPCAddress() == "" && yml.GRPCPort() == 0 {
-			getFlagGRPCAddress()
-		}
-		setIfFlagChanged(flagGRPCAddress, getFlagGRPCAddress)
-
-		if address == "" {
-			err = fmt.Errorf("can't configure gRPC address : %s", address)
-		}
-		return address, err
+		return serverAddressPrepareProperty(
+			flagGRPCAddress, flm,
+			env.GRPCAddress,
+			yml.GRPCAddress(),
+			yml.GRPCPort())
 	}
 	return "", fmt.Errorf("gRPC server disabled")
 }
@@ -102,42 +88,73 @@ func getGRPCTransportCredentials(
 	yml Config,
 ) (tCredentials credentials.TransportCredentials, err error) {
 	if yml.GRPCEnabled() {
-
-		certFile, keyFile := yml.GRPCTLSCertFile(), yml.GRPCTLSKeyFile()
-		getFlagGRPCCertFile := func() {
-			if cf, ok := flm[flagGRPCCertFile].(*string); !ok {
-				err = fmt.Errorf("bad value of %s : %v", flagGRPCCertFile, flm[flagGRPCCertFile])
-			} else {
-				certFile = *cf
-			}
-		}
-		getFlagGRPCKeyFile := func() {
-			if kf, ok := flm[flagGRPCKeyFile].(*string); !ok {
-				err = fmt.Errorf("bad value of %s : %v", flagGRPCKeyFile, flm[flagGRPCKeyFile])
-			} else {
-				keyFile = *kf
-			}
-		}
-		if env.GRPCCertFile != "" {
-			certFile = env.GRPCCertFile
-		}
-		if env.GRPCKeyFile != "" {
-			keyFile = env.GRPCKeyFile
-		}
-		if certFile == "" {
-			getFlagGRPCCertFile()
-		}
-		if keyFile == "" {
-			getFlagGRPCKeyFile()
-		}
-		setIfFlagChanged(flagGRPCCertFile, getFlagGRPCCertFile)
-		setIfFlagChanged(flagGRPCKeyFile, getFlagGRPCKeyFile)
-		if err != nil {
-			return nil, err
-		}
-		return tool.LoadServerTLSCredentials(certFile, keyFile)
+		return serverTransportCredentialsPrepareProperty(
+			flagGRPCCertFile,
+			flagGRPCKeyFile, flm,
+			env.GRPCCertFile,
+			env.GRPCKeyFile,
+			yml.GRPCTLSCertFile(),
+			yml.GRPCTLSKeyFile(),
+		)
 	}
 	return nil, fmt.Errorf("gRPC server disabled")
+}
+
+func getHTTPAddress(flm map[string]interface{}, env *environments, yml Config) (address string, err error) {
+	if yml.GRPCEnabled() {
+		return serverAddressPrepareProperty(
+			flagHTTPAddress, flm,
+			env.HTTPAddress,
+			yml.HTTPAddress(),
+			yml.HTTPPort(),
+		)
+	}
+	return "", fmt.Errorf("HTTP server disabled")
+}
+
+func getHTTPTransportCredentials(
+	flm map[string]interface{},
+	env *environments,
+	yml Config,
+) (tCredentials credentials.TransportCredentials, err error) {
+	if yml.GRPCEnabled() {
+		return serverTransportCredentialsPrepareProperty(
+			flagHTTPCertFile,
+			flagHTTPKeyFile, flm,
+			env.HTTPCertFile,
+			env.HTTPKeyFile,
+			yml.HTTPTLSCertFile(),
+			yml.HTTPTLSKeyFile(),
+		)
+	}
+	return nil, fmt.Errorf("HTTP server disabled")
+}
+
+func getJwtExpiresIn(flm map[string]interface{}, env *environments, yml Config) (time.Duration, error) {
+	return timePrepareProperty(
+		flagJwtExpiresIn,
+		flm[flagJwtExpiresIn],
+		env.JwtExpiresIn,
+		yml.JwtExpiresIn(),
+	)
+}
+
+func getJwtMaxAgeSec(flm map[string]interface{}, env *environments, yml Config) (int, error) {
+	return intPrepareProperty(
+		flagJwtMaxAgeSec,
+		flm[flagJwtMaxAgeSec],
+		env.JwtMaxAge,
+		yml.JwtMaxAgeSec(),
+	)
+}
+
+func getJwtSecret(flm map[string]interface{}, env *environments, yml Config) (string, error) {
+	return stringPrepareProperty(
+		flagJwtSecret,
+		flm[flagJwtSecret],
+		env.JwtSecret,
+		yml.JwtSecret(),
+	)
 }
 
 func makeDBPool(flm map[string]interface{}, env *environments, yml Config) (*pgxpool.Pool, error) {
@@ -180,6 +197,63 @@ func parseEnvAddress(address []string) string {
 	return fmt.Sprintf("%s%d", bb.String(), port)
 }
 
+func intPrepareProperty(
+	name string,
+	flag interface{},
+	env int,
+	yaml int,
+) (result int, err error) {
+
+	getFlag := func() {
+		if a, ok := flag.(*int); !ok {
+			err = fmt.Errorf("bad value")
+		} else {
+			result = *a
+		}
+	}
+	if yaml > 0 {
+		result = yaml
+	}
+	if env > 0 {
+		result = env
+	} else if result == 0 {
+		getFlag()
+	}
+	setIfFlagChanged(name, getFlag)
+
+	return result, err
+}
+
+func serverAddressPrepareProperty(
+	name string,
+	flm map[string]interface{},
+	envAddress []string,
+	ymlAddress string,
+	ymlPort int,
+) (address string, err error) {
+
+	getFlagAddress := func() {
+		if a, ok := flm[name].(*string); !ok {
+			err = fmt.Errorf("bad value of %s : %v", name, flm[name])
+		} else {
+			address = *a
+		}
+	}
+	address = fmt.Sprintf("%s:%d", ymlAddress, ymlPort)
+
+	if len(envAddress) > 0 {
+		address = parseEnvAddress(envAddress)
+	} else if ymlAddress == "" && ymlPort == 0 {
+		getFlagAddress()
+	}
+	setIfFlagChanged(name, getFlagAddress)
+
+	if address == "" {
+		err = ErrEmptyAddress
+	}
+	return address, err
+}
+
 func stringsAddressPrepareProperty(
 	name string,
 	flag interface{},
@@ -207,7 +281,106 @@ func stringsAddressPrepareProperty(
 	return result, err
 }
 
+func stringPrepareProperty(
+	name string,
+	flag interface{},
+	env string,
+	yaml string,
+) (result string, err error) {
+
+	getFlag := func() {
+		if a, ok := flag.(*string); !ok {
+			err = fmt.Errorf("bad value")
+		} else {
+			result = *a
+		}
+	}
+	if yaml != "" {
+		result = yaml
+	}
+	if env != "" {
+		result = env
+	} else if result == "" {
+		getFlag()
+	}
+	setIfFlagChanged(name, getFlag)
+
+	return result, err
+}
+
+func serverTransportCredentialsPrepareProperty(
+	nameCertFile string,
+	nameKeyFile string,
+	flm map[string]interface{},
+	envTLSCertFile string,
+	envTLSKeyFile string,
+	ymlTLSCertFile string,
+	ymlTLSKeyFile string,
+) (tCredentials credentials.TransportCredentials, err error) {
+
+	certFile, keyFile := ymlTLSCertFile, ymlTLSKeyFile
+	getFlagGRPCCertFile := func() {
+		if cf, ok := flm[nameCertFile].(*string); !ok {
+			err = fmt.Errorf("bad value of %s : %v", flagGRPCCertFile, flm[flagGRPCCertFile])
+		} else {
+			certFile = *cf
+		}
+	}
+	getFlagGRPCKeyFile := func() {
+		if kf, ok := flm[nameKeyFile].(*string); !ok {
+			err = fmt.Errorf("bad value of %s : %v", flagGRPCKeyFile, flm[flagGRPCKeyFile])
+		} else {
+			keyFile = *kf
+		}
+	}
+	if envTLSCertFile != "" {
+		certFile = envTLSCertFile
+	}
+	if envTLSKeyFile != "" {
+		keyFile = envTLSKeyFile
+	}
+	if certFile == "" {
+		getFlagGRPCCertFile()
+	}
+	if keyFile == "" {
+		getFlagGRPCKeyFile()
+	}
+	setIfFlagChanged(nameCertFile, getFlagGRPCCertFile)
+	setIfFlagChanged(nameKeyFile, getFlagGRPCKeyFile)
+	if err != nil {
+		return nil, err
+	}
+	return tool.LoadServerTLSCredentials(certFile, keyFile)
+}
+
 func timePrepareProperty(
+	name string,
+	flag interface{},
+	env time.Duration,
+	yaml time.Duration,
+) (result time.Duration, err error) {
+
+	getFlag := func() {
+		if a, ok := flag.(*time.Duration); !ok {
+			err = fmt.Errorf("bad value")
+		} else {
+			result = *a
+		}
+	}
+	if yaml > 0 {
+		result = yaml
+	}
+	if env > 0 {
+		result = env
+	} else if result == 0 {
+		getFlag()
+	}
+	setIfFlagChanged(name, getFlag)
+
+	return result, err
+}
+
+func toTimePrepareProperty(
 	name string,
 	flag interface{},
 	env int,

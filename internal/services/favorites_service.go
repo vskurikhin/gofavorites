@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-21 08:50 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-23 14:43 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites_service.go
@@ -38,7 +38,7 @@ type favoritesService struct {
 var _ FavoritesService = (*favoritesService)(nil)
 var (
 	onceFavorites = new(sync.Once)
-	favoritesSrv  *favoritesService
+	favoritesServ *favoritesService
 	inTransaction = func() {
 		// TODO
 	}
@@ -47,13 +47,13 @@ var (
 func GetFavoritesService(prop env.Properties) FavoritesService {
 
 	onceFavorites.Do(func() {
-		favoritesSrv = new(favoritesService)
-		favoritesSrv.assetLookup = GetAssetSearchService(prop)
-		favoritesSrv.dftFavorites = repo.GetFavoritesTxPostgres(prop)
-		favoritesSrv.repoFavorites = repo.GetFavoritesPostgresCachedRepo(prop)
-		favoritesSrv.userLookup = GetUserSearchService(prop)
+		favoritesServ = new(favoritesService)
+		favoritesServ.assetLookup = GetAssetSearchService(prop)
+		favoritesServ.dftFavorites = repo.GetFavoritesTxPostgres(prop)
+		favoritesServ.repoFavorites = repo.GetFavoritesPostgresCachedRepo(prop)
+		favoritesServ.userLookup = GetUserSearchService(prop)
 	})
-	return favoritesSrv
+	return favoritesServ
 }
 
 func (f *favoritesService) Get(ctx context.Context, request *pb.FavoritesRequest) (*pb.FavoritesResponse, error) {

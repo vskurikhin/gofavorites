@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-21 10:37 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-22 23:58 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * properties.go
@@ -22,7 +22,8 @@ import (
 )
 
 const (
-	propertyCacheExpire                    = "cache-expire"
+	propertyCacheExpireMs                  = "cache-expire"
+	propertyCacheGCIntervalSec             = "cache-gc-interval"
 	propertyConfig                         = "config"
 	propertyDBPool                         = "db-pool"
 	propertyEnvironments                   = "environments"
@@ -32,6 +33,11 @@ const (
 	propertyFlags                          = "flags"
 	propertyGRPCAddress                    = "grpc-address"
 	propertyGRPCTransportCredentials       = "grpc-transport-credentials"
+	propertyHTTPAddress                    = "http-address"
+	propertyHTTPTransportCredentials       = "http-transport-credentials"
+	propertyJwtExpiresIn                   = "jwt-expires-in"
+	propertyJwtMaxAgeSec                   = "jwt-max-age-sec"
+	propertyJwtSecret                      = "jwt-secret"
 )
 
 type Properties interface {
@@ -47,7 +53,12 @@ type Properties interface {
 	Flags() map[string]interface{}
 	GRPCAddress() string
 	GRPCTransportCredentials() credentials.TransportCredentials
+	HTTPAddress() string
+	HTTPTransportCredentials() credentials.TransportCredentials
 	OutboundIP() net.IP
+	JwtExpiresIn() time.Duration
+	JwtMaxAgeSec() int
+	JwtSecret() string
 }
 
 type mapProperties struct {
@@ -71,18 +82,33 @@ func GetProperties() Properties {
 		slog.Warn(MSG+" GetProperties", "cacheExpire", cacheExpire, "err", err)
 		cacheGCInterval, err := getCacheGCInterval(flm, env, yml)
 		slog.Warn(MSG+" GetProperties", "cacheGCInterval", cacheGCInterval, "err", err)
+
 		dbPool, err := makeDBPool(flm, env, yml)
 		slog.Warn(MSG+" GetProperties", "dbDisable", err)
+
 		grpcAddress, err := getGRPCAddress(flm, env, yml)
 		slog.Warn(MSG+" GetProperties", "grpcAddress", grpcAddress, "err", err)
-		tCredentials, err := getGRPCTransportCredentials(flm, env, yml)
-		slog.Warn(MSG+" GetProperties", "grpcTransportCredentials", tCredentials, "err", err)
+		tgRPCCredentials, err := getGRPCTransportCredentials(flm, env, yml)
+		slog.Warn(MSG+" GetProperties", "grpcTransportCredentials", tgRPCCredentials, "err", err)
+
+		httpAddress, err := getHTTPAddress(flm, env, yml)
+		slog.Warn(MSG+" GetProperties", "httpAddress", httpAddress, "err", err)
+		tHTTPCredentials, err := getHTTPTransportCredentials(flm, env, yml)
+		slog.Warn(MSG+" GetProperties", "httpTransportCredentials", tHTTPCredentials, "err", err)
+
 		assetGRPCAddress, err := getExternalAssetGRPCAddress(flm, env, yml)
 		slog.Warn(MSG+" GetProperties", "assetGRPCAddress", assetGRPCAddress, "err", err)
 		authGRPCAddress, err := getExternalAuthGRPCAddress(flm, env, yml)
 		slog.Warn(MSG+" GetProperties", "authGRPCAddress", authGRPCAddress, "err", err)
 		requestTimeoutInterval, err := getExternalRequestTimeoutInterval(flm, env, yml)
 		slog.Warn(MSG+" GetProperties", "requestTimeoutInterval", requestTimeoutInterval, "err", err)
+
+		jwtExpiresIn, err := getJwtExpiresIn(flm, env, yml)
+		slog.Warn(MSG+" GetProperties", "jwtExpiresIn", jwtExpiresIn, "err", err)
+		jwtMaxAgeSec, err := getJwtMaxAgeSec(flm, env, yml)
+		slog.Warn(MSG+" GetProperties", "jwtMaxAgeSec", jwtMaxAgeSec, "err", err)
+		jwtSecret, err := getJwtSecret(flm, env, yml)
+		slog.Warn(MSG+" GetProperties", "jwtSecret", jwtSecret, "err", err)
 
 		properties = getProperties(
 			WithCacheExpire(cacheExpire),
@@ -95,7 +121,12 @@ func GetProperties() Properties {
 			WithFlags(flm),
 			withDBPool(dbPool),
 			WithGRPCAddress(grpcAddress),
-			WithGRPCTransportCredentials(tCredentials),
+			WithGRPCTransportCredentials(tgRPCCredentials),
+			WithHTTPAddress(httpAddress),
+			WithHTTPTransportCredentials(tHTTPCredentials),
+			WithJwtExpiresIn(jwtExpiresIn),
+			WithJwtMaxAgeSec(jwtMaxAgeSec),
+			WithJwtSecret(jwtSecret),
 		)
 	})
 	return properties
@@ -105,14 +136,14 @@ func GetProperties() Properties {
 func WithCacheExpire(cacheExpire time.Duration) func(*mapProperties) {
 	return func(p *mapProperties) {
 		if cacheExpire > 0 {
-			p.mp.Store(propertyCacheExpire, cacheExpire)
+			p.mp.Store(propertyCacheExpireMs, cacheExpire)
 		}
 	}
 }
 
 // CacheExpire — TODO.
 func (p *mapProperties) CacheExpire() time.Duration {
-	if a, ok := p.mp.Load(propertyCacheExpire); ok {
+	if a, ok := p.mp.Load(propertyCacheExpireMs); ok {
 		if cacheExpire, ok := a.(time.Duration); ok {
 			return cacheExpire
 		}
@@ -124,14 +155,14 @@ func (p *mapProperties) CacheExpire() time.Duration {
 func WithCacheGCInterval(cacheGCInterval time.Duration) func(*mapProperties) {
 	return func(p *mapProperties) {
 		if cacheGCInterval > 0 {
-			p.mp.Store(propertyCacheExpire, cacheGCInterval)
+			p.mp.Store(propertyCacheGCIntervalSec, cacheGCInterval)
 		}
 	}
 }
 
 // CacheGCInterval — TODO.
 func (p *mapProperties) CacheGCInterval() time.Duration {
-	if a, ok := p.mp.Load(propertyCacheExpire); ok {
+	if a, ok := p.mp.Load(propertyCacheGCIntervalSec); ok {
 		if cacheGCInterval, ok := a.(time.Duration); ok {
 			return cacheGCInterval
 		}
@@ -283,6 +314,101 @@ func (p *mapProperties) GRPCTransportCredentials() credentials.TransportCredenti
 	return nil
 }
 
+// WithHTTPAddress — адрес HTTP сервера.
+func WithHTTPAddress(address string) func(*mapProperties) {
+	return func(p *mapProperties) {
+		if address != "" {
+			p.mp.Store(propertyHTTPAddress, address)
+		}
+	}
+}
+
+// HTTPAddress — геттер адреса HTTP сервера.
+func (p *mapProperties) HTTPAddress() string {
+	if a, ok := p.mp.Load(propertyHTTPAddress); ok {
+		if address, ok := a.(string); ok {
+			return address
+		}
+	}
+	return ""
+}
+
+// WithHTTPTransportCredentials — TODO.
+func WithHTTPTransportCredentials(tCredentials credentials.TransportCredentials) func(*mapProperties) {
+	return func(p *mapProperties) {
+		if tCredentials != nil {
+			p.mp.Store(propertyHTTPTransportCredentials, tCredentials)
+		}
+	}
+}
+
+// HTTPTransportCredentials — геттер TODO.
+func (p *mapProperties) HTTPTransportCredentials() credentials.TransportCredentials {
+	if c, ok := p.mp.Load(propertyHTTPTransportCredentials); ok {
+		if tCredentials, ok := c.(credentials.TransportCredentials); ok {
+			return tCredentials
+		}
+	}
+	return nil
+}
+
+// WithJwtExpiresIn — TODO.
+func WithJwtExpiresIn(jwtExpiresIn time.Duration) func(*mapProperties) {
+	return func(p *mapProperties) {
+		if jwtExpiresIn > 0 {
+			p.mp.Store(propertyJwtExpiresIn, jwtExpiresIn)
+		}
+	}
+}
+
+// JwtExpiresIn — TODO.
+func (p *mapProperties) JwtExpiresIn() time.Duration {
+	if a, ok := p.mp.Load(propertyJwtExpiresIn); ok {
+		if jwtExpiresIn, ok := a.(time.Duration); ok {
+			return jwtExpiresIn
+		}
+	}
+	return 0
+}
+
+// WithJwtMaxAgeSec — TODO.
+func WithJwtMaxAgeSec(maxAge int) func(*mapProperties) {
+	return func(p *mapProperties) {
+		if maxAge > 0 {
+			p.mp.Store(propertyJwtMaxAgeSec, maxAge)
+		}
+	}
+}
+
+// JwtMaxAgeSec — TODO.
+func (p *mapProperties) JwtMaxAgeSec() int {
+	if a, ok := p.mp.Load(propertyJwtMaxAgeSec); ok {
+		if maxAge, ok := a.(int); ok {
+			return maxAge
+		}
+	}
+	return 0
+}
+
+// WithJwtSecret — TODO.
+func WithJwtSecret(secret string) func(*mapProperties) {
+	return func(p *mapProperties) {
+		if secret != "" {
+			p.mp.Store(propertyJwtSecret, secret)
+		}
+	}
+}
+
+// JwtSecret — TODO.
+func (p *mapProperties) JwtSecret() string {
+	if a, ok := p.mp.Load(propertyJwtSecret); ok {
+		if secret, ok := a.(string); ok {
+			return secret
+		}
+	}
+	return ""
+}
+
 // withDBPool — Флаги.
 func withDBPool(pool *pgxpool.Pool) func(*mapProperties) {
 	return func(p *mapProperties) {
@@ -318,6 +444,11 @@ ExternalRequestTimeoutInterval: %d
 Flags: %v
 GRPCAddress: %s
 GRPCTransportCredentials: %v
+HTTPAddress: %s
+HTTPTransportCredentials: %v
+JwtExpiresIn: %v
+JwtMaxAgeSec: %d
+JwtSecret: %s
 OutboundIP: %v
 `
 	return fmt.Sprintf(format,
@@ -332,6 +463,11 @@ OutboundIP: %v
 		p.Flags(),
 		p.GRPCAddress(),
 		p.GRPCTransportCredentials(),
+		p.HTTPAddress(),
+		p.HTTPTransportCredentials(),
+		p.JwtExpiresIn(),
+		p.JwtMaxAgeSec(),
+		p.JwtSecret(),
 		p.OutboundIP(),
 	)
 }
