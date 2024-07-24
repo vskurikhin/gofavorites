@@ -1,21 +1,16 @@
 /*
- * This file was last modified at 2024-07-22 14:26 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-24 10:23 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
- * user.go
+ * error_response.go
  * $Id$
  */
+//!+
 
-package models
+// Package dto TODO.
+package dto
 
-import (
-	"github.com/go-playground/validator/v10"
-)
-
-type SignInRequest struct {
-	UserName string `json:"userName"  validate:"required"`
-	Password string `json:"password"  validate:"required"`
-}
+import "github.com/go-playground/validator/v10"
 
 var validate = validator.New()
 
@@ -39,3 +34,6 @@ func ValidateStruct[T any](payload T) []*ErrorResponse {
 	}
 	return errors
 }
+
+//!-
+/* vim: set tabstop=4 softtabstop=4 shiftwidth=4 noexpandtab: */

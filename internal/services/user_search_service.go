@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-23 14:43 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-26 10:59 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * user_search_service.go
@@ -16,6 +16,7 @@ import (
 	"github.com/vskurikhin/gofavorites/internal/domain/entity"
 	"github.com/vskurikhin/gofavorites/internal/domain/repo"
 	"github.com/vskurikhin/gofavorites/internal/env"
+	"github.com/vskurikhin/gofavorites/internal/models"
 	"github.com/vskurikhin/gofavorites/internal/tool"
 	pb "github.com/vskurikhin/gofavorites/proto"
 	"google.golang.org/grpc"
@@ -28,7 +29,7 @@ import (
 )
 
 type UserSearchService interface {
-	Lookup(ctx context.Context, personalKey, upk string) bool
+	Lookup(ctx context.Context, user models.User) bool
 }
 
 type userSearchService struct {
@@ -66,18 +67,43 @@ func GetUserSearchService(prop env.Properties) UserSearchService {
 	return userSearchServ
 }
 
-func (u *userSearchService) Lookup(ctx context.Context, personalKey, upk string) bool {
+const cntUserSearchLookupJobs = 3
 
-	if u.dbLookup(ctx, upk) {
-		return true
+func (u *userSearchService) Lookup(ctx context.Context, user models.User) bool {
+
+	var wg sync.WaitGroup
+	wg.Add(cntUserSearchLookupJobs)
+
+	quit := make(chan struct{})
+	results := make(chan bool, cntUserSearchLookupJobs)
+
+	go func() {
+		defer wg.Done()
+		results <- u.dbLookup(ctx, user.Upk())
+	}()
+	go func() {
+		defer wg.Done()
+		results <- u.grpcLookupUpk(ctx, user.Upk())
+	}()
+	go func() {
+		defer wg.Done()
+		results <- u.grpcLookupPersonalKey(ctx, user.PersonalKey())
+	}()
+	go func() {
+		wg.Wait()
+		close(results)
+		close(quit)
+	}()
+	for {
+		select {
+		case result := <-results:
+			if result {
+				return result
+			}
+		case <-quit:
+			return false
+		}
 	}
-	if u.grpcLookupUpk(ctx, upk) {
-		return true
-	}
-	if u.grpcLookupPersonalKey(ctx, personalKey) {
-		return true
-	}
-	return false
 }
 
 func (u *userSearchService) dbLookup(ctx context.Context, upk string) bool {

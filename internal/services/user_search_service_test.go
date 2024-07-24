@@ -18,6 +18,7 @@ import (
 	"github.com/vskurikhin/gofavorites/internal/domain/entity"
 	"github.com/vskurikhin/gofavorites/internal/domain/repo"
 	"github.com/vskurikhin/gofavorites/internal/env"
+	"github.com/vskurikhin/gofavorites/internal/models"
 	"github.com/vskurikhin/gofavorites/internal/tool"
 	pb "github.com/vskurikhin/gofavorites/proto"
 	"go.uber.org/mock/gomock"
@@ -86,14 +87,15 @@ func testUserSearchServiceLookupPositiveCase1(t *testing.T) {
 	prop := env.GetProperties()
 	ctrl := gomock.NewController(t)
 	repoUser := NewMockRepo[*entity.User](ctrl)
-	user1 := entity.MakeUser("test", entity.DefaultTAttributes())
+	data := entity.MakeUser("test", entity.DefaultTAttributes())
+	model := models.MakeUser("test", "test")
 	repoUser.
 		EXPECT().
-		Get(context.Background(), gomock.Any(), gomock.Any()).
-		Return(&user1, nil).
+		Get(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(&data, nil).
 		AnyTimes()
 	userSearchService := getUserSearchService(prop, repoUser)
-	got := userSearchService.Lookup(context.Background(), "", user1.Upk())
+	got := userSearchService.Lookup(context.Background(), model)
 	assert.True(t, got)
 }
 
@@ -102,7 +104,7 @@ func testUserSearchServiceLookupPositiveCase2(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Millisecond)
 	defer func() {
 		cancel()
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 	}()
 	up := make(chan struct{})
 	go grpcServeUserServiceServer(ctx, prop, userServicePositiveCase1{}, up)
@@ -110,7 +112,7 @@ func testUserSearchServiceLookupPositiveCase2(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	repoUser := NewMockRepo[*entity.User](ctrl)
-	user1 := entity.MakeUser("test", entity.DefaultTAttributes())
+	user := models.MakeUser("test", "test")
 	repoUser.
 		EXPECT().
 		Get(context.Background(), gomock.Any(), gomock.Any()).
@@ -122,7 +124,7 @@ func testUserSearchServiceLookupPositiveCase2(t *testing.T) {
 	}()
 
 	userSearchService := getUserSearchService(prop, repoUser)
-	got := userSearchService.Lookup(context.Background(), "", user1.Upk())
+	got := userSearchService.Lookup(context.Background(), user)
 	assert.True(t, got)
 }
 
@@ -131,6 +133,7 @@ func testUserSearchServiceLookupPositiveCase3(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 900*time.Millisecond)
 	defer func() {
 		cancel()
+		time.Sleep(500 * time.Millisecond)
 	}()
 	up := make(chan struct{})
 	go grpcServeUserServiceServer(ctx, prop, userServicePositiveCase2{}, up)
@@ -147,9 +150,10 @@ func testUserSearchServiceLookupPositiveCase3(t *testing.T) {
 		cancel()
 		time.Sleep(100 * time.Millisecond)
 	}()
+	user := models.MakeUser("test", "test")
 
 	userSearchService := getUserSearchService(prop, repoUser)
-	got := userSearchService.Lookup(context.Background(), "test", "")
+	got := userSearchService.Lookup(context.Background(), user)
 	assert.True(t, got)
 }
 
@@ -162,8 +166,9 @@ func testUserSearchServiceLookupNegativeCase1(t *testing.T) {
 		Get(context.Background(), gomock.Any(), gomock.Any()).
 		Return(nil, repo.ErrNotFound).
 		AnyTimes()
+	user := models.MakeUser("test", "test")
 	userSearchService := getUserSearchService(prop, repoUser)
-	got := userSearchService.Lookup(context.Background(), "test", "")
+	got := userSearchService.Lookup(context.Background(), user)
 	assert.False(t, got)
 }
 
@@ -172,6 +177,7 @@ func testUserSearchServiceLookupNegativeCase2(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Millisecond)
 	defer func() {
 		cancel()
+		time.Sleep(500 * time.Millisecond)
 	}()
 	up := make(chan struct{})
 	go grpcServeUserServiceServer(ctx, prop, userServiceNegativeCase1{}, up)
@@ -188,9 +194,10 @@ func testUserSearchServiceLookupNegativeCase2(t *testing.T) {
 		cancel()
 		time.Sleep(100 * time.Millisecond)
 	}()
+	user := models.MakeUser("test", "test")
 
 	userSearchService := getUserSearchService(prop, repoUser)
-	got := userSearchService.Lookup(context.Background(), "test", "")
+	got := userSearchService.Lookup(context.Background(), user)
 	assert.False(t, got)
 }
 

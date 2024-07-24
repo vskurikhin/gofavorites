@@ -94,7 +94,7 @@ func testAssetSearchServiceLookupPositiveCase2(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Millisecond)
 	defer func() {
 		cancel()
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 	}()
 	up := make(chan struct{})
 	go grpcServeAssetServiceServer(ctx, prop, assetServicePositive{}, up)

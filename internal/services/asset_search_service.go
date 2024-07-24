@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-23 14:43 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-26 10:58 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * asset_search_service.go
@@ -67,15 +67,39 @@ func GetAssetSearchService(prop env.Properties) AssetSearchService {
 	return assetSearchServ
 }
 
-func (a *assetSearchService) Lookup(ctx context.Context, isin string) bool {
+const cntAssetSearchLookupJobs = 2
 
-	if a.dbLookup(ctx, isin) {
-		return true
+func (a *assetSearchService) Lookup(ctx context.Context, isin string) (ok bool) {
+
+	var wg sync.WaitGroup
+	wg.Add(cntAssetSearchLookupJobs)
+
+	quit := make(chan struct{})
+	results := make(chan bool, cntAssetSearchLookupJobs)
+
+	go func() {
+		defer wg.Done()
+		results <- a.dbLookup(ctx, isin)
+	}()
+	go func() {
+		defer wg.Done()
+		results <- a.grpcLookup(ctx, isin)
+	}()
+	go func() {
+		wg.Wait()
+		close(results)
+		close(quit)
+	}()
+	for {
+		select {
+		case result := <-results:
+			if result {
+				return result
+			}
+		case <-quit:
+			return false
+		}
 	}
-	if a.grpcLookup(ctx, isin) {
-		return true
-	}
-	return false
 }
 
 func (a *assetSearchService) dbLookup(ctx context.Context, isin string) bool {

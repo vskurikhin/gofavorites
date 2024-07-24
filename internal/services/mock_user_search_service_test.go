@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	models "github.com/vskurikhin/gofavorites/internal/models"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -40,15 +41,15 @@ func (m *MockUserSearchService) EXPECT() *MockUserSearchServiceMockRecorder {
 }
 
 // Lookup mocks base method.
-func (m *MockUserSearchService) Lookup(ctx context.Context, personalKey, upk string) bool {
+func (m *MockUserSearchService) Lookup(ctx context.Context, user models.User) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Lookup", ctx, personalKey, upk)
+	ret := m.ctrl.Call(m, "Lookup", ctx, user)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
 // Lookup indicates an expected call of Lookup.
-func (mr *MockUserSearchServiceMockRecorder) Lookup(ctx, personalKey, upk any) *gomock.Call {
+func (mr *MockUserSearchServiceMockRecorder) Lookup(ctx, user any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Lookup", reflect.TypeOf((*MockUserSearchService)(nil).Lookup), ctx, personalKey, upk)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Lookup", reflect.TypeOf((*MockUserSearchService)(nil).Lookup), ctx, user)
 }

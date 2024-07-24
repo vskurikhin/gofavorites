@@ -160,16 +160,16 @@ func testFavoritesServiceSetPositive(t *testing.T) {
 	userLookup := NewMockUserSearchService(ctrl)
 	assetLookup.
 		EXPECT().
-		Lookup(context.TODO(), gomock.Any()).Return(true).
+		Lookup(gomock.Any(), gomock.Any()).Return(true).
 		AnyTimes()
 	dftFavorites.
 		EXPECT().
-		DoUpsert(context.TODO(), gomock.Any(), gomock.Any()).
+		DoUpsert(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil).
 		AnyTimes()
 	userLookup.
 		EXPECT().
-		Lookup(context.TODO(), gomock.Any(), gomock.Any()).
+		Lookup(gomock.Any(), gomock.Any()).
 		Return(true).
 		AnyTimes()
 	favoritesService := getTestFavoritesService(assetLookup, dftFavorites, repoFavorites, userLookup)
@@ -189,16 +189,16 @@ func testFavoritesServiceSetNegative1(t *testing.T) {
 	userLookup := NewMockUserSearchService(ctrl)
 	assetLookup.
 		EXPECT().
-		Lookup(context.TODO(), gomock.Any()).Return(false).
+		Lookup(gomock.Any(), gomock.Any()).Return(false).
 		AnyTimes()
 	dftFavorites.
 		EXPECT().
-		DoUpsert(context.TODO(), gomock.Any(), gomock.Any()).
+		DoUpsert(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil).
 		AnyTimes()
 	userLookup.
 		EXPECT().
-		Lookup(context.TODO(), gomock.Any(), gomock.Any()).
+		Lookup(gomock.Any(), gomock.Any()).
 		Return(true).
 		AnyTimes()
 	favoritesService := getTestFavoritesService(assetLookup, dftFavorites, repoFavorites, userLookup)
@@ -215,16 +215,16 @@ func testFavoritesServiceSetNegative2(t *testing.T) {
 	userLookup := NewMockUserSearchService(ctrl)
 	assetLookup.
 		EXPECT().
-		Lookup(context.TODO(), gomock.Any()).Return(true).
+		Lookup(gomock.Any(), gomock.Any()).Return(true).
 		AnyTimes()
 	dftFavorites.
 		EXPECT().
-		DoUpsert(context.TODO(), gomock.Any(), gomock.Any()).
+		DoUpsert(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil).
 		AnyTimes()
 	userLookup.
 		EXPECT().
-		Lookup(context.TODO(), gomock.Any(), gomock.Any()).
+		Lookup(gomock.Any(), gomock.Any()).
 		Return(false).
 		AnyTimes()
 	favoritesService := getTestFavoritesService(assetLookup, dftFavorites, repoFavorites, userLookup)
@@ -241,16 +241,16 @@ func testFavoritesServiceSetNegative3(t *testing.T) {
 	userLookup := NewMockUserSearchService(ctrl)
 	assetLookup.
 		EXPECT().
-		Lookup(context.TODO(), gomock.Any()).Return(true).
+		Lookup(gomock.Any(), gomock.Any()).Return(true).
 		AnyTimes()
 	dftFavorites.
 		EXPECT().
-		DoUpsert(context.TODO(), gomock.Any(), gomock.Any()).
+		DoUpsert(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(pgx.ErrTxCommitRollback).
 		AnyTimes()
 	userLookup.
 		EXPECT().
-		Lookup(context.TODO(), gomock.Any(), gomock.Any()).
+		Lookup(gomock.Any(), gomock.Any()).
 		Return(true).
 		AnyTimes()
 	favoritesService := getTestFavoritesService(assetLookup, dftFavorites, repoFavorites, userLookup)
@@ -316,7 +316,7 @@ func testGRPCFavoritesServiceGetPositive(t *testing.T) {
 
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
-	address := fmt.Sprintf("127.0.0.1:%d", 65501+rnd.Intn(34))
+	address := fmt.Sprintf("127.0.0.1:%d", 65285+rnd.Intn(34))
 
 	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
 	defer func() {
@@ -342,7 +342,7 @@ func testGRPCFavoritesServiceGetForUserPositive(t *testing.T) {
 
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
-	address := fmt.Sprintf("127.0.0.1:%d", 65501+rnd.Intn(34))
+	address := fmt.Sprintf("127.0.0.1:%d", 65321+rnd.Intn(34))
 
 	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
 	defer func() {
@@ -367,7 +367,7 @@ func testGRPCFavoritesServiceSetPositive(t *testing.T) {
 
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
-	address := fmt.Sprintf("127.0.0.1:%d", 65501+rnd.Intn(34))
+	address := fmt.Sprintf("127.0.0.1:%d", 65357+rnd.Intn(34))
 
 	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
 	defer func() {
@@ -392,7 +392,7 @@ func testGRPCFavoritesServiceGetNegative(t *testing.T) {
 
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
-	address := fmt.Sprintf("127.0.0.1:%d", 65501+rnd.Intn(34))
+	address := fmt.Sprintf("127.0.0.1:%d", 65393+rnd.Intn(34))
 
 	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
 	defer func() {
@@ -417,7 +417,7 @@ func testGRPCFavoritesServiceGetForUserNegative(t *testing.T) {
 
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
-	address := fmt.Sprintf("127.0.0.1:%d", 65501+rnd.Intn(34))
+	address := fmt.Sprintf("127.0.0.1:%d", 65429+rnd.Intn(34))
 
 	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
 	defer func() {
@@ -442,7 +442,7 @@ func testGRPCFavoritesServiceSetNegative(t *testing.T) {
 
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	t.Setenv("GO_FAVORITES_SKIP_LOAD_CONFIG", "True")
-	address := fmt.Sprintf("127.0.0.1:%d", 65501+rnd.Intn(34))
+	address := fmt.Sprintf("127.0.0.1:%d", 65465+rnd.Intn(34))
 
 	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
 	defer func() {

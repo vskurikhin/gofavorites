@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-20 10:57 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-26 10:39 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites.go
@@ -18,9 +18,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/vskurikhin/gofavorites/internal/domain"
 	"github.com/vskurikhin/gofavorites/internal/env"
+	"github.com/vskurikhin/gofavorites/internal/models"
 	"github.com/vskurikhin/gofavorites/internal/tool"
-	pb "github.com/vskurikhin/gofavorites/proto"
 	"log/slog"
+	"math"
 	"time"
 )
 
@@ -165,14 +166,17 @@ func GetFavoritesForUser(ctx context.Context, repo domain.Repo[*Favorites], upk 
 	return results, err
 }
 
-func FavoritesFromProto(proto *pb.Favorites, upk string) Favorites {
+func FavoritesFromModel(favorites models.Favorites) Favorites {
 
-	assetType := proto.GetAsset().GetAssetType().GetName()
-	isin := proto.GetAsset().GetIsin()
-	id := uuid.New()
-	at := MakeAssetType(assetType, DefaultTAttributes())
-	asset := MakeAsset(isin, at, DefaultTAttributes())
-	user := MakeUser(upk, DefaultTAttributes())
+	var id uuid.UUID
+	if favorites.Id() == uuid.Max {
+		id = uuid.New()
+	} else {
+		id = favorites.Id()
+	}
+	at := MakeAssetType(favorites.Asset().AssetType(), DefaultTAttributes())
+	asset := MakeAsset(favorites.Asset().Isin(), at, DefaultTAttributes())
+	user := MakeUser(favorites.User().Upk(), DefaultTAttributes())
 
 	return MakeFavorites(id, asset, user, sql.NullInt64{}, DefaultTAttributes())
 }
@@ -411,18 +415,18 @@ func (f *Favorites) ToJSON() ([]byte, error) {
 	return result, nil
 }
 
-func (f *Favorites) ToProto() pb.Favorites {
-	return pb.Favorites{
-		Asset: &pb.Asset{
-			Isin: f.asset.isin,
-			AssetType: &pb.AssetType{
-				Name: f.asset.assetType.name,
-			},
-		},
-		User: &pb.User{
-			Upk: f.user.upk,
-		},
+func (f *Favorites) ToModel() models.Favorites {
+
+	asset := models.MakeAsset(f.asset.isin, f.asset.assetType.name)
+	user := models.MakeUser("", f.user.upk)
+	var version int64
+
+	if f.version.Valid {
+		version = f.version.Int64
+	} else {
+		version = math.MaxInt64
 	}
+	return models.MakeFavorites(f.id, asset, user, version)
 }
 
 func (f *Favorites) UpdateArgs() []any {

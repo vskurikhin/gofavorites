@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-23 14:43 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-24 10:23 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * auth.go
@@ -12,8 +12,8 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/vskurikhin/gofavorites/internal/controllers/dto"
 	"github.com/vskurikhin/gofavorites/internal/env"
-	"github.com/vskurikhin/gofavorites/internal/models"
 	"golang.org/x/crypto/bcrypt"
 	"sync"
 	"time"
@@ -45,7 +45,7 @@ func GetAuthController(prop env.Properties) *Auth {
 
 func (a *Auth) SignInUser(c *fiber.Ctx) error {
 
-	var payload models.SignInRequest
+	var payload dto.SignInRequest
 	requestId := c.Locals("requestid")
 
 	if err := c.BodyParser(&payload); err != nil {
@@ -53,7 +53,7 @@ func (a *Auth) SignInUser(c *fiber.Ctx) error {
 			Status(fiber.StatusBadRequest).
 			JSON(fiber.Map{"status": "fail", "message": err.Error(), "requestId": requestId})
 	}
-	errors := models.ValidateStruct(payload)
+	errors := dto.ValidateStruct(payload)
 
 	if errors != nil {
 		return c.
@@ -90,7 +90,6 @@ func (a *Auth) SignInUser(c *fiber.Ctx) error {
 		HTTPOnly: true,
 		Domain:   "localhost",
 	})
-
 	if err != nil {
 		return c.
 			Status(fiber.StatusBadGateway).

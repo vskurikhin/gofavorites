@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-21 11:42 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-26 11:26 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * transactional.go
@@ -97,11 +97,11 @@ func scanPostgreTxArgs(ctx context.Context, pool *pgxpool.Pool, txArgs domain.Tx
 		}
 	}()
 
-	tx, err := conn.BeginTx(ctx, pgx.TxOptions{})
-
 	if err != nil {
 		return err
 	}
+	tx, err := conn.BeginTx(ctx, pgx.TxOptions{})
+
 	defer func() {
 		if err != nil {
 			_ = tx.Rollback(ctx)

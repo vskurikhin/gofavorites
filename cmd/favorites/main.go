@@ -19,6 +19,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
+	"github.com/vskurikhin/gofavorites/internal/middleware"
 	"google.golang.org/grpc"
 	"log"
 	"log/slog"
@@ -59,7 +60,6 @@ func run(ctx context.Context) {
 	signal.Notify(sigint, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
 	// запускаем горутину обработки пойманных прерываний
 	prop := env.GetProperties()
-	_, _ = fmt.Fprintf(os.Stderr, "PROPERTIES%s\n", prop)
 	dbMigrations(prop)
 	serve(ctx, prop)
 }
@@ -130,7 +130,7 @@ func serve(ctx context.Context, prop env.Properties) {
 		}
 	}()
 	log.Println("Сервер HTTP начал работу")
-	if err := httpServer.Listen(":8000"); err != nil {
+	if err := httpServer.Listen(prop.HTTPAddress()); err != nil {
 		log.Printf("Ошибка при выключение сервера HTTP: %v\n", err)
 	}
 	<-idleConnsClosed
@@ -141,7 +141,7 @@ func makeHTTP(prop env.Properties) *fiber.App {
 
 	logHandler := logger.New(logger.Config{
 		Format:       "${pid} | ${time} | ${status} | ${locals:requestid} | ${latency} | ${ip} | ${method} | ${path} | ${error}\n",
-		TimeFormat:   "15:04:05.999",
+		TimeFormat:   "15:04:05.99",
 		TimeZone:     "Local",
 		TimeInterval: 500 * time.Millisecond,
 		Output:       os.Stdout,
@@ -159,7 +159,21 @@ func makeHTTP(prop env.Properties) *fiber.App {
 		router.Post("/login", controllers.GetAuthController(prop).SignInUser)
 	})
 
-	// micro.Get("/users/me", middleware.DeserializeUser, controllers.GetMe)
+	micro.Get(
+		"/favorites/get",
+		middleware.GetUserJwtHandler(prop).DeserializeUser,
+		controllers.GetFavoritesController(prop).GetForUser,
+	)
+	micro.Post(
+		"/favorites/get",
+		middleware.GetUserJwtHandler(prop).DeserializeUser,
+		controllers.GetFavoritesController(prop).Get,
+	)
+	micro.Post(
+		"/favorites/set",
+		middleware.GetUserJwtHandler(prop).DeserializeUser,
+		controllers.GetFavoritesController(prop).Set,
+	)
 
 	micro.Get("/health", func(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
