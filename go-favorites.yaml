@@ -34,8 +34,8 @@ favorites:
       ca_file: cert/http-ca-cert.pem
       cert_file: cert/http-server-cert.pem
       key_file: cert/http-server-key.pem
-    jwt:
-      jwt_secret: TzzVGdLUJGcYKaf5he4zeLW5QdSJws9UoUug3Q3kCMeLVijBSjPY3k0pNu2XWhB
-      jwt_expired_in: 60m
-      jwt_max_age_sec: 36000
+  jwt:
+    jwt_secret: TzzVGdLUJGcYKaf5he4zeLW5QdSJws9UoUug3Q3kCMeLVijBSjPY3k0pNu2XWhB
+    jwt_expired_in: 60m
+    jwt_max_age_sec: 3600
   token: '$2a$11$ZTzzVGdLUJGcYKJws9UoUug3Q3kCMELVziajBSJPY3k0pNu2XWHBy'

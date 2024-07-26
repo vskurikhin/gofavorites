@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-26 11:26 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-26 16:38 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites_service.go
@@ -14,6 +14,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"github.com/ssoroka/slice"
 	"github.com/vskurikhin/gofavorites/internal/domain"
 	"github.com/vskurikhin/gofavorites/internal/domain/entity"
 	"github.com/vskurikhin/gofavorites/internal/domain/repo"
@@ -185,11 +186,10 @@ func (f *favoritesService) getForUser(ctx context.Context, model models.User) ([
 		return nil, err
 	}
 	response := make([]models.Favorites, 0, len(favorites))
-
-	for _, fav := range favorites {
-		item := fav.ToModel()
-		response = append(response, item)
-	}
+	response = slice.Map[entity.Favorites, models.Favorites](favorites,
+		func(i int, fav entity.Favorites) models.Favorites {
+			return fav.ToModel()
+		})
 	return response, err
 }
 

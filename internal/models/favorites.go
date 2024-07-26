@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-26 11:20 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-26 16:38 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites.go
@@ -10,6 +10,7 @@ package models
 
 import (
 	"github.com/google/uuid"
+	"github.com/ssoroka/slice"
 	"github.com/vskurikhin/gofavorites/internal/controllers/dto"
 	pb "github.com/vskurikhin/gofavorites/proto"
 	"math"
@@ -77,11 +78,10 @@ func (f Favorites) ToDto() dto.Favorites {
 func FavoritesSliceToDto(favorites []Favorites) (result []dto.Favorites) {
 
 	result = make([]dto.Favorites, 0, len(favorites))
-
-	for _, fav := range favorites {
-		item := fav.ToDto()
-		result = append(result, item)
-	}
+	result = slice.Map[Favorites, dto.Favorites](favorites,
+		func(i int, fav Favorites) dto.Favorites {
+			return fav.ToDto()
+		})
 	return result
 }
 

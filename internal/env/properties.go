@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-22 23:58 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-26 12:28 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * properties.go
@@ -11,6 +11,7 @@
 package env
 
 import (
+	"crypto/tls"
 	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/vskurikhin/gofavorites/internal/tool"
@@ -34,7 +35,7 @@ const (
 	propertyGRPCAddress                    = "grpc-address"
 	propertyGRPCTransportCredentials       = "grpc-transport-credentials"
 	propertyHTTPAddress                    = "http-address"
-	propertyHTTPTransportCredentials       = "http-transport-credentials"
+	propertyHTTPHTTPTLSConfig              = "http-tls-config"
 	propertyJwtExpiresIn                   = "jwt-expires-in"
 	propertyJwtMaxAgeSec                   = "jwt-max-age-sec"
 	propertyJwtSecret                      = "jwt-secret"
@@ -54,7 +55,7 @@ type Properties interface {
 	GRPCAddress() string
 	GRPCTransportCredentials() credentials.TransportCredentials
 	HTTPAddress() string
-	HTTPTransportCredentials() credentials.TransportCredentials
+	HTTPTLSConfig() *tls.Config
 	OutboundIP() net.IP
 	JwtExpiresIn() time.Duration
 	JwtMaxAgeSec() int
@@ -93,8 +94,8 @@ func GetProperties() Properties {
 
 		httpAddress, err := getHTTPAddress(flm, env, yml)
 		slog.Warn(MSG+" GetProperties", "httpAddress", httpAddress, "err", err)
-		tHTTPCredentials, err := getHTTPTransportCredentials(flm, env, yml)
-		slog.Warn(MSG+" GetProperties", "httpTransportCredentials", tHTTPCredentials, "err", err)
+		tHTTPConfig, err := getHTTPTLSConfig(flm, env, yml)
+		slog.Warn(MSG+" GetProperties", "tHTTPConfig", tHTTPConfig, "err", err)
 
 		assetGRPCAddress, err := getExternalAssetGRPCAddress(flm, env, yml)
 		slog.Warn(MSG+" GetProperties", "assetGRPCAddress", assetGRPCAddress, "err", err)
@@ -123,7 +124,7 @@ func GetProperties() Properties {
 			WithGRPCAddress(grpcAddress),
 			WithGRPCTransportCredentials(tgRPCCredentials),
 			WithHTTPAddress(httpAddress),
-			WithHTTPTransportCredentials(tHTTPCredentials),
+			WithHTTPTLSConfig(tHTTPConfig),
 			WithJwtExpiresIn(jwtExpiresIn),
 			WithJwtMaxAgeSec(jwtMaxAgeSec),
 			WithJwtSecret(jwtSecret),
@@ -333,19 +334,19 @@ func (p *mapProperties) HTTPAddress() string {
 	return ""
 }
 
-// WithHTTPTransportCredentials — TODO.
-func WithHTTPTransportCredentials(tCredentials credentials.TransportCredentials) func(*mapProperties) {
+// WithHTTPTLSConfig — TODO.
+func WithHTTPTLSConfig(tCredentials *tls.Config) func(*mapProperties) {
 	return func(p *mapProperties) {
 		if tCredentials != nil {
-			p.mp.Store(propertyHTTPTransportCredentials, tCredentials)
+			p.mp.Store(propertyHTTPHTTPTLSConfig, tCredentials)
 		}
 	}
 }
 
-// HTTPTransportCredentials — геттер TODO.
-func (p *mapProperties) HTTPTransportCredentials() credentials.TransportCredentials {
-	if c, ok := p.mp.Load(propertyHTTPTransportCredentials); ok {
-		if tCredentials, ok := c.(credentials.TransportCredentials); ok {
+// HTTPTLSConfig — геттер TODO.
+func (p *mapProperties) HTTPTLSConfig() *tls.Config {
+	if c, ok := p.mp.Load(propertyHTTPHTTPTLSConfig); ok {
+		if tCredentials, ok := c.(*tls.Config); ok {
 			return tCredentials
 		}
 	}
@@ -464,7 +465,7 @@ OutboundIP: %v
 		p.GRPCAddress(),
 		p.GRPCTransportCredentials(),
 		p.HTTPAddress(),
-		p.HTTPTransportCredentials(),
+		p.HTTPTLSConfig(),
 		p.JwtExpiresIn(),
 		p.JwtMaxAgeSec(),
 		p.JwtSecret(),

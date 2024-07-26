@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-26 10:58 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-26 16:51 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * asset_search_service.go
@@ -69,7 +69,7 @@ func GetAssetSearchService(prop env.Properties) AssetSearchService {
 
 const cntAssetSearchLookupJobs = 2
 
-func (a *assetSearchService) Lookup(ctx context.Context, isin string) (ok bool) {
+func (a *assetSearchService) Lookup(ctx context.Context, isin string) bool {
 
 	var wg sync.WaitGroup
 	wg.Add(cntAssetSearchLookupJobs)

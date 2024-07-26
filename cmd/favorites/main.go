@@ -12,6 +12,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"embed"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
@@ -130,7 +131,16 @@ func serve(ctx context.Context, prop env.Properties) {
 		}
 	}()
 	log.Println("Сервер HTTP начал работу")
-	if err := httpServer.Listen(prop.HTTPAddress()); err != nil {
+	if prop.Config().HTTPTLSEnabled() {
+
+		ln, err := tls.Listen("tcp", prop.HTTPAddress(), prop.HTTPTLSConfig())
+		if err != nil {
+			panic(err)
+		}
+		if err := httpServer.Listener(ln); err != nil {
+			log.Printf("Ошибка при выключение сервера HTTP: %v\n", err)
+		}
+	} else if err := httpServer.Listen(prop.HTTPAddress()); err != nil {
 		log.Printf("Ошибка при выключение сервера HTTP: %v\n", err)
 	}
 	<-idleConnsClosed

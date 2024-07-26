@@ -34,10 +34,8 @@ func TestWithoutArgs(t *testing.T) {
 	os.Args = []string{"main"}
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	grpcPort := 65501 + rnd.Intn(30)
-	fmt.Fprintf(os.Stderr, "TestWithoutArgs GRPC=127.0.0.1:%d\n", grpcPort)
 	t.Setenv("GRPC_ADDRESS", fmt.Sprintf("127.0.0.1:%d", grpcPort))
 	httpPort := grpcPort + 1 + rnd.Intn(65535-grpcPort)
-	fmt.Fprintf(os.Stderr, "TestWithoutArgs HTTP=127.0.0.1:%d\n", httpPort)
 	t.Setenv("HTTP_ADDRESS", fmt.Sprintf("127.0.0.1:%d", httpPort))
 	go func() {
 		time.Sleep(3 * time.Second)

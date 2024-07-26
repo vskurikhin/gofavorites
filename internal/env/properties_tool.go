@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-22 23:58 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-26 12:28 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * properties_tool.go
@@ -12,6 +12,7 @@ package env
 
 import (
 	"bytes"
+	"crypto/tls"
 	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/vskurikhin/gofavorites/internal/tool"
@@ -112,13 +113,13 @@ func getHTTPAddress(flm map[string]interface{}, env *environments, yml Config) (
 	return "", fmt.Errorf("HTTP server disabled")
 }
 
-func getHTTPTransportCredentials(
+func getHTTPTLSConfig(
 	flm map[string]interface{},
 	env *environments,
 	yml Config,
-) (tCredentials credentials.TransportCredentials, err error) {
-	if yml.GRPCEnabled() {
-		return serverTransportCredentialsPrepareProperty(
+) (tConfig *tls.Config, err error) {
+	if yml.HTTPTLSEnabled() {
+		return serverTLSConfigPrepareProperty(
 			flagHTTPCertFile,
 			flagHTTPKeyFile, flm,
 			env.HTTPCertFile,
@@ -306,6 +307,55 @@ func stringPrepareProperty(
 	setIfFlagChanged(name, getFlag)
 
 	return result, err
+}
+
+func serverTLSConfigPrepareProperty(
+	nameCertFile string,
+	nameKeyFile string,
+	flm map[string]interface{},
+	envTLSCertFile string,
+	envTLSKeyFile string,
+	ymlTLSCertFile string,
+	ymlTLSKeyFile string,
+) (tConfig *tls.Config, err error) {
+	certFile, keyFile := ymlTLSCertFile, ymlTLSKeyFile
+	getFlagCertFile := func() {
+		if cf, ok := flm[nameCertFile].(*string); !ok {
+			err = fmt.Errorf("bad value of %s : %v", flagGRPCCertFile, flm[flagGRPCCertFile])
+		} else {
+			certFile = *cf
+		}
+	}
+	getFlagKeyFile := func() {
+		if kf, ok := flm[nameKeyFile].(*string); !ok {
+			err = fmt.Errorf("bad value of %s : %v", flagGRPCKeyFile, flm[flagGRPCKeyFile])
+		} else {
+			keyFile = *kf
+		}
+	}
+	if envTLSCertFile != "" {
+		certFile = envTLSCertFile
+	}
+	if envTLSKeyFile != "" {
+		keyFile = envTLSKeyFile
+	}
+	if certFile == "" {
+		getFlagCertFile()
+	}
+	if keyFile == "" {
+		getFlagKeyFile()
+	}
+	setIfFlagChanged(nameCertFile, getFlagCertFile)
+	setIfFlagChanged(nameKeyFile, getFlagKeyFile)
+	if err != nil {
+		return nil, err
+	}
+	cer, err := tls.LoadX509KeyPair(certFile, keyFile)
+
+	if err != nil {
+		return nil, err
+	}
+	return &tls.Config{Certificates: []tls.Certificate{cer}}, nil
 }
 
 func serverTransportCredentialsPrepareProperty(

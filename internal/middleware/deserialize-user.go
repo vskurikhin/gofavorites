@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-23 15:18 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-27 10:54 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * deserialize-user.go
@@ -11,7 +11,7 @@ package middleware
 import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/vskurikhin/gofavorites/internal/env"
 	"strings"
 	"sync"

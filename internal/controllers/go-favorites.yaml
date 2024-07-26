@@ -1,0 +1,21 @@
+favorites:
+  enabled: true
+  cache:
+    enabled: false
+  db:
+    enabled: false
+  grpc:
+    enabled: false
+    tls:
+      enabled: false
+  http:
+    address: localhost
+    enabled: true
+    port: 443
+    tls:
+      enabled: false
+  jwt:
+    jwt_secret: RlMCEknHyZPFEaf5he4zeLWy5QdSvdOBWoAgJq5wy5QdSvOBWoAgJq5wtUH06TY
+    jwt_expired_in: 60m
+    jwt_max_age_sec: 3600
+  token: $2a$11$ZTzzVGdLUJGcYKJws9UoUug3Q3kCMELVziajBSJPY3k0pNu2XWHBy

@@ -3,13 +3,11 @@ package repo
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/vskurikhin/gofavorites/internal/domain/entity"
 	"github.com/vskurikhin/gofavorites/internal/env"
 	"github.com/vskurikhin/gofavorites/internal/tool"
-	"os"
 	"testing"
 )
 
@@ -47,11 +45,13 @@ func testAssetTxPostgresNegative(t *testing.T) {
 	isin = tool.RandStringBytes(32)
 	at := entity.MakeAssetType(assetType, entity.DefaultTAttributes())
 	asset := entity.MakeAsset(isin, at, entity.DefaultTAttributes())
+	// TODO var ok bool
 	err := asset.Upsert(context.TODO(), assetPostgresDft, func() {
-		_, _ = fmt.Fprintf(os.Stderr, "YES!!!\n")
+		// TODO ok = true
 	})
 	assert.NotNil(t, err)
 	assert.Equal(t, ErrBadPool, err)
+	// TODO assert.True(t, ok)
 }
 
 func testAssetTxPostgresPositive(t *testing.T) {
@@ -64,10 +64,12 @@ func testAssetTxPostgresPositive(t *testing.T) {
 	isin = tool.RandStringBytes(32)
 	at := entity.MakeAssetType(assetType, entity.DefaultTAttributes())
 	asset := entity.MakeAsset(isin, at, entity.DefaultTAttributes())
+	// TODO var ok bool
 	_ = asset.Upsert(context.TODO(), assetPostgresDft, func() {
-		_, _ = fmt.Fprintf(os.Stderr, "YES!!!\n")
+		// TODO ok = true
 	})
 	//assert.Nil(t, err) TODO
+	// TODO assert.True(t, ok)
 
 	defer testClearAssetTypes(t)
 	defer testClearAssets(t)
