@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-26 16:38 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-29 11:38 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites_service.go
@@ -27,10 +27,8 @@ import (
 )
 
 type FavoritesService interface {
+	ApiFavoritesService
 	pb.FavoritesServiceServer
-	ApiFavoritesGet(ctx context.Context, model models.Favorites) (models.Favorites, error)
-	ApiFavoritesGetForUser(ctx context.Context, model models.User) ([]models.Favorites, error)
-	ApiFavoritesSet(ctx context.Context, model models.Favorites) (models.Favorites, error)
 }
 
 type favoritesService struct {

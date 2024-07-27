@@ -84,11 +84,23 @@ cert:
 %.pb.go: %.proto
 	@protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ./$<
 
+%_search_service_mock_test.go: %_search_service.go
+	@mockgen -source=./$< -package=services > ./$@
+
+$(SEARCH_SERVICE_DIR)/repo_mock_domain_test.go: $(REPO_DIR)/repo.go
+	@mockgen -source=./$< -package=services > ./$@
+
+$(SEARCH_SERVICE_DIR)/transactional_mock_domain_test.go: $(REPO_DIR)/transactional.go
+	@mockgen -source=./$< -package=services > ./$@
+
+$(CONTROLLERS_DIR)/api_favorites_service_mock_test.go: $(SEARCH_SERVICE_DIR)/api_favorites_service.go
+	@mockgen -source=./$< -package=controllers > ./$@
+
 ####################################
 # Major source code-generate targets
 ####################################
-generate: $(PROTO_PB_GO) $(MODEL_EASY_JSON_GO)
-	@echo "  >  Done generating source files based on *.proto and *.model.go files."
+generate: $(PROTO_PB_GO) $(SEARCH_SERVICE_MOCKS) $(REPO_MOCKS) $(FAVORITES_MOCK)
+	@echo "  >  Done generating source files based on *.proto and Mock files."
 
 test:
 	@echo "  > Test Iteration ..."

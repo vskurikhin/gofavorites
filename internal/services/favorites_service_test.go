@@ -80,7 +80,8 @@ func testFavoritesServiceGetPositive(t *testing.T) {
 	userLookup := NewMockUserSearchService(ctrl)
 	repoFavorites.
 		EXPECT().
-		Get(context.TODO(), gomock.Any(), gomock.Any()).Return(&entity.Favorites{}, nil).
+		Get(context.TODO(), gomock.Any(), gomock.Any()).
+		Return(&entity.Favorites{}, nil).
 		AnyTimes()
 	favoritesService := getTestFavoritesService(assetLookup, dftFavorites, repoFavorites, userLookup)
 	resp, err := favoritesService.Get(context.TODO(), &pb.FavoritesRequest{})

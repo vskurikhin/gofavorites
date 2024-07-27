@@ -5,7 +5,9 @@
  * auth_test.go
  * $Id$
  */
+//!+
 
+// Package controllers TODO.
 package controllers
 
 import (
@@ -44,3 +46,6 @@ func Test_Auth_SignInUser_Positive_1(t *testing.T) {
 		utils.AssertEqual(t, nil, err)
 	})
 }
+
+//!-
+/* vim: set tabstop=4 softtabstop=4 shiftwidth=4 noexpandtab: */

@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-27 10:54 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-29 12:59 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * deserialize-user.go
@@ -72,12 +72,6 @@ func (u *UserJwtHandler) DeserializeUser(c *fiber.Ctx) error {
 			JSON(fiber.Map{"status": "fail", "message": "invalid token claim"})
 
 	}
-	//var user models.User
-	//initializers.DB.First(&user, "id = ?", fmt.Sprint(claims["sub"]))
-	//if user.ID.String() != claims["sub"] {
-	//	return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"status": "fail", "message": "the user belonging to this token no logger exists"})
-	//}
-
 	c.Locals("user", fmt.Sprint(claims["sub"]))
 
 	return c.Next()

@@ -1,11 +1,13 @@
 /*
- * This file was last modified at 2024-07-26 11:26 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-29 12:16 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites.go
  * $Id$
  */
+//!+
 
+// Package controllers TODO.
 package controllers
 
 import (
@@ -15,12 +17,13 @@ import (
 	"github.com/vskurikhin/gofavorites/internal/env"
 	"github.com/vskurikhin/gofavorites/internal/models"
 	"github.com/vskurikhin/gofavorites/internal/services"
+	"os"
 	"sync"
 	"time"
 )
 
 type Favorites struct {
-	favoritesServ services.FavoritesService
+	favoritesServ services.ApiFavoritesService
 	jwtExpiresIn  time.Duration
 	jwtMaxAge     int
 	jwtSecret     string
@@ -58,6 +61,7 @@ func (f *Favorites) Get(c *fiber.Ctx) error {
 			JSON(fiber.Map{"status": "fail", "requestId": requestId, "message": "user failed"})
 	}
 	if err := c.BodyParser(&payload); err != nil {
+		fmt.Fprintf(os.Stderr, "err: %v\n", err)
 		return c.
 			Status(fiber.StatusBadRequest).
 			JSON(fiber.Map{"status": "fail", "message": err.Error(), "requestId": requestId})
@@ -71,7 +75,6 @@ func (f *Favorites) Get(c *fiber.Ctx) error {
 	}
 	model := models.FavoritesFromDto(payload, "", user)
 	favorites, err := f.favoritesServ.ApiFavoritesGet(c.Context(), model)
-	response := favorites.ToDto()
 
 	if err != nil {
 		return c.
@@ -81,6 +84,8 @@ func (f *Favorites) Get(c *fiber.Ctx) error {
 				"message": fmt.Sprintf("error: %v", err),
 			})
 	}
+	response := favorites.ToDto()
+
 	return c.
 		Status(fiber.StatusOK).
 		JSON(fiber.Map{
@@ -166,3 +171,6 @@ func (f *Favorites) Set(c *fiber.Ctx) error {
 			"data":      fiber.Map{"favorites": response, "user": user},
 		})
 }
+
+//!-
+/* vim: set tabstop=4 softtabstop=4 shiftwidth=4 noexpandtab: */

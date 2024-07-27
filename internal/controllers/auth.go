@@ -1,11 +1,13 @@
 /*
- * This file was last modified at 2024-07-27 12:08 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-29 11:23 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * auth.go
  * $Id$
  */
+//!+
 
+// Package controllers TODO.
 package controllers
 
 import (
@@ -102,3 +104,6 @@ func (a *Auth) SignInUser(c *fiber.Ctx) error {
 		Status(fiber.StatusOK).
 		JSON(fiber.Map{"status": "success", "requestId": requestId, "token": tokenString})
 }
+
+//!-
+/* vim: set tabstop=4 softtabstop=4 shiftwidth=4 noexpandtab: */
