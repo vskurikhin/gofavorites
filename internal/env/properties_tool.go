@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-26 12:28 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-29 19:47 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * properties_tool.go
@@ -12,7 +12,9 @@ package env
 
 import (
 	"bytes"
+	"crypto/rsa"
 	"crypto/tls"
+	"encoding/base64"
 	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/vskurikhin/gofavorites/internal/tool"
@@ -44,7 +46,7 @@ func getCacheGCInterval(flm map[string]interface{}, env *environments, yml Confi
 	)
 }
 
-func getExternalAssetGRPCAddress(flm map[string]interface{}, env *environments, yml Config) (result string, err error) {
+func getExternalAssetGRPCAddress(flm map[string]interface{}, env *environments, yml Config) (string, error) {
 	return stringsAddressPrepareProperty(
 		flagExternalAssetGRPCAddress,
 		flm[flagExternalAssetGRPCAddress],
@@ -53,7 +55,7 @@ func getExternalAssetGRPCAddress(flm map[string]interface{}, env *environments, 
 	)
 }
 
-func getExternalAuthGRPCAddress(flm map[string]interface{}, env *environments, yml Config) (result string, err error) {
+func getExternalAuthGRPCAddress(flm map[string]interface{}, env *environments, yml Config) (string, error) {
 	return stringsAddressPrepareProperty(
 		flagExternalAuthGRPCAddress,
 		flm[flagExternalAuthGRPCAddress],
@@ -72,7 +74,7 @@ func getExternalRequestTimeoutInterval(flm map[string]interface{}, env *environm
 	)
 }
 
-func getGRPCAddress(flm map[string]interface{}, env *environments, yml Config) (address string, err error) {
+func getGRPCAddress(flm map[string]interface{}, env *environments, yml Config) (string, error) {
 	if yml.GRPCEnabled() {
 		return serverAddressPrepareProperty(
 			flagGRPCAddress, flm,
@@ -87,7 +89,7 @@ func getGRPCTransportCredentials(
 	flm map[string]interface{},
 	env *environments,
 	yml Config,
-) (tCredentials credentials.TransportCredentials, err error) {
+) (credentials.TransportCredentials, error) {
 	if yml.GRPCEnabled() {
 		return serverTransportCredentialsPrepareProperty(
 			flagGRPCCertFile,
@@ -101,7 +103,7 @@ func getGRPCTransportCredentials(
 	return nil, fmt.Errorf("gRPC server disabled")
 }
 
-func getHTTPAddress(flm map[string]interface{}, env *environments, yml Config) (address string, err error) {
+func getHTTPAddress(flm map[string]interface{}, env *environments, yml Config) (string, error) {
 	if yml.GRPCEnabled() {
 		return serverAddressPrepareProperty(
 			flagHTTPAddress, flm,
@@ -113,11 +115,7 @@ func getHTTPAddress(flm map[string]interface{}, env *environments, yml Config) (
 	return "", fmt.Errorf("HTTP server disabled")
 }
 
-func getHTTPTLSConfig(
-	flm map[string]interface{},
-	env *environments,
-	yml Config,
-) (tConfig *tls.Config, err error) {
+func getHTTPTLSConfig(flm map[string]interface{}, env *environments, yml Config) (*tls.Config, error) {
 	if yml.HTTPTLSEnabled() {
 		return serverTLSConfigPrepareProperty(
 			flagHTTPCertFile,
@@ -156,6 +154,128 @@ func getJwtSecret(flm map[string]interface{}, env *environments, yml Config) (st
 		env.JwtSecret,
 		yml.JwtSecret(),
 	)
+}
+
+func getRSAPrivateKey(flm map[string]interface{}, env *environments, yml Config) (*rsa.PrivateKey, error) {
+	return loadRSAPrivateKey(
+		flagUpkPrivateKeyFile,
+		flm[flagUpkPrivateKeyFile],
+		env.UpkPrivateKeyFile,
+		yml.UpkRSAPrivateKeyFile(),
+	)
+}
+
+func getRSAPublicKey(flm map[string]interface{}, env *environments, yml Config) (*rsa.PublicKey, error) {
+	return loadRSAPublicKey(
+		flagUpkPublicKeyFile,
+		flm[flagUpkPublicKeyFile],
+		env.UpkPublicKeyFile,
+		yml.UpkRSAPublicKeyFile(),
+	)
+}
+
+func getUpkSecret(flm map[string]interface{}, env *environments, yml Config) (string, error) {
+	return stringPrepareProperty(
+		flagUpkSecret,
+		flm[flagUpkSecret],
+		env.UpkSecret,
+		yml.UpkSecret(),
+	)
+}
+
+func getUpkSecretKey(
+	flm map[string]interface{},
+	env *environments,
+	yml Config,
+	rsaPrivateKey *rsa.PrivateKey,
+) ([]byte, error) {
+
+	secret, err := getUpkSecret(flm, env, yml)
+
+	if err != nil {
+		return nil, err
+	}
+	encrypt, err := base64.StdEncoding.DecodeString(secret)
+
+	if err != nil {
+		return nil, err
+	}
+	secretKey, err := tool.DecryptRSA(rsaPrivateKey, encrypt)
+
+	if err != nil {
+		return nil, err
+	}
+	result := make([]byte, 32)
+	copy(result, secretKey)
+
+	return result, nil
+}
+
+func intPrepareProperty(name string, flag interface{}, env int, yaml int) (int, error) {
+
+	var result int
+	var err error
+
+	getFlag := func() {
+		if a, ok := flag.(*int); !ok {
+			err = fmt.Errorf("bad value")
+		} else {
+			result = *a
+		}
+	}
+	if yaml > 0 {
+		result = yaml
+	}
+	if env > 0 {
+		result = env
+	} else if result == 0 {
+		getFlag()
+	}
+	setIfFlagChanged(name, getFlag)
+
+	return result, err
+}
+
+func loadRSAPrivateKey(name string, flag interface{}, env string, yaml string) (*rsa.PrivateKey, error) {
+
+	err, fileName := getFileName(name, flag, env, yaml)
+
+	if err != nil {
+		return nil, err
+	}
+	return tool.LoadPrivateKey(fileName), err
+}
+
+func loadRSAPublicKey(name string, flag interface{}, env string, yaml string) (*rsa.PublicKey, error) {
+
+	err, fileName := getFileName(name, flag, env, yaml)
+
+	if err != nil {
+		return nil, err
+	}
+	return tool.LoadPublicKey(fileName), err
+}
+
+func getFileName(name string, flag interface{}, env string, yaml string) (error, string) {
+	var err error
+	var fileName string
+	getFlag := func() {
+		if a, ok := flag.(*string); !ok {
+			err = fmt.Errorf("bad value")
+		} else {
+			fileName = *a
+		}
+	}
+	if yaml != "" {
+		fileName = yaml
+	}
+	if env != "" {
+		fileName = env
+	} else if fileName == "" {
+		getFlag()
+	}
+	setIfFlagChanged(name, getFlag)
+	return err, fileName
 }
 
 func makeDBPool(flm map[string]interface{}, env *environments, yml Config) (*pgxpool.Pool, error) {
@@ -198,40 +318,16 @@ func parseEnvAddress(address []string) string {
 	return fmt.Sprintf("%s%d", bb.String(), port)
 }
 
-func intPrepareProperty(
-	name string,
-	flag interface{},
-	env int,
-	yaml int,
-) (result int, err error) {
-
-	getFlag := func() {
-		if a, ok := flag.(*int); !ok {
-			err = fmt.Errorf("bad value")
-		} else {
-			result = *a
-		}
-	}
-	if yaml > 0 {
-		result = yaml
-	}
-	if env > 0 {
-		result = env
-	} else if result == 0 {
-		getFlag()
-	}
-	setIfFlagChanged(name, getFlag)
-
-	return result, err
-}
-
 func serverAddressPrepareProperty(
 	name string,
 	flm map[string]interface{},
 	envAddress []string,
 	ymlAddress string,
 	ymlPort int,
-) (address string, err error) {
+) (string, error) {
+
+	var address string
+	var err error
 
 	getFlagAddress := func() {
 		if a, ok := flm[name].(*string); !ok {
@@ -255,12 +351,10 @@ func serverAddressPrepareProperty(
 	return address, err
 }
 
-func stringsAddressPrepareProperty(
-	name string,
-	flag interface{},
-	env []string,
-	yaml string,
-) (result string, err error) {
+func stringsAddressPrepareProperty(name string, flag interface{}, env []string, yaml string) (string, error) {
+
+	var result string
+	var err error
 
 	getFlag := func() {
 		if a, ok := flag.(*string); !ok {
@@ -282,12 +376,10 @@ func stringsAddressPrepareProperty(
 	return result, err
 }
 
-func stringPrepareProperty(
-	name string,
-	flag interface{},
-	env string,
-	yaml string,
-) (result string, err error) {
+func stringPrepareProperty(name string, flag interface{}, env string, yaml string) (string, error) {
+
+	var result string
+	var err error
 
 	getFlag := func() {
 		if a, ok := flag.(*string); !ok {
@@ -403,12 +495,10 @@ func serverTransportCredentialsPrepareProperty(
 	return tool.LoadServerTLSCredentials(certFile, keyFile)
 }
 
-func timePrepareProperty(
-	name string,
-	flag interface{},
-	env time.Duration,
-	yaml time.Duration,
-) (result time.Duration, err error) {
+func timePrepareProperty(name string, flag interface{}, env time.Duration, yaml time.Duration) (time.Duration, error) {
+
+	var result time.Duration
+	var err error
 
 	getFlag := func() {
 		if a, ok := flag.(*time.Duration); !ok {
@@ -430,13 +520,10 @@ func timePrepareProperty(
 	return result, err
 }
 
-func toTimePrepareProperty(
-	name string,
-	flag interface{},
-	env int,
-	yaml int,
-	scale time.Duration,
-) (result time.Duration, err error) {
+func toTimePrepareProperty(name string, flag interface{}, env int, yaml int, scale time.Duration) (time.Duration, error) {
+
+	var result time.Duration
+	var err error
 
 	getFlag := func() {
 		if a, ok := flag.(*int); !ok {

@@ -51,6 +51,10 @@ func tryMakeFlagsParse(t *testing.T) {
 		flagHTTPCAFile,
 		flagHTTPCertFile,
 		flagHTTPKeyFile,
+		flagJwtSecret,
+		flagUpkPrivateKeyFile,
+		flagUpkPublicKeyFile,
+		flagUpkSecret,
 	}
 	oldArgs := os.Args
 	defer func() { os.Args = oldArgs }()

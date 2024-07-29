@@ -34,14 +34,14 @@ func TestLoadClientTLSCredentials(t *testing.T) {
 		{
 			name: "negative test #2 LoadServerTLSCredentials",
 			input: input{
-				caCertFile: "server-key.pem",
+				caCertFile: "test_server-key.pem",
 			},
 			fRun: negativeLoadClientTLSCredentials,
 		},
 		{
 			name: "positive test #3 LoadServerTLSCredentials",
 			input: input{
-				caCertFile: "ca-cert.pem",
+				caCertFile: "test_ca-cert.pem",
 			},
 			fRun: positiveLoadClientTLSCredentials,
 		},
@@ -87,8 +87,8 @@ func TestLoadServerTLSCredentials(t *testing.T) {
 		{
 			name: "positive test #0 LoadServerTLSCredentials",
 			input: input{
-				certFile: "server-cert.pem",
-				keyFile:  "server-key.pem",
+				certFile: "test_server-cert.pem",
+				keyFile:  "test_server-key.pem",
 			},
 			fRun: positiveLoadServerTLSCredentials,
 		},

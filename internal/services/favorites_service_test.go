@@ -35,32 +35,44 @@ func TestFavoritesService(t *testing.T) {
 		fRun func(*testing.T)
 	}{
 		{
-			name: "positive test #1 Favorites Service Get",
+			name: "positive test #0 Favorites Service Get",
 			fRun: testFavoritesServiceGetPositive,
 		},
 		{
-			name: "negative test #2 Favorites Service Get #1",
+			name: "negative test #1 Favorites Service Get #1",
 			fRun: testFavoritesServiceGetNegative1,
+		},
+		{
+			name: "negative test #2 Favorites Service Get #2",
+			fRun: testFavoritesServiceGetNegative2,
 		},
 		{
 			name: "positive test #3 Favorites Service GetForUser",
 			fRun: testFavoritesServiceGetForUserPositive1,
 		},
 		{
-			name: "positive test #4 Favorites Service Set",
+			name: "negative test #4 Favorites Service GetForUser",
+			fRun: testFavoritesServiceGetForUserNegative1,
+		},
+		{
+			name: "positive test #5 Favorites Service Set",
 			fRun: testFavoritesServiceSetPositive,
 		},
 		{
-			name: "negative test #5 Favorites Service Set #1",
+			name: "negative test #6 Favorites Service Set #1",
 			fRun: testFavoritesServiceSetNegative1,
 		},
 		{
-			name: "negative test #6 Favorites Service Set #2",
+			name: "negative test #7 Favorites Service Set #2",
 			fRun: testFavoritesServiceSetNegative2,
 		},
 		{
-			name: "negative test #7 Favorites Service Set #3",
+			name: "negative test #8 Favorites Service Set #3",
 			fRun: testFavoritesServiceSetNegative3,
+		},
+		{
+			name: "negative test #9 Favorites Service Set #4",
+			fRun: testFavoritesServiceSetNegative4,
 		},
 	}
 
@@ -77,13 +89,19 @@ func testFavoritesServiceGetPositive(t *testing.T) {
 	assetLookup := NewMockAssetSearchService(ctrl)
 	dftFavorites := NewMockDft[*entity.Favorites](ctrl)
 	repoFavorites := NewMockRepo[*entity.Favorites](ctrl)
+	upkUtil := NewMockUpkUtilService(ctrl)
 	userLookup := NewMockUserSearchService(ctrl)
 	repoFavorites.
 		EXPECT().
 		Get(context.TODO(), gomock.Any(), gomock.Any()).
 		Return(&entity.Favorites{}, nil).
 		AnyTimes()
-	favoritesService := getTestFavoritesService(assetLookup, dftFavorites, repoFavorites, userLookup)
+	upkUtil.
+		EXPECT().
+		EncryptPersonalKey(gomock.Any()).
+		Return("", nil).
+		AnyTimes()
+	favoritesService := getTestFavoritesService(assetLookup, dftFavorites, repoFavorites, upkUtil, userLookup)
 	resp, err := favoritesService.Get(context.TODO(), &pb.FavoritesRequest{})
 	assert.Nil(t, err)
 	assert.Equal(t, pb.Status_OK, resp.GetStatus())
@@ -97,12 +115,42 @@ func testFavoritesServiceGetNegative1(t *testing.T) {
 	assetLookup := NewMockAssetSearchService(ctrl)
 	dftFavorites := NewMockDft[*entity.Favorites](ctrl)
 	repoFavorites := NewMockRepo[*entity.Favorites](ctrl)
+	upkUtil := NewMockUpkUtilService(ctrl)
 	userLookup := NewMockUserSearchService(ctrl)
 	repoFavorites.
 		EXPECT().
-		Get(context.TODO(), gomock.Any(), gomock.Any()).Return(nil, pgx.ErrTxCommitRollback).
+		Get(context.TODO(), gomock.Any(), gomock.Any()).
+		Return(nil, pgx.ErrTxCommitRollback).
 		AnyTimes()
-	favoritesService := getTestFavoritesService(assetLookup, dftFavorites, repoFavorites, userLookup)
+	upkUtil.
+		EXPECT().
+		EncryptPersonalKey(gomock.Any()).
+		Return("", nil).
+		AnyTimes()
+	favoritesService := getTestFavoritesService(assetLookup, dftFavorites, repoFavorites, upkUtil, userLookup)
+	resp, err := favoritesService.Get(context.TODO(), &pb.FavoritesRequest{})
+	assert.NotNil(t, err)
+	assert.Equal(t, pb.Status_FAIL, resp.GetStatus())
+}
+
+func testFavoritesServiceGetNegative2(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	assetLookup := NewMockAssetSearchService(ctrl)
+	dftFavorites := NewMockDft[*entity.Favorites](ctrl)
+	repoFavorites := NewMockRepo[*entity.Favorites](ctrl)
+	upkUtil := NewMockUpkUtilService(ctrl)
+	userLookup := NewMockUserSearchService(ctrl)
+	repoFavorites.
+		EXPECT().
+		Get(context.TODO(), gomock.Any(), gomock.Any()).
+		Return(nil, nil).
+		AnyTimes()
+	upkUtil.
+		EXPECT().
+		EncryptPersonalKey(gomock.Any()).
+		Return("", tool.ErrEncryptAES).
+		AnyTimes()
+	favoritesService := getTestFavoritesService(assetLookup, dftFavorites, repoFavorites, upkUtil, userLookup)
 	resp, err := favoritesService.Get(context.TODO(), &pb.FavoritesRequest{})
 	assert.NotNil(t, err)
 	assert.Equal(t, pb.Status_FAIL, resp.GetStatus())
@@ -113,16 +161,46 @@ func testFavoritesServiceGetForUserPositive1(t *testing.T) {
 	assetLookup := NewMockAssetSearchService(ctrl)
 	dftFavorites := NewMockDft[*entity.Favorites](ctrl)
 	repoFavorites := NewMockRepo[*entity.Favorites](ctrl)
+	upkUtil := NewMockUpkUtilService(ctrl)
 	userLookup := NewMockUserSearchService(ctrl)
 	repoFavorites.
 		EXPECT().
 		GetByFilter(context.TODO(), gomock.Any(), gomock.Any()).
 		Return(make([]*entity.Favorites, 0), nil).
 		AnyTimes()
-	favoritesService := getTestFavoritesService(assetLookup, dftFavorites, repoFavorites, userLookup)
+	upkUtil.
+		EXPECT().
+		EncryptPersonalKey(gomock.Any()).
+		Return("", nil).
+		AnyTimes()
+	favoritesService := getTestFavoritesService(assetLookup, dftFavorites, repoFavorites, upkUtil, userLookup)
 	resp, err := favoritesService.GetForUser(context.TODO(), &pb.UserFavoritesRequest{})
 	assert.Nil(t, err)
 	assert.Equal(t, pb.Status_OK, resp.GetStatus())
+	assert.Equal(t, 0, len(resp.GetFavorites()))
+}
+
+func testFavoritesServiceGetForUserNegative1(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	assetLookup := NewMockAssetSearchService(ctrl)
+	dftFavorites := NewMockDft[*entity.Favorites](ctrl)
+	repoFavorites := NewMockRepo[*entity.Favorites](ctrl)
+	upkUtil := NewMockUpkUtilService(ctrl)
+	userLookup := NewMockUserSearchService(ctrl)
+	repoFavorites.
+		EXPECT().
+		GetByFilter(context.TODO(), gomock.Any(), gomock.Any()).
+		Return(make([]*entity.Favorites, 0), nil).
+		AnyTimes()
+	upkUtil.
+		EXPECT().
+		EncryptPersonalKey(gomock.Any()).
+		Return("", tool.ErrEncryptAES).
+		AnyTimes()
+	favoritesService := getTestFavoritesService(assetLookup, dftFavorites, repoFavorites, upkUtil, userLookup)
+	resp, err := favoritesService.GetForUser(context.TODO(), &pb.UserFavoritesRequest{})
+	assert.NotNil(t, err)
+	assert.Equal(t, pb.Status_FAIL, resp.GetStatus())
 	assert.Equal(t, 0, len(resp.GetFavorites()))
 }
 
@@ -132,8 +210,9 @@ func testFavoritesServiceGetForUserPositive2(t *testing.T) {
 	assetLookup := NewMockAssetSearchService(ctrl)
 	dftFavorites := NewMockDft[*entity.Favorites](ctrl)
 	repoFavorites := NewMockRepo[*entity.Favorites](ctrl)
+	upkUtil := NewMockUpkUtilService(ctrl)
 	userLookup := NewMockUserSearchService(ctrl)
-	favoritesService := getTestFavoritesService(assetLookup, dftFavorites, repoFavorites, userLookup)
+	favoritesService := getTestFavoritesService(assetLookup, dftFavorites, repoFavorites, upkUtil, userLookup)
 	resp, err := favoritesService.GetForUser(context.TODO(), &pb.UserFavoritesRequest{})
 	assert.Nil(t, err)
 	assert.Equal(t, pb.Status_OK, resp.GetStatus())
@@ -145,8 +224,9 @@ func testFavoritesServiceGetForUserNegative(t *testing.T) {
 	assetLookup := NewMockAssetSearchService(ctrl)
 	dftFavorites := NewMockDft[*entity.Favorites](ctrl)
 	repoFavorites := NewMockRepo[*entity.Favorites](ctrl)
+	upkUtil := NewMockUpkUtilService(ctrl)
 	userLookup := NewMockUserSearchService(ctrl)
-	favoritesService := getTestFavoritesService(assetLookup, dftFavorites, repoFavorites, userLookup)
+	favoritesService := getTestFavoritesService(assetLookup, dftFavorites, repoFavorites, upkUtil, userLookup)
 	resp, err := favoritesService.GetForUser(context.TODO(), &pb.UserFavoritesRequest{})
 	assert.Nil(t, err)
 	assert.Equal(t, pb.Status_OK, resp.GetStatus())
@@ -158,6 +238,7 @@ func testFavoritesServiceSetPositive(t *testing.T) {
 	assetLookup := NewMockAssetSearchService(ctrl)
 	dftFavorites := NewMockDft[*entity.Favorites](ctrl)
 	repoFavorites := NewMockRepo[*entity.Favorites](ctrl)
+	upkUtil := NewMockUpkUtilService(ctrl)
 	userLookup := NewMockUserSearchService(ctrl)
 	assetLookup.
 		EXPECT().
@@ -168,12 +249,17 @@ func testFavoritesServiceSetPositive(t *testing.T) {
 		DoUpsert(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil).
 		AnyTimes()
+	upkUtil.
+		EXPECT().
+		EncryptPersonalKey(gomock.Any()).
+		Return("", nil).
+		AnyTimes()
 	userLookup.
 		EXPECT().
 		Lookup(gomock.Any(), gomock.Any()).
 		Return(true).
 		AnyTimes()
-	favoritesService := getTestFavoritesService(assetLookup, dftFavorites, repoFavorites, userLookup)
+	favoritesService := getTestFavoritesService(assetLookup, dftFavorites, repoFavorites, upkUtil, userLookup)
 	resp, err := favoritesService.Set(context.TODO(), &pb.FavoritesRequest{})
 	assert.Nil(t, err)
 	assert.Equal(t, pb.Status_OK, resp.GetStatus())
@@ -187,6 +273,7 @@ func testFavoritesServiceSetNegative1(t *testing.T) {
 	assetLookup := NewMockAssetSearchService(ctrl)
 	dftFavorites := NewMockDft[*entity.Favorites](ctrl)
 	repoFavorites := NewMockRepo[*entity.Favorites](ctrl)
+	upkUtil := NewMockUpkUtilService(ctrl)
 	userLookup := NewMockUserSearchService(ctrl)
 	assetLookup.
 		EXPECT().
@@ -197,12 +284,17 @@ func testFavoritesServiceSetNegative1(t *testing.T) {
 		DoUpsert(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil).
 		AnyTimes()
+	upkUtil.
+		EXPECT().
+		EncryptPersonalKey(gomock.Any()).
+		Return("", nil).
+		AnyTimes()
 	userLookup.
 		EXPECT().
 		Lookup(gomock.Any(), gomock.Any()).
 		Return(true).
 		AnyTimes()
-	favoritesService := getTestFavoritesService(assetLookup, dftFavorites, repoFavorites, userLookup)
+	favoritesService := getTestFavoritesService(assetLookup, dftFavorites, repoFavorites, upkUtil, userLookup)
 	resp, err := favoritesService.Set(context.TODO(), &pb.FavoritesRequest{})
 	assert.NotNil(t, err)
 	assert.Equal(t, pb.Status_FAIL, resp.GetStatus())
@@ -213,6 +305,7 @@ func testFavoritesServiceSetNegative2(t *testing.T) {
 	assetLookup := NewMockAssetSearchService(ctrl)
 	dftFavorites := NewMockDft[*entity.Favorites](ctrl)
 	repoFavorites := NewMockRepo[*entity.Favorites](ctrl)
+	upkUtil := NewMockUpkUtilService(ctrl)
 	userLookup := NewMockUserSearchService(ctrl)
 	assetLookup.
 		EXPECT().
@@ -223,12 +316,17 @@ func testFavoritesServiceSetNegative2(t *testing.T) {
 		DoUpsert(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil).
 		AnyTimes()
+	upkUtil.
+		EXPECT().
+		EncryptPersonalKey(gomock.Any()).
+		Return("", nil).
+		AnyTimes()
 	userLookup.
 		EXPECT().
 		Lookup(gomock.Any(), gomock.Any()).
 		Return(false).
 		AnyTimes()
-	favoritesService := getTestFavoritesService(assetLookup, dftFavorites, repoFavorites, userLookup)
+	favoritesService := getTestFavoritesService(assetLookup, dftFavorites, repoFavorites, upkUtil, userLookup)
 	resp, err := favoritesService.Set(context.TODO(), &pb.FavoritesRequest{})
 	assert.NotNil(t, err)
 	assert.Equal(t, pb.Status_FAIL, resp.GetStatus())
@@ -239,6 +337,7 @@ func testFavoritesServiceSetNegative3(t *testing.T) {
 	assetLookup := NewMockAssetSearchService(ctrl)
 	dftFavorites := NewMockDft[*entity.Favorites](ctrl)
 	repoFavorites := NewMockRepo[*entity.Favorites](ctrl)
+	upkUtil := NewMockUpkUtilService(ctrl)
 	userLookup := NewMockUserSearchService(ctrl)
 	assetLookup.
 		EXPECT().
@@ -249,12 +348,49 @@ func testFavoritesServiceSetNegative3(t *testing.T) {
 		DoUpsert(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(pgx.ErrTxCommitRollback).
 		AnyTimes()
+	upkUtil.
+		EXPECT().
+		EncryptPersonalKey(gomock.Any()).
+		Return("", nil).
+		AnyTimes()
 	userLookup.
 		EXPECT().
 		Lookup(gomock.Any(), gomock.Any()).
 		Return(true).
 		AnyTimes()
-	favoritesService := getTestFavoritesService(assetLookup, dftFavorites, repoFavorites, userLookup)
+	favoritesService := getTestFavoritesService(assetLookup, dftFavorites, repoFavorites, upkUtil, userLookup)
+	resp, err := favoritesService.Set(context.TODO(), &pb.FavoritesRequest{})
+	assert.NotNil(t, err)
+	assert.Equal(t, pb.Status_FAIL, resp.GetStatus())
+}
+
+func testFavoritesServiceSetNegative4(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	assetLookup := NewMockAssetSearchService(ctrl)
+	dftFavorites := NewMockDft[*entity.Favorites](ctrl)
+	repoFavorites := NewMockRepo[*entity.Favorites](ctrl)
+	upkUtil := NewMockUpkUtilService(ctrl)
+	userLookup := NewMockUserSearchService(ctrl)
+	assetLookup.
+		EXPECT().
+		Lookup(gomock.Any(), gomock.Any()).Return(true).
+		AnyTimes()
+	dftFavorites.
+		EXPECT().
+		DoUpsert(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil).
+		AnyTimes()
+	upkUtil.
+		EXPECT().
+		EncryptPersonalKey(gomock.Any()).
+		Return("", tool.ErrEncryptAES).
+		AnyTimes()
+	userLookup.
+		EXPECT().
+		Lookup(gomock.Any(), gomock.Any()).
+		Return(true).
+		AnyTimes()
+	favoritesService := getTestFavoritesService(assetLookup, dftFavorites, repoFavorites, upkUtil, userLookup)
 	resp, err := favoritesService.Set(context.TODO(), &pb.FavoritesRequest{})
 	assert.NotNil(t, err)
 	assert.Equal(t, pb.Status_FAIL, resp.GetStatus())
@@ -264,12 +400,14 @@ func getTestFavoritesService(
 	assetLookup AssetSearchService,
 	dftFavorites domain.Dft[*entity.Favorites],
 	repoFavorites domain.Repo[*entity.Favorites],
+	upkUtil UpkUtilService,
 	userLookup UserSearchService,
 ) FavoritesService {
 	favoritesServ = new(favoritesService)
 	favoritesServ.assetLookup = assetLookup
 	favoritesServ.dftFavorites = dftFavorites
 	favoritesServ.repoFavorites = repoFavorites
+	favoritesServ.upkUtil = upkUtil
 	favoritesServ.userLookup = userLookup
 	return favoritesServ
 }

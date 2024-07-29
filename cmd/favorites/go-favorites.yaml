@@ -39,3 +39,8 @@ favorites:
     jwt_expired_in: 60m
     jwt_max_age_sec: 3600
   token: $2a$11$ZTzzVGdLUJGcYKJws9UoUug3Q3kCMELVziajBSJPY3k0pNu2XWHBy
+  upk:
+    rsa_private_key_file: cert/upk-private-key.pem
+    rsa_public_key_file: cert/upk-public-key.pem
+    secret: g16Ug0b1zVaCYQzxD45C6p99fUxMkaSL2npjmi5qBjRMAy6kjpZP0/zahKE4zQGvTlp7lKavV4z3RWIm9Uch1pBgaYLZ/pAZDbgr8roqVc/QEzQnsaLqoe7ZzOcPsj7NzbrXz/l+rWVAGdyAkLGs7NIZ3GgNlyZ5lrjglAIRdHA6PpW0jBzbcKb5Z5Y5U80N75+wrenlWPFUKTrN8exuUhzLK6FHWpAzuivD+pg42bZFvdSLE/0oXd0U1W+SxSBXv3RxEkRMquYG+9/VHpT745BzF+QQlR+CicLC5XaUusAZKtqFf3LokISPY1kxjP32gW3SqtZThZa/4pPMpesrXA==
+

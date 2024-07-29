@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-21 08:50 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-29 15:17 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * yaml_load.go
@@ -35,18 +35,18 @@ import (
 //	    proto: tcp
 //	    tls:
 //	        Enabled: true
-//	        ca_file: cert/ca-cert.pem
-//	        cert_file: cert/server-cert.pem
-//	        key_file: cert/server-key.pem
+//	        ca_file: cert/test_ca-cert.pem
+//	        cert_file: cert/test_server-cert.pem
+//	        key_file: cert/test_server-key.pem
 //	http:
 //	    address: localhost
 //	    Enabled: true
 //	    port: 443
 //	    tls:
 //	        Enabled: true
-//	        ca_file: cert/ca-cert.pem
-//	        cert_file: cert/server-cert.pem
-//	        key_file: cert/server-key.pem
+//	        ca_file: cert/test_ca-cert.pem
+//	        cert_file: cert/test_server-cert.pem
+//	        key_file: cert/test_server-key.pem
 //	token: 89h3f98hbwf987h3f98wenf89ehf
 func LoadConfig(path string) (cfg Config, err error) {
 

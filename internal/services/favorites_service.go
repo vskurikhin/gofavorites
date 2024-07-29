@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-29 11:38 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-29 20:11 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites_service.go
@@ -12,7 +12,6 @@ package services
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"github.com/ssoroka/slice"
 	"github.com/vskurikhin/gofavorites/internal/domain"
@@ -20,6 +19,7 @@ import (
 	"github.com/vskurikhin/gofavorites/internal/domain/repo"
 	"github.com/vskurikhin/gofavorites/internal/env"
 	"github.com/vskurikhin/gofavorites/internal/models"
+	"github.com/vskurikhin/gofavorites/internal/tool"
 	pb "github.com/vskurikhin/gofavorites/proto"
 	"golang.org/x/sync/errgroup"
 	"log/slog"
@@ -36,6 +36,7 @@ type favoritesService struct {
 	assetLookup   AssetSearchService
 	dftFavorites  domain.Dft[*entity.Favorites]
 	repoFavorites domain.Repo[*entity.Favorites]
+	upkUtil       UpkUtilService
 	userLookup    UserSearchService
 }
 
@@ -56,6 +57,7 @@ func GetFavoritesService(prop env.Properties) FavoritesService {
 		favoritesServ.assetLookup = GetAssetSearchService(prop)
 		favoritesServ.dftFavorites = repo.GetFavoritesTxPostgres(prop)
 		favoritesServ.repoFavorites = repo.GetFavoritesPostgresCachedRepo(prop)
+		favoritesServ.upkUtil = GetUpkUtilService(prop)
 		favoritesServ.userLookup = GetUserSearchService(prop)
 	})
 	return favoritesServ
@@ -116,7 +118,7 @@ func (f *favoritesService) GetForUser(ctx context.Context, request *pb.UserFavor
 
 	if err != nil {
 		response.Status = pb.Status_FAIL
-		return nil, err
+		return &response, err
 	}
 	response.Favorites = make([]*pb.Favorites, len(favorites))
 
@@ -149,15 +151,32 @@ func (f *favoritesService) Set(ctx context.Context, request *pb.FavoritesRequest
 	return &response, err
 }
 
-func (f *favoritesService) get(ctx context.Context, model models.Favorites) (response models.Favorites, err error) {
+func (f *favoritesService) encrypt(personalKey string) (string, error) {
 
-	var upk string
+	upk, err := f.upkUtil.EncryptPersonalKey(personalKey)
+
+	if err != nil {
+		slog.Error(env.MSG+" FavoritesService.encrypt", "err", err)
+		return "", tool.ErrEncryptAES
+	}
+	return upk, nil
+}
+
+func (f *favoritesService) get(ctx context.Context, model models.Favorites) (models.Favorites, error) {
+
+	var (
+		err      error
+		response models.Favorites
+		upk      string
+	)
 	isin := model.Asset().Isin()
 	personalKey := model.User().PersonalKey()
 	upk = model.User().Upk()
 
 	if upk == "" {
-		upk = base64.StdEncoding.EncodeToString([]byte(personalKey)) // TODO RSA Encrypt
+		if upk, err = f.encrypt(personalKey); err != nil {
+			return models.Favorites{}, err
+		}
 	}
 	favorites, err := entity.GetFavorites(ctx, f.repoFavorites, isin, upk)
 
@@ -171,12 +190,16 @@ func (f *favoritesService) get(ctx context.Context, model models.Favorites) (res
 
 func (f *favoritesService) getForUser(ctx context.Context, model models.User) ([]models.Favorites, error) {
 
+	var err error
 	var upk string
+
 	personalKey := model.PersonalKey()
 	upk = model.Upk()
 
 	if upk == "" {
-		upk = base64.StdEncoding.EncodeToString([]byte(personalKey)) // TODO RSA Encrypt
+		if upk, err = f.encrypt(personalKey); err != nil {
+			return nil, err
+		}
 	}
 	favorites, err := entity.GetFavoritesForUser(ctx, f.repoFavorites, upk)
 
@@ -184,21 +207,28 @@ func (f *favoritesService) getForUser(ctx context.Context, model models.User) ([
 		return nil, err
 	}
 	response := make([]models.Favorites, 0, len(favorites))
-	response = slice.Map[entity.Favorites, models.Favorites](favorites,
+	response = slice.Map[entity.Favorites, models.Favorites](
+		favorites,
 		func(i int, fav entity.Favorites) models.Favorites {
 			return fav.ToModel()
 		})
 	return response, err
 }
 
-func (f *favoritesService) set(ctx context.Context, model models.Favorites) (response models.Favorites, err error) {
+func (f *favoritesService) set(ctx context.Context, model models.Favorites) (models.Favorites, error) {
 
-	var upk string
+	var (
+		err      error
+		response models.Favorites
+		upk      string
+	)
 	personalKey := model.User().PersonalKey()
 	upk = model.User().Upk()
 
 	if upk == "" {
-		upk = base64.StdEncoding.EncodeToString([]byte(personalKey)) // TODO RSA Encrypt
+		if upk, err = f.encrypt(personalKey); err != nil {
+			return models.Favorites{}, err
+		}
 	}
 	user := models.MakeUser(personalKey, upk)
 	g, c := errgroup.WithContext(ctx)

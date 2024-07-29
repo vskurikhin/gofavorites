@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-26 16:38 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-29 14:28 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites.go
@@ -78,7 +78,8 @@ func (f Favorites) ToDto() dto.Favorites {
 func FavoritesSliceToDto(favorites []Favorites) (result []dto.Favorites) {
 
 	result = make([]dto.Favorites, 0, len(favorites))
-	result = slice.Map[Favorites, dto.Favorites](favorites,
+	result = slice.Map[Favorites, dto.Favorites](
+		favorites,
 		func(i int, fav Favorites) dto.Favorites {
 			return fav.ToDto()
 		})

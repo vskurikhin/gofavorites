@@ -55,7 +55,10 @@ HTTPTLSCAFile:
 HTTPTLSCertFile: 
 HTTPTLSEnabled: false
 HTTPTLSKeyFile: 
-Token: `,
+Token: 
+UpkRSAPrivateKeyFile: 
+UpkRSAPublicKeyFile: 
+UpkSecretKey: `,
 		},
 		{
 			name: `positive test #1 zero config`,
@@ -88,7 +91,10 @@ HTTPTLSCAFile:
 HTTPTLSCertFile: 
 HTTPTLSEnabled: false
 HTTPTLSKeyFile: 
-Token: `,
+Token: 
+UpkRSAPrivateKeyFile: 
+UpkRSAPublicKeyFile: 
+UpkSecretKey: `,
 		},
 	}
 	assert.NotNil(t, t)

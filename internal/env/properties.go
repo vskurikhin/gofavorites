@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-26 12:28 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-29 21:01 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * properties.go
@@ -11,7 +11,9 @@
 package env
 
 import (
+	"crypto/rsa"
 	"crypto/tls"
+	"encoding/base64"
 	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/vskurikhin/gofavorites/internal/tool"
@@ -39,6 +41,9 @@ const (
 	propertyJwtExpiresIn                   = "jwt-expires-in"
 	propertyJwtMaxAgeSec                   = "jwt-max-age-sec"
 	propertyJwtSecret                      = "jwt-secret"
+	propertyUpkRSAPrivateKey               = "upk-rsa-private-key"
+	propertyUpkRSAPublicKey                = "upk-rsa-public-key"
+	propertyUpkSecretKey                   = "upk-secret-key"
 )
 
 type Properties interface {
@@ -60,6 +65,9 @@ type Properties interface {
 	JwtExpiresIn() time.Duration
 	JwtMaxAgeSec() int
 	JwtSecret() string
+	UpkRSAPrivateKey() *rsa.PrivateKey
+	UpkRSAPublicKey() *rsa.PublicKey
+	UpkSecretKey() []byte
 }
 
 type mapProperties struct {
@@ -111,6 +119,13 @@ func GetProperties() Properties {
 		jwtSecret, err := getJwtSecret(flm, env, yml)
 		slog.Warn(MSG+" GetProperties", "jwtSecret", jwtSecret, "err", err)
 
+		upkRSAPrivateKey, err := getRSAPrivateKey(flm, env, yml)
+		slog.Warn(MSG+" GetProperties", "upkRSAPrivateKey", upkRSAPrivateKey, "err", err)
+		upkRSAPublicKey, err := getRSAPublicKey(flm, env, yml)
+		slog.Warn(MSG+" GetProperties", "upkRSAPublicKey", upkRSAPublicKey, "err", err)
+		upkSecretKey, err := getUpkSecretKey(flm, env, yml, upkRSAPrivateKey)
+		slog.Warn(MSG+" GetProperties", "upkSecretKey", base64.StdEncoding.EncodeToString(upkSecretKey), "err", err)
+
 		properties = getProperties(
 			WithCacheExpire(cacheExpire),
 			WithCacheGCInterval(cacheGCInterval),
@@ -128,6 +143,9 @@ func GetProperties() Properties {
 			WithJwtExpiresIn(jwtExpiresIn),
 			WithJwtMaxAgeSec(jwtMaxAgeSec),
 			WithJwtSecret(jwtSecret),
+			WithUpkRSAPrivateKey(upkRSAPrivateKey),
+			WithUpkRSAPublicKey(upkRSAPublicKey),
+			WithUpkSecretKey(upkSecretKey),
 		)
 	})
 	return properties
@@ -410,6 +428,63 @@ func (p *mapProperties) JwtSecret() string {
 	return ""
 }
 
+// WithUpkRSAPrivateKey — TODO.
+func WithUpkRSAPrivateKey(privateKey *rsa.PrivateKey) func(*mapProperties) {
+	return func(p *mapProperties) {
+		if privateKey != nil {
+			p.mp.Store(propertyUpkRSAPrivateKey, privateKey)
+		}
+	}
+}
+
+// UpkRSAPrivateKey — TODO.
+func (p *mapProperties) UpkRSAPrivateKey() *rsa.PrivateKey {
+	if a, ok := p.mp.Load(propertyUpkRSAPrivateKey); ok {
+		if PrivateKey, ok := a.(*rsa.PrivateKey); ok {
+			return PrivateKey
+		}
+	}
+	return nil
+}
+
+// WithUpkRSAPublicKey — TODO.
+func WithUpkRSAPublicKey(publicKey *rsa.PublicKey) func(*mapProperties) {
+	return func(p *mapProperties) {
+		if publicKey != nil {
+			p.mp.Store(propertyUpkRSAPublicKey, publicKey)
+		}
+	}
+}
+
+// UpkRSAPublicKey — TODO.
+func (p *mapProperties) UpkRSAPublicKey() *rsa.PublicKey {
+	if a, ok := p.mp.Load(propertyUpkRSAPublicKey); ok {
+		if publicKey, ok := a.(*rsa.PublicKey); ok {
+			return publicKey
+		}
+	}
+	return nil
+}
+
+// WithUpkSecretKey — TODO.
+func WithUpkSecretKey(secretKey []byte) func(*mapProperties) {
+	return func(p *mapProperties) {
+		if secretKey != nil {
+			p.mp.Store(propertyUpkSecretKey, secretKey)
+		}
+	}
+}
+
+// UpkSecretKey — TODO.
+func (p *mapProperties) UpkSecretKey() []byte {
+	if a, ok := p.mp.Load(propertyUpkSecretKey); ok {
+		if secretKey, ok := a.([]byte); ok {
+			return secretKey
+		}
+	}
+	return nil
+}
+
 // withDBPool — Флаги.
 func withDBPool(pool *pgxpool.Pool) func(*mapProperties) {
 	return func(p *mapProperties) {
@@ -451,6 +526,9 @@ JwtExpiresIn: %v
 JwtMaxAgeSec: %d
 JwtSecret: %s
 OutboundIP: %v
+UpkRSAPrivateKey: %v
+UpkRSAPublicKey: %v
+UpkSecretKey: %v
 `
 	return fmt.Sprintf(format,
 		p.Config(),
@@ -470,6 +548,9 @@ OutboundIP: %v
 		p.JwtMaxAgeSec(),
 		p.JwtSecret(),
 		p.OutboundIP(),
+		p.UpkRSAPrivateKey(),
+		p.UpkRSAPublicKey(),
+		p.UpkSecretKey(),
 	)
 }
 

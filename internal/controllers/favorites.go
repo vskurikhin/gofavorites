@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-29 12:16 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-29 20:14 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites.go
@@ -17,7 +17,6 @@ import (
 	"github.com/vskurikhin/gofavorites/internal/env"
 	"github.com/vskurikhin/gofavorites/internal/models"
 	"github.com/vskurikhin/gofavorites/internal/services"
-	"os"
 	"sync"
 	"time"
 )
@@ -61,7 +60,6 @@ func (f *Favorites) Get(c *fiber.Ctx) error {
 			JSON(fiber.Map{"status": "fail", "requestId": requestId, "message": "user failed"})
 	}
 	if err := c.BodyParser(&payload); err != nil {
-		fmt.Fprintf(os.Stderr, "err: %v\n", err)
 		return c.
 			Status(fiber.StatusBadRequest).
 			JSON(fiber.Map{"status": "fail", "message": err.Error(), "requestId": requestId})
@@ -73,7 +71,7 @@ func (f *Favorites) Get(c *fiber.Ctx) error {
 			Status(fiber.StatusBadRequest).
 			JSON(errors)
 	}
-	model := models.FavoritesFromDto(payload, "", user)
+	model := models.FavoritesFromDto(payload, user, "")
 	favorites, err := f.favoritesServ.ApiFavoritesGet(c.Context(), model)
 
 	if err != nil {
@@ -105,7 +103,7 @@ func (f *Favorites) GetForUser(c *fiber.Ctx) error {
 			Status(fiber.StatusBadRequest).
 			JSON(fiber.Map{"status": "fail", "requestId": requestId, "message": "user failed"})
 	}
-	model := models.MakeUser("", user)
+	model := models.MakeUser(user, "")
 	favorites, err := f.favoritesServ.ApiFavoritesGetForUser(c.Context(), model)
 
 	if err != nil {
@@ -151,7 +149,7 @@ func (f *Favorites) Set(c *fiber.Ctx) error {
 			Status(fiber.StatusBadRequest).
 			JSON(errors)
 	}
-	model := models.FavoritesFromDto(payload, "", user)
+	model := models.FavoritesFromDto(payload, user, "")
 	favorites, err := f.favoritesServ.ApiFavoritesSet(c.Context(), model)
 	response := favorites.ToDto()
 

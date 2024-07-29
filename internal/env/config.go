@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-22 23:58 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-29 21:04 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * config.go
@@ -52,6 +52,9 @@ type Config interface {
 	JwtMaxAgeSec() int
 	JwtSecret() string
 	Token() string
+	UpkRSAPrivateKeyFile() string
+	UpkRSAPublicKeyFile() string
+	UpkSecret() string
 }
 
 type config struct {
@@ -88,6 +91,9 @@ type config struct {
 			jwtConfig `mapstructure:",squash"`
 		}
 		goFavoritesConfig `mapstructure:",squash"`
+		UPK               struct {
+			upkConfig `mapstructure:",squash"`
+		}
 	}
 }
 
@@ -136,6 +142,12 @@ type tlsConfig struct {
 // moduleConfig could be in a module specific package
 type goFavoritesConfig struct {
 	Token string `mapstructure:"token"`
+}
+
+type upkConfig struct {
+	RSAPrivateKeyFile string `mapstructure:"rsa_private_key_file"`
+	RSAPublicKeyFile  string `mapstructure:"rsa_public_key_file"`
+	Secret            string `mapstructure:"secret"`
 }
 
 func (y *config) CacheEnabled() bool {
@@ -392,6 +404,30 @@ func (y *config) Token() string {
 	return ""
 }
 
+func (y *config) UpkRSAPrivateKeyFile() string {
+
+	if y != nil {
+		return y.Favorites.UPK.RSAPrivateKeyFile
+	}
+	return ""
+}
+
+func (y *config) UpkRSAPublicKeyFile() string {
+
+	if y != nil {
+		return y.Favorites.UPK.RSAPublicKeyFile
+	}
+	return ""
+}
+
+func (y *config) UpkSecret() string {
+
+	if y != nil {
+		return y.Favorites.UPK.Secret
+	}
+	return ""
+}
+
 func (y *config) String() string {
 	return fmt.Sprintf(
 		`CacheEnabled: %v
@@ -422,7 +458,10 @@ HTTPTLSCAFile: %s
 HTTPTLSCertFile: %s
 HTTPTLSEnabled: %v
 HTTPTLSKeyFile: %s
-Token: %s`,
+Token: %s
+UpkRSAPrivateKeyFile: %s
+UpkRSAPublicKeyFile: %s
+UpkSecretKey: %s`,
 		y.CacheEnabled(),
 		y.CacheExpireMs(),
 		y.CacheGCIntervalSec(),
@@ -452,6 +491,9 @@ Token: %s`,
 		y.HTTPTLSEnabled(),
 		y.HTTPTLSKeyFile(),
 		y.Token(),
+		y.UpkRSAPrivateKeyFile(),
+		y.UpkRSAPublicKeyFile(),
+		base64.StdEncoding.EncodeToString([]byte(y.UpkSecret())),
 	)
 }
 

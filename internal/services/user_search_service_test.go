@@ -68,6 +68,9 @@ func TestUserSearchService(t *testing.T) {
 	t.Setenv("ASSET_GRPC_ADDRESS", fmt.Sprintf("127.0.0.1:%d", 65501+rnd.Intn(34)))
 	t.Setenv("AUTH_GRPC_ADDRESS", fmt.Sprintf("127.0.0.1:%d", 65501+rnd.Intn(34)))
 	t.Setenv("REQUEST_TIMEOUT_INTERVAL_MS", "500")
+	t.Setenv("UPK_PRIVATE_KEY_FILE", "test_private-key.pem")
+	t.Setenv("UPK_PUBLIC_KEY_FILE", "test_public-key.pem")
+	t.Setenv("UPK_SECRET", "qYhaPtg+PIQtBhAU5fHCeQw7XIF3WLKoLPZnJgq1H//DDOB8o2qrP9goVCUZldOdwqLAHxWOGHuvXcwaIFRrD8I3Hz5tRCgCeI+cEZD9h4c4h6ADSjkcrPXg5eRwnANasBkKKZQz8noYwvt9Z9p7HdOtrBmQOi7OVjTfY0T2SnI=")
 
 	assert.NotNil(t, t)
 	for _, test := range tests {

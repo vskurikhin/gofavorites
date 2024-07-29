@@ -67,6 +67,9 @@ func TestLoadConfig(t *testing.T) {
 						jwtConfig `mapstructure:",squash"`
 					}
 					goFavoritesConfig `mapstructure:",squash"`
+					UPK               struct {
+						upkConfig `mapstructure:",squash"`
+					}
 				}{
 					Cache: struct {
 						Enabled     bool
@@ -121,9 +124,9 @@ func TestLoadConfig(t *testing.T) {
 						}{
 							Enabled: true,
 							tlsConfig: tlsConfig{
-								CAFile:   "cert/grpc-ca-cert.pem",
-								CertFile: "cert/grpc-server-cert.pem",
-								KeyFile:  "cert/grpc-server-key.pem",
+								CAFile:   "cert/grpc-test_ca-cert.pem",
+								CertFile: "cert/grpc-test_server-cert.pem",
+								KeyFile:  "cert/grpc-test_server-key.pem",
 							},
 						},
 					},
@@ -146,9 +149,9 @@ func TestLoadConfig(t *testing.T) {
 						}{
 							Enabled: true,
 							tlsConfig: tlsConfig{
-								CAFile:   "cert/http-ca-cert.pem",
-								CertFile: "cert/http-server-cert.pem",
-								KeyFile:  "cert/http-server-key.pem",
+								CAFile:   "cert/http-test_ca-cert.pem",
+								CertFile: "cert/http-test_server-cert.pem",
+								KeyFile:  "cert/http-test_server-key.pem",
 							},
 						},
 					},
@@ -163,6 +166,15 @@ func TestLoadConfig(t *testing.T) {
 					},
 					goFavoritesConfig: goFavoritesConfig{
 						Token: "$2a$11$ZTzzVGdLUJGcYKJws9UoUug3Q3kCMELVziajBSJPY3k0pNu2XWHBy",
+					},
+					UPK: struct {
+						upkConfig `mapstructure:",squash"`
+					}{
+						upkConfig: upkConfig{
+							RSAPrivateKeyFile: "cert/upk-private-key.pem",
+							RSAPublicKeyFile:  "cert/upk-public-key.pem",
+							Secret:            "qYhaPtg+PIQtBhAU5fHCeQw7XIF3WLKoLPZnJgq1H//DDOB8o2qrP9goVCUZldOdwqLAHxWOGHuvXcwaIFRrD8I3Hz5tRCgCeI+cEZD9h4c4h6ADSjkcrPXg5eRwnANasBkKKZQz8noYwvt9Z9p7HdOtrBmQOi7OVjTfY0T2SnI=",
+						},
 					},
 				}},
 				err: nil,

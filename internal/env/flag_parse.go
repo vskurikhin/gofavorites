@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-22 23:58 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-29 16:43 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * flag_parse.go
@@ -33,6 +33,9 @@ const (
 	flagJwtExpiresIn                   = "jwt-expires-in"
 	flagJwtMaxAgeSec                   = "Jwt-max-age-sec"
 	flagJwtSecret                      = "jwt-secret"
+	flagUpkPrivateKeyFile              = "upk-private-key-file"
+	flagUpkPublicKeyFile               = "upk-public-key-file"
+	flagUpkSecret                      = "upk-secret"
 )
 
 func makeFlagsParse() map[string]interface{} {
@@ -80,17 +83,17 @@ func makeFlagsParse() map[string]interface{} {
 		)
 		flagsMap[flagGRPCCAFile] = pflag.String(
 			flagGRPCCAFile,
-			"cert/grpc-ca-cert.pem",
+			"cert/grpc-test_ca-cert.pem",
 			"gRPC CA file",
 		)
 		flagsMap[flagGRPCCertFile] = pflag.String(
 			flagGRPCCertFile,
-			"cert/grpc-server-cert.pem",
+			"cert/grpc-test_server-cert.pem",
 			"gRPC server certificate file",
 		)
 		flagsMap[flagGRPCKeyFile] = pflag.String(
 			flagGRPCKeyFile,
-			"cert/grpc-server-key.pem",
+			"cert/grpc-test_server-key.pem",
 			"gRPC server key file",
 		)
 		flagsMap[flagHTTPAddress] = pflag.StringP(
@@ -101,17 +104,17 @@ func makeFlagsParse() map[string]interface{} {
 		)
 		flagsMap[flagHTTPCAFile] = pflag.String(
 			flagHTTPCAFile,
-			"cert/http-ca-cert.pem",
+			"cert/http-test_ca-cert.pem",
 			"HTTP CA file",
 		)
 		flagsMap[flagHTTPCertFile] = pflag.String(
 			flagHTTPCertFile,
-			"cert/http-server-cert.pem",
+			"cert/http-test_server-cert.pem",
 			"HTTP server certificate file",
 		)
 		flagsMap[flagHTTPKeyFile] = pflag.String(
 			flagHTTPKeyFile,
-			"cert/http-server-key.pem",
+			"cert/http-test_server-key.pem",
 			"HTTP server key file",
 		)
 		flagsMap[flagJwtExpiresIn] = pflag.Duration(
@@ -128,6 +131,21 @@ func makeFlagsParse() map[string]interface{} {
 			flagJwtSecret,
 			"",
 			"JWT secret",
+		)
+		flagsMap[flagUpkPrivateKeyFile] = pflag.String(
+			flagUpkPrivateKeyFile,
+			"cert/upk-private-key.pem",
+			"Private key file for decrypt UPK secret",
+		)
+		flagsMap[flagUpkPublicKeyFile] = pflag.String(
+			flagUpkPublicKeyFile,
+			"cert/upk-public-key.pem",
+			"Public key for encrypt UPK secret",
+		)
+		flagsMap[flagUpkSecret] = pflag.String(
+			flagUpkSecret,
+			"",
+			"UPK secret",
 		)
 		pflag.Parse()
 	}

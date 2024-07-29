@@ -87,6 +87,9 @@ cert:
 %_search_service_mock_test.go: %_search_service.go
 	@mockgen -source=./$< -package=services > ./$@
 
+%_util_service_mock_test.go: %_util_service.go
+	@mockgen -source=./$< -package=services > ./$@
+
 $(SEARCH_SERVICE_DIR)/repo_mock_domain_test.go: $(REPO_DIR)/repo.go
 	@mockgen -source=./$< -package=services > ./$@
 
@@ -99,7 +102,7 @@ $(CONTROLLERS_DIR)/api_favorites_service_mock_test.go: $(SEARCH_SERVICE_DIR)/api
 ####################################
 # Major source code-generate targets
 ####################################
-generate: $(PROTO_PB_GO) $(SEARCH_SERVICE_MOCKS) $(REPO_MOCKS) $(FAVORITES_MOCK)
+generate: $(PROTO_PB_GO) $(SEARCH_SERVICE_MOCKS) $(UTIL_SERVICE_MOCKS) $(REPO_MOCKS) $(FAVORITES_MOCK)
 	@echo "  >  Done generating source files based on *.proto and Mock files."
 
 test:
