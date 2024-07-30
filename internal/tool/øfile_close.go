@@ -1,8 +1,8 @@
 /*
- * This file was last modified at 2024-07-29 14:04 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-03 12:44 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
- * ™_file_close.go
+ * øfile_close.go
  * $Id$
  */
 //!+

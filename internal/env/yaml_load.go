@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-29 15:17 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-31 00:15 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * yaml_load.go
@@ -11,8 +11,9 @@
 package env
 
 import (
-	"github.com/spf13/viper"
 	"os"
+
+	"github.com/spf13/viper"
 )
 
 // LoadConfig - TODO.

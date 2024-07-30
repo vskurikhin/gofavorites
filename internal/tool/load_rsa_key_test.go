@@ -16,11 +16,12 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	mRand "math/rand"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestLoadKeys(t *testing.T) {

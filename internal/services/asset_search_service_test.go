@@ -13,6 +13,12 @@ package services
 import (
 	"context"
 	"fmt"
+	"log"
+	"math/rand"
+	"net"
+	"testing"
+	"time"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/vskurikhin/gofavorites/internal/domain"
 	"github.com/vskurikhin/gofavorites/internal/domain/entity"
@@ -24,11 +30,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/credentials/local"
-	"log"
-	"math/rand"
-	"net"
-	"testing"
-	"time"
 )
 
 func TestAssetSearchService(t *testing.T) {
@@ -143,6 +144,7 @@ func getAssetSearchService(prop env.Properties, repoAsset domain.Repo[*entity.As
 	assetSearchServ.opts = opts
 	assetSearchServ.repoAsset = repoAsset
 	assetSearchServ.requestInterval = prop.ExternalRequestTimeoutInterval()
+	assetSearchServ.sLog = prop.Logger()
 	return assetSearchServ
 }
 

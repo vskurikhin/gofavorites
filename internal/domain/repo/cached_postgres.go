@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-20 19:34 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-03 12:13 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * cached_postgres.go
@@ -13,16 +13,18 @@ package repo
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"sync"
+	"time"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/vskurikhin/gofavorites/internal/domain"
 	"github.com/vskurikhin/gofavorites/internal/domain/entity"
 	"github.com/vskurikhin/gofavorites/internal/domain/memory"
 	"github.com/vskurikhin/gofavorites/internal/env"
-	"sync"
-	"time"
 )
 
-type cache[E domain.Entity] interface {
+type cache[E domain.Serializable] interface {
 	delete(entity E) error
 	get(entity E) (E, error)
 	invalidate() error
@@ -31,8 +33,9 @@ type cache[E domain.Entity] interface {
 
 type CachedPostgres[E domain.Entity] struct {
 	cache *memory.Storage
-	pool  *pgxpool.Pool
 	exp   time.Duration
+	pool  *pgxpool.Pool
+	sLog  *slog.Logger
 }
 
 var _ cache[domain.Entity] = (*CachedPostgres[domain.Entity])(nil)
@@ -63,6 +66,7 @@ func getAssetCachedPostgresRepo(prop env.Properties) *CachedPostgres[*entity.Ass
 		assetCachedRepo.cache = memory.New(memory.Config{GCInterval: prop.CacheGCInterval()})
 		assetCachedRepo.pool = prop.DBPool()
 		assetCachedRepo.exp = prop.CacheExpire()
+		assetCachedRepo.sLog = prop.Logger()
 	})
 	return assetCachedRepo
 }
@@ -77,6 +81,7 @@ func getAssetTypeCachedPostgresRepo(prop env.Properties) *CachedPostgres[*entity
 		assetTypeCachedRepo.cache = memory.New(memory.Config{GCInterval: prop.CacheGCInterval()})
 		assetTypeCachedRepo.pool = prop.DBPool()
 		assetTypeCachedRepo.exp = prop.CacheExpire()
+		assetTypeCachedRepo.sLog = prop.Logger()
 	})
 	return assetTypeCachedRepo
 }
@@ -95,6 +100,7 @@ func getFavoritesCachedPostgresRepo(prop env.Properties) *CachedPostgres[*entity
 		favoritesCachedRepo.cache = memory.New(memory.Config{GCInterval: prop.CacheGCInterval()})
 		favoritesCachedRepo.pool = prop.DBPool()
 		favoritesCachedRepo.exp = prop.CacheExpire()
+		favoritesCachedRepo.sLog = prop.Logger()
 	})
 	return favoritesCachedRepo
 }
@@ -109,6 +115,7 @@ func getUserCachedPostgresRepo(prop env.Properties) *CachedPostgres[*entity.User
 		userCachedRepo.cache = memory.New(memory.Config{GCInterval: prop.CacheGCInterval()})
 		userCachedRepo.pool = prop.DBPool()
 		userCachedRepo.exp = prop.CacheExpire()
+		userCachedRepo.sLog = prop.Logger()
 	})
 	return userCachedRepo
 }
@@ -116,7 +123,7 @@ func getUserCachedPostgresRepo(prop env.Properties) *CachedPostgres[*entity.User
 func (p *CachedPostgres[E]) Delete(ctx context.Context, entity E, scan func(domain.Scanner)) (E, error) {
 
 	_ = p.cache.Delete(entity.Key())
-	err := scanPostgreSQL(ctx, p.pool, scan, entity.DeleteSQL(), entity.DeleteArgs()...)
+	err := scanPostgreSQL(ctx, p.sLog, p.pool, scan, entity.DeleteSQL(), entity.DeleteArgs()...)
 
 	return entity, err
 }
@@ -128,7 +135,7 @@ func (p *CachedPostgres[E]) Get(ctx context.Context, entity E, scan func(domain.
 	if err == nil {
 		return entity, nil
 	}
-	err = scanPostgreSQL(ctx, p.pool, scan, entity.GetSQL(), entity.GetArgs()...)
+	err = scanPostgreSQL(ctx, p.sLog, p.pool, scan, entity.GetSQL(), entity.GetArgs()...)
 
 	return entity, err
 }
@@ -136,7 +143,7 @@ func (p *CachedPostgres[E]) Get(ctx context.Context, entity E, scan func(domain.
 func (p *CachedPostgres[E]) GetByFilter(ctx context.Context, entity E, scan func(domain.Scanner) E) ([]E, error) {
 
 	result := make([]E, 0)
-	rows, err := rowsPostgreSQL(ctx, p.pool, entity.GetByFilterSQL(), entity.GetByFilterArgs()...)
+	rows, err := rowsPostgreSQL(ctx, p.sLog, p.pool, entity.GetByFilterSQL(), entity.GetByFilterArgs()...)
 
 	if err != nil {
 		return nil, err
@@ -154,7 +161,7 @@ func (p *CachedPostgres[E]) GetByFilter(ctx context.Context, entity E, scan func
 
 func (p *CachedPostgres[E]) Insert(ctx context.Context, entity E, scan func(domain.Scanner)) (E, error) {
 
-	err := scanPostgreSQL(ctx, p.pool, scan, entity.InsertSQL(), entity.InsertArgs()...)
+	err := scanPostgreSQL(ctx, p.sLog, p.pool, scan, entity.InsertSQL(), entity.InsertArgs()...)
 
 	if err == nil {
 		return p.set(entity)
@@ -164,7 +171,7 @@ func (p *CachedPostgres[E]) Insert(ctx context.Context, entity E, scan func(doma
 
 func (p *CachedPostgres[E]) Update(ctx context.Context, entity E, scan func(domain.Scanner)) (E, error) {
 
-	err := scanPostgreSQL(ctx, p.pool, scan, entity.UpdateSQL(), entity.UpdateArgs()...)
+	err := scanPostgreSQL(ctx, p.sLog, p.pool, scan, entity.UpdateSQL(), entity.UpdateArgs()...)
 
 	if data, e := entity.ToJSON(); e == nil {
 		_ = p.cache.Set(entity.Key(), data, p.exp)

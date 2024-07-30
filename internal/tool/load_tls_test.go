@@ -10,9 +10,10 @@
 package tool
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/credentials"
-	"testing"
 )
 
 func TestLoadClientTLSCredentials(t *testing.T) {

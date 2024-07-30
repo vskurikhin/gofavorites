@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-30 10:15 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-03 12:13 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * transactional.go
@@ -10,19 +10,21 @@ package repo
 
 import (
 	"context"
+	"log/slog"
+	"sync"
+	"time"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/vskurikhin/gofavorites/internal/domain"
 	"github.com/vskurikhin/gofavorites/internal/domain/entity"
 	"github.com/vskurikhin/gofavorites/internal/env"
-	"log/slog"
-	"sync"
-	"time"
 )
 
 type TxPostgres[S domain.Suite] struct {
-	pool  *pgxpool.Pool
 	cache cache[S]
+	pool  *pgxpool.Pool
+	sLog  *slog.Logger
 }
 
 var _ domain.Dft[domain.Suite] = (*TxPostgres[domain.Suite])(nil)
@@ -36,8 +38,9 @@ var (
 func GetAssetTxPostgres(prop env.Properties) domain.Dft[*entity.Asset] {
 	onceAssetDft.Do(func() {
 		assetDft = new(TxPostgres[*entity.Asset])
-		assetDft.pool = prop.DBPool()
 		assetDft.cache = getAssetCache(prop)
+		assetDft.pool = prop.DBPool()
+		assetDft.sLog = prop.Logger()
 	})
 	return assetDft
 }
@@ -45,8 +48,9 @@ func GetAssetTxPostgres(prop env.Properties) domain.Dft[*entity.Asset] {
 func GetFavoritesTxPostgres(prop env.Properties) domain.Dft[*entity.Favorites] {
 	onceFavoritesDft.Do(func() {
 		favoritesDft = new(TxPostgres[*entity.Favorites])
-		favoritesDft.pool = prop.DBPool()
 		favoritesDft.cache = getFavoritesCache(prop)
+		favoritesDft.pool = prop.DBPool()
+		favoritesDft.sLog = prop.Logger()
 	})
 	return favoritesDft
 }
@@ -56,9 +60,9 @@ func (p *TxPostgres[S]) DoDelete(ctx context.Context, entity S, scan func(domain
 	err = p.cache.delete(entity)
 
 	if err != nil {
-		slog.Warn(env.MSG+" DoDelete", "err", err)
+		p.sLog.ErrorContext(ctx, env.MSG+"TxPostgres.DoDelete", "err", err)
 	}
-	return scanPostgreTxArgs(ctx, p.pool, entity.DeleteTxArgs(), scan)
+	return scanPostgreTxArgs(ctx, p.sLog, p.pool, entity.DeleteTxArgs(), scan)
 }
 
 func (p *TxPostgres[S]) DoUpsert(ctx context.Context, entity S, scan func(domain.Scanner)) (err error) {
@@ -66,20 +70,26 @@ func (p *TxPostgres[S]) DoUpsert(ctx context.Context, entity S, scan func(domain
 	err = p.cache.delete(entity)
 
 	if err != nil {
-		slog.Warn(env.MSG+" DoUpsert", "err", err)
+		p.sLog.ErrorContext(ctx, env.MSG+"TxPostgres.DoUpsert", "err", err)
 	}
-	err = scanPostgreTxArgs(ctx, p.pool, entity.UpsertTxArgs(), scan)
+	err = scanPostgreTxArgs(ctx, p.sLog, p.pool, entity.UpsertTxArgs(), scan)
 
 	if err == nil {
 		_, e := p.cache.set(entity)
 		if e != nil {
-			slog.Warn(env.MSG+" DoUpsert", "err", err)
+			p.sLog.ErrorContext(ctx, env.MSG+"TxPostgres.DoUpsert", "err", err)
 		}
 	}
 	return err
 }
 
-func scanPostgreTxArgs(ctx context.Context, pool *pgxpool.Pool, txArgs domain.TxArgs, scan func(domain.Scanner)) (err error) {
+func scanPostgreTxArgs(
+	ctx context.Context,
+	log *slog.Logger,
+	pool *pgxpool.Pool,
+	txArgs domain.TxArgs,
+	scan func(domain.Scanner),
+) (err error) {
 
 	if pool == nil {
 		return ErrBadPool
@@ -88,7 +98,7 @@ func scanPostgreTxArgs(ctx context.Context, pool *pgxpool.Pool, txArgs domain.Tx
 
 	for i := 1; err != nil && i < tries*increase; i += increase {
 		time.Sleep(time.Duration(i) * time.Second)
-		slog.Warn(env.MSG+" retry pool acquire", "err", err)
+		log.WarnContext(ctx, env.MSG+"TxPostgres.scanPostgreTxArgs", "msg", "retry pool acquire tx", "err", err)
 		conn, err = pool.Acquire(ctx)
 	}
 	defer func() {
@@ -114,14 +124,10 @@ func scanPostgreTxArgs(ctx context.Context, pool *pgxpool.Pool, txArgs domain.Tx
 		ct, err := tx.Exec(ctx, txArgs.SQLs[i], args...)
 
 		if err != nil {
-			slog.Error(env.MSG+" scanPostgreTxArgs", "err", err)
+			log.ErrorContext(ctx, env.MSG+"TxPostgres.scanPostgreTxArgs", "err", err)
 			return err
 		}
-		slog.Debug(
-			env.MSG+" scanPostgreTxArgs",
-			"commandTag", ct.String(),
-			"commandTag.RowsAffected()", ct.RowsAffected(),
-		)
+		log.DebugContext(ctx, env.MSG+"TxPostgres.scanPostgreTxArgs", "commandTag", ct.String(), "rowsAffected", ct.RowsAffected())
 	}
 	query := txArgs.SQLs[len(txArgs.SQLs)-1]
 	args := getTxArgs(txArgs, len(txArgs.SQLs)-1)

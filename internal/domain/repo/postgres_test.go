@@ -12,12 +12,13 @@ package repo
 
 import (
 	"context"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/vskurikhin/gofavorites/internal/domain/entity"
 	"github.com/vskurikhin/gofavorites/internal/env"
 	"github.com/vskurikhin/gofavorites/internal/tool"
-	"testing"
 )
 
 var (

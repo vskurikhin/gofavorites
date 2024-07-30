@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-30 14:51 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-03 10:29 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * asset_type.go
@@ -14,9 +14,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
+
 	"github.com/goccy/go-json"
 	"github.com/vskurikhin/gofavorites/internal/domain"
-	"time"
 )
 
 type AssetType struct {
@@ -35,19 +36,19 @@ var _ domain.Entity = (*AssetType)(nil)
 
 func GetAssetType(ctx context.Context, repo domain.Repo[*AssetType], name string) (AssetType, error) {
 
-	var e error
+	var err error
 	result := &AssetType{name: name}
 
-	result, err := repo.Get(ctx, result, func(scanner domain.Scanner) {
-		e = scanner.Scan(
+	result, er0 := repo.Get(ctx, result, func(scanner domain.Scanner) {
+		err = scanner.Scan(
 			&result.name,
 			&result.deleted,
 			&result.createdAt,
 			&result.updatedAt,
 		)
 	})
-	if e != nil {
-		return AssetType{}, e
+	if er0 != nil {
+		return AssetType{}, er0
 	}
 	if err != nil {
 		return AssetType{}, err
@@ -93,17 +94,17 @@ func (a *AssetType) Copy() domain.Entity {
 
 func (a *AssetType) Delete(ctx context.Context, repo domain.Repo[*AssetType]) (err error) {
 
-	_, e := repo.Delete(ctx, a, func(s domain.Scanner) {
+	_, er0 := repo.Delete(ctx, a, func(s domain.Scanner) {
 		t := *a
 		err = s.Scan(&t.deleted, &t.updatedAt)
 		if err == nil {
 			*a = t
 		}
 	})
-	if e != nil {
-		return e
+	if er0 != nil {
+		return er0
 	}
-	return
+	return err
 }
 
 func (a *AssetType) DeleteArgs() []any {
@@ -148,17 +149,17 @@ func (a *AssetType) GetSQL() string {
 
 func (a *AssetType) Insert(ctx context.Context, repo domain.Repo[*AssetType]) (err error) {
 
-	_, e := repo.Insert(ctx, a, func(s domain.Scanner) {
+	_, er0 := repo.Insert(ctx, a, func(s domain.Scanner) {
 		t := *a
 		err = s.Scan(&t.name, &t.createdAt)
 		if err == nil {
 			*a = t
 		}
 	})
-	if e != nil {
-		return e
+	if er0 != nil {
+		return er0
 	}
-	return
+	return err
 }
 
 func (a *AssetType) InsertArgs() []any {
@@ -199,17 +200,17 @@ func (a *AssetType) ToJSON() ([]byte, error) {
 
 func (a *AssetType) Update(ctx context.Context, repo domain.Repo[*AssetType]) (err error) {
 
-	_, e := repo.Update(ctx, a, func(s domain.Scanner) {
+	_, er0 := repo.Update(ctx, a, func(s domain.Scanner) {
 		t := *a
 		err = s.Scan(&t.updatedAt)
 		if err == nil {
 			*a = t
 		}
 	})
-	if e != nil {
-		return e
+	if er0 != nil {
+		return er0
 	}
-	return
+	return err
 }
 
 func (a *AssetType) UpdateArgs() []any {

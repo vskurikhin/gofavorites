@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-11 11:30 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-31 15:59 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * db.go
@@ -12,23 +12,36 @@ package tool
 
 import (
 	"context"
+	"log/slog"
+	"time"
+
+	"github.com/vskurikhin/gofavorites/internal/alog"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"log/slog"
 )
+
+var sLog = slog.Default()
 
 func DBConnect(dsn string) *pgxpool.Pool {
 
 	config, err := pgxpool.ParseConfig(dsn)
 	IfErrorThenPanic(err)
-	slog.Debug(MSG, "dbConnect", "config parsed")
+	sLog.Debug(MSG+"DBConnect", "config", "parsed")
+
+	go func() {
+		for alog.GetLogger() == nil {
+			time.Sleep(time.Second)
+		}
+		sLog = alog.GetLogger()
+	}()
 
 	config.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
-		slog.Debug(MSG, "dbConnect", "Acquire connect ping...")
+		sLog.Debug(MSG+"DBConnect", "acquire", "connect ping...")
 		if err = conn.Ping(ctx); err != nil {
 			panic(err)
 		}
-		slog.Debug(MSG, "dbConnect", "Acquire connect Ok")
+		sLog.Debug(MSG+"DBConnect", "acquire", "connect Ok")
 		return nil
 	}
 
@@ -36,7 +49,7 @@ func DBConnect(dsn string) *pgxpool.Pool {
 	IfErrorThenPanic(err)
 	_, err = pool.Acquire(context.TODO())
 	IfErrorThenPanic(err)
-	slog.Debug(MSG, "dbConnect", "Acquire pool Ok")
+	sLog.Debug(MSG+"DBConnect", "acquire", "pool Ok")
 
 	return pool
 }

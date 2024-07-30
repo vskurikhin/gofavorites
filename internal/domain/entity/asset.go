@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-30 14:51 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-31 15:59 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * asset.go
@@ -14,12 +14,13 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
+	"time"
+
 	"github.com/goccy/go-json"
 	"github.com/vskurikhin/gofavorites/internal/domain"
 	"github.com/vskurikhin/gofavorites/internal/env"
 	"github.com/vskurikhin/gofavorites/internal/tool"
-	"log/slog"
-	"time"
 )
 
 const (
@@ -89,11 +90,11 @@ var _ domain.Entity = (*Asset)(nil)
 
 func GetAsset(ctx context.Context, repo domain.Repo[*Asset], isin string) (Asset, error) {
 
-	var e error
+	var err error
 	result := &Asset{isin: isin}
 
-	result, err := repo.Get(ctx, result, func(scanner domain.Scanner) {
-		e = scanner.Scan(
+	result, er0 := repo.Get(ctx, result, func(scanner domain.Scanner) {
+		err = scanner.Scan(
 			&result.isin,
 			&result.deleted,
 			&result.createdAt,
@@ -104,8 +105,8 @@ func GetAsset(ctx context.Context, repo domain.Repo[*Asset], isin string) (Asset
 			&result.assetType.updatedAt,
 		)
 	})
-	if e != nil {
-		return Asset{}, e
+	if er0 != nil {
+		return Asset{}, er0
 	}
 	if err != nil {
 		return Asset{}, err
@@ -170,7 +171,7 @@ func (a *Asset) Delete(ctx context.Context, dtf domain.Dft[*Asset], inTransactio
 			&as.isin, &at.name, &as.deleted, &as.createdAt, &as.updatedAt,
 		)
 		if err != nil {
-			slog.Error(env.MSG+" Delete", "err", err)
+			slog.ErrorContext(ctx, env.MSG+"Asset.Delete", "err", err)
 		} else {
 			a.isin = as.isin
 			a.deleted = as.deleted
@@ -307,7 +308,7 @@ func (a *Asset) Upsert(ctx context.Context, dtf domain.Dft[*Asset], inTransactio
 			&as.isin, &at.name, &as.deleted, &as.createdAt, &as.updatedAt, &at.createdAt,
 		)
 		if err != nil {
-			slog.Error(env.MSG+" Upsert", "err", err)
+			slog.ErrorContext(ctx, env.MSG+"Asset.Upsert", "err", err)
 		} else {
 			a.isin = as.isin
 			a.deleted = as.deleted

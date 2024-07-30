@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-30 14:51 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-03 13:52 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * user.go
@@ -14,10 +14,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
+
 	"github.com/goccy/go-json"
 	"github.com/vskurikhin/gofavorites/internal/domain"
 	"github.com/vskurikhin/gofavorites/internal/tool"
-	"time"
 )
 
 type User struct {
@@ -38,11 +39,11 @@ var _ domain.Entity = (*User)(nil)
 
 func GetUser(ctx context.Context, repo domain.Repo[*User], upk string) (User, error) {
 
-	var e error
+	var err error
 	result := &User{upk: upk}
 
-	result, err := repo.Get(ctx, result, func(scanner domain.Scanner) {
-		e = scanner.Scan(
+	result, er0 := repo.Get(ctx, result, func(scanner domain.Scanner) {
+		err = scanner.Scan(
 			&result.upk,
 			&result.version,
 			&result.deleted,
@@ -50,8 +51,8 @@ func GetUser(ctx context.Context, repo domain.Repo[*User], upk string) (User, er
 			&result.updatedAt,
 		)
 	})
-	if e != nil {
-		return User{}, e
+	if er0 != nil {
+		return User{}, er0
 	}
 	if err != nil {
 		return User{}, err
@@ -71,6 +72,22 @@ func MakeUser(upk string, a TAttributes) User {
 			updatedAt: a.updatedAt,
 		},
 		upk: upk,
+	}
+}
+
+func MakeUserWithVersion(upk string, version int64, a TAttributes) User {
+	return User{
+		TAttributes: struct {
+			deleted   sql.NullBool
+			createdAt time.Time
+			updatedAt sql.NullTime
+		}{
+			deleted:   a.deleted,
+			createdAt: a.createdAt,
+			updatedAt: a.updatedAt,
+		},
+		upk:     upk,
+		version: version,
 	}
 }
 
@@ -220,17 +237,17 @@ func (u *User) ToJSON() ([]byte, error) {
 
 func (u *User) Update(ctx context.Context, repo domain.Repo[*User]) (err error) {
 
-	_, e := repo.Update(ctx, u, func(s domain.Scanner) {
+	_, er0 := repo.Update(ctx, u, func(s domain.Scanner) {
 		t := *u
 		err = s.Scan(&t.version, &t.updatedAt)
 		if err == nil {
 			*u = t
 		}
 	})
-	if e != nil {
-		return e
+	if er0 != nil {
+		return er0
 	}
-	return
+	return err
 }
 
 func (u *User) UpdateArgs() []any {

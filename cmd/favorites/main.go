@@ -20,7 +20,11 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
+	"github.com/vskurikhin/gofavorites/internal/alog"
+	"github.com/vskurikhin/gofavorites/internal/controllers"
+	"github.com/vskurikhin/gofavorites/internal/env"
 	"github.com/vskurikhin/gofavorites/internal/middleware"
+	"github.com/vskurikhin/gofavorites/internal/services"
 	"google.golang.org/grpc"
 	"log"
 	"log/slog"
@@ -30,10 +34,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/vskurikhin/gofavorites/internal/controllers"
-	"github.com/vskurikhin/gofavorites/internal/env"
-	"github.com/vskurikhin/gofavorites/internal/services"
-
+	slogf "github.com/samber/slog-fiber"
 	pb "github.com/vskurikhin/gofavorites/proto"
 )
 
@@ -41,6 +42,7 @@ var (
 	buildVersion = "N/A"
 	buildDate    = "N/A"
 	buildCommit  = "N/A"
+	sLog         *slog.Logger
 )
 
 //go:embed migrations/*.sql
@@ -51,16 +53,15 @@ func main() {
 }
 
 func run(ctx context.Context) {
-	slog.Info(env.MSG,
+	slog.Info(env.MSG+"meta info",
 		"build_version", buildVersion,
 		"build_date", buildDate,
 		"build_commit", buildCommit,
 	)
 	sigint := make(chan os.Signal, 1)
-	// регистрируем перенаправление прерываний
 	signal.Notify(sigint, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
-	// запускаем горутину обработки пойманных прерываний
 	prop := env.GetProperties()
+	sLog = alog.GetLogger()
 	dbMigrations(prop)
 	serve(ctx, prop)
 }
@@ -69,7 +70,7 @@ func dbMigrations(prop env.Properties) {
 
 	pool := prop.DBPool()
 	if pool == nil {
-		slog.Warn(env.MSG+" dbMigrations", "pool", pool)
+		sLog.Warn(env.MSG+"dbMigrations", "pool", pool)
 		return
 	}
 	goose.SetBaseFS(embedMigrations)
@@ -107,30 +108,30 @@ func serve(ctx context.Context, prop env.Properties) {
 	go func() {
 		<-sigint
 		grpcServer.GracefulStop()
-		log.Println("Выключение сервера gRPC")
+		sLog.Info(env.MSG+"graceful stop", "msg", "Выключение сервера gRPC")
 		if err := httpServer.Shutdown(); err != nil {
-			log.Printf("Ошибка при выключение сервера HTTP: %v\n", err)
+			sLog.Error(env.MSG+"graceful stop", "msg", "Ошибка при выключение сервера HTTP", "err", err)
 		}
-		log.Println("Выключение сервера HTTP")
+		sLog.Info(env.MSG+"graceful stop", "msg", "Выключение сервера HTTP")
 		close(idleConnsClosed)
 	}()
 	go func() {
 		<-ctx.Done()
 		grpcServer.GracefulStop()
-		log.Println("Выключение сервера gRPC")
+		sLog.Info(env.MSG+"graceful stop", "msg", "Выключение сервера gRPC")
 		if err := httpServer.Shutdown(); err != nil {
-			log.Printf("Ошибка при выключение сервера HTTP: %v\n", err)
+			sLog.Error(env.MSG+"graceful stop", "msg", "Ошибка при выключение сервера HTTP", "err", err)
 		}
-		log.Println("Выключение сервера HTTP")
+		sLog.Info(env.MSG+"graceful stop", "msg", "Выключение сервера HTTP")
 		close(idleConnsClosed)
 	}()
 	go func() {
-		log.Println("Сервер gRPC начал работу")
+		sLog.Info(env.MSG+"start app", "msg", "Сервер gRPC начал работу")
 		if err := grpcServer.Serve(listen); err != nil {
 			log.Fatal(err)
 		}
 	}()
-	log.Println("Сервер HTTP начал работу")
+	sLog.Info(env.MSG+"start app", "msg", "Сервер HTTP начал работу")
 	if prop.Config().HTTPTLSEnabled() {
 
 		ln, err := tls.Listen("tcp", prop.HTTPAddress(), prop.HTTPTLSConfig())
@@ -138,37 +139,42 @@ func serve(ctx context.Context, prop env.Properties) {
 			panic(err)
 		}
 		if err := httpServer.Listener(ln); err != nil {
-			log.Printf("Ошибка при выключение сервера HTTP: %v\n", err)
+			sLog.Error(env.MSG+"start app", "msg", "Ошибка при выключение сервера HTTP", "err", err)
 		}
 	} else if err := httpServer.Listen(prop.HTTPAddress()); err != nil {
-		log.Printf("Ошибка при выключение сервера HTTP: %v\n", err)
+		sLog.Error(env.MSG+"start app", "msg", "Ошибка при выключение сервера HTTP", "err", err)
 	}
 	<-idleConnsClosed
-	log.Println("Корректное завершение работы сервера")
+	sLog.Info(env.MSG+"shutdown app", "msg", "Корректное завершение работы сервера")
 }
 
 func makeHTTP(prop env.Properties) *fiber.App {
 
 	logHandler := logger.New(logger.Config{
 		Format:       "${pid} | ${time} | ${status} | ${locals:requestid} | ${latency} | ${ip} | ${method} | ${path} | ${error}\n",
-		TimeFormat:   "15:04:05.99",
+		TimeFormat:   "15:04:05.000000",
 		TimeZone:     "Local",
 		TimeInterval: 500 * time.Millisecond,
 		Output:       os.Stdout,
 	})
+	slogLogger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	app := fiber.New()
 	micro := fiber.New()
 	app.Mount("/api", micro)
-	app.Use(logHandler)
 	app.Use(requestid.New())
-	micro.Use(logHandler)
 	micro.Use(requestid.New())
 
+	if prop.SlogJSON() {
+		app.Use(slogf.New(slogLogger))
+		micro.Use(alog.New(slogLogger))
+	} else {
+		app.Use(logHandler)
+		micro.Use(logHandler)
+	}
 	micro.Route("/auth", func(router fiber.Router) {
 		router.Post("/login", controllers.GetAuthController(prop).SignInUser)
 	})
-
 	micro.Get(
 		"/favorites/get",
 		middleware.GetUserJwtHandler(prop).DeserializeUser,
@@ -184,7 +190,6 @@ func makeHTTP(prop env.Properties) *fiber.App {
 		middleware.GetUserJwtHandler(prop).DeserializeUser,
 		controllers.GetFavoritesController(prop).Set,
 	)
-
 	micro.Get("/health", func(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"status":  "success",

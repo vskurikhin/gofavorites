@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-30 14:51 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-03 10:29 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites.go
@@ -14,13 +14,14 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
+	"time"
+
 	"github.com/goccy/go-json"
 	"github.com/google/uuid"
 	"github.com/vskurikhin/gofavorites/internal/domain"
 	"github.com/vskurikhin/gofavorites/internal/env"
 	"github.com/vskurikhin/gofavorites/internal/tool"
-	"log/slog"
-	"time"
 )
 
 const (
@@ -91,12 +92,12 @@ const (
 	DO UPDATE SET version = users.version + 1`
 
 	FavoritesUpsertTxFavoritesSQL = `INSERT INTO favorites
-    (isin, user_upk, version, created_at)
-    VALUES ($1, $2, (SELECT u.version FROM users u WHERE u.upk = $3), $4)
+    (isin, user_upk, created_at)
+    VALUES ($1, $2, $3)
 	ON CONFLICT (isin, user_upk)
-	DO UPDATE SET version = (SELECT u.version FROM users u WHERE u.upk = $2), updated_at = $5
+	DO UPDATE SET updated_at = $4
     RETURNING id, isin, user_upk, version, deleted, created_at, updated_at,
-	(SELECT created_at FROM asset_types WHERE name = $6),
+	(SELECT created_at FROM asset_types WHERE name = $5),
 	(SELECT created_at FROM assets WHERE isin = $1),
 	(SELECT updated_at FROM assets WHERE isin = $1),
 	(SELECT created_at FROM users WHERE upk = $2)`
@@ -124,11 +125,11 @@ var _ domain.Entity = (*Favorites)(nil)
 
 func GetFavorites(ctx context.Context, repo domain.Repo[*Favorites], isin, upk string) (Favorites, error) {
 
-	var e error
+	var err error
 	result := &Favorites{asset: Asset{isin: isin}, user: User{upk: upk}}
 
-	_, err := repo.Get(ctx, result, func(scanner domain.Scanner) {
-		e = scanner.Scan(
+	_, er0 := repo.Get(ctx, result, func(scanner domain.Scanner) {
+		err = scanner.Scan(
 			&result.id,
 			&result.version,
 			&result.deleted,
@@ -152,8 +153,8 @@ func GetFavorites(ctx context.Context, repo domain.Repo[*Favorites], isin, upk s
 			&result.user.updatedAt,
 		)
 	})
-	if e != nil {
-		return Favorites{}, e
+	if er0 != nil {
+		return Favorites{}, er0
 	}
 	if err != nil {
 		return Favorites{}, err
@@ -165,7 +166,7 @@ func GetFavoritesForUser(ctx context.Context, repo domain.Repo[*Favorites], upk 
 
 	var err error
 	results := make([]Favorites, 0)
-	_, _ = repo.GetByFilter(ctx, &Favorites{user: User{upk: upk}}, func(scanner domain.Scanner) *Favorites {
+	_, er0 := repo.GetByFilter(ctx, &Favorites{user: User{upk: upk}}, func(scanner domain.Scanner) *Favorites {
 		result := Favorites{}
 		err = scanner.Scan(
 			&result.id,
@@ -193,6 +194,9 @@ func GetFavoritesForUser(ctx context.Context, repo domain.Repo[*Favorites], upk 
 		results = append(results, result)
 		return &result
 	})
+	if er0 != nil {
+		return results, err
+	}
 	return results, err
 }
 
@@ -260,7 +264,7 @@ func (f *Favorites) Delete(ctx context.Context, dtf domain.Dft[*Favorites], inTr
 			&fv.id, &fv.asset.isin, &fv.user.upk, &fv.version, &fv.deleted, &fv.createdAt, &fv.updatedAt,
 		)
 		if err != nil {
-			slog.Error(env.MSG+" Delete", "err", err)
+			slog.ErrorContext(ctx, env.MSG+"Favorites.Delete", "err", err)
 		} else {
 			f.id = fv.id
 			f.version = fv.version
@@ -414,6 +418,22 @@ func (f Favorites) ToJSON() ([]byte, error) {
 	return result, nil
 }
 
+func (f *Favorites) Update(ctx context.Context, repo domain.Repo[*Favorites]) (err error) {
+
+	_, er0 := repo.Update(ctx, f, func(s domain.Scanner) {
+		t := *f
+		err = s.Scan(&f.version, &f.updatedAt)
+		if err == nil {
+			*f = t
+		}
+	})
+	if er0 != nil {
+		return er0
+	}
+	return err
+
+}
+
 func (f *Favorites) UpdateArgs() []any {
 	return []any{f.asset.isin, f.user.upk, f.updatedAt, f.user.upk}
 }
@@ -424,26 +444,26 @@ func (f *Favorites) UpdateSQL() string {
 
 func (f *Favorites) Upsert(ctx context.Context, dtf domain.Dft[*Favorites], inTransaction func()) (err error) {
 
-	var (
-		as Asset
-		at AssetType
-		fv Favorites
-		us User
-	)
+	var fv Favorites
 	er0 := dtf.DoUpsert(ctx, f, func(scanner domain.Scanner) {
 		err = scanner.Scan(
-			&fv.id, &as.isin, &us.upk, &fv.version, &fv.deleted, &fv.createdAt, &fv.updatedAt,
-			&at.createdAt, &as.createdAt, &as.updatedAt, &us.createdAt,
+			&fv.id, &fv.asset.isin, &fv.user.upk, &fv.version, &fv.deleted, &fv.createdAt, &fv.updatedAt,
+			&fv.asset.assetType.createdAt, &fv.asset.createdAt, &fv.asset.updatedAt, &fv.asset.createdAt,
 		)
 		if err != nil {
-			slog.Error(env.MSG+" Upsert", "err", err)
+			slog.ErrorContext(ctx, env.MSG+"Favorites.Upsert", "err", err)
 		} else {
-			f.asset.isin = as.isin
-			f.asset.createdAt = as.createdAt
-			f.asset.updatedAt = as.updatedAt
-			f.asset.assetType.createdAt = at.createdAt
-			f.user.upk = us.upk
-			f.user.createdAt = us.createdAt
+			f.id = fv.id
+			f.version = fv.version
+			f.deleted = fv.deleted
+			f.createdAt = fv.createdAt
+			f.updatedAt = fv.updatedAt
+			f.asset.isin = fv.asset.isin
+			f.asset.createdAt = fv.asset.createdAt
+			f.asset.updatedAt = fv.asset.updatedAt
+			f.asset.assetType.createdAt = fv.asset.assetType.createdAt
+			f.user.upk = fv.user.upk
+			f.user.createdAt = fv.asset.createdAt
 			inTransaction()
 		}
 	})
@@ -465,7 +485,7 @@ func (f *Favorites) UpsertTxArgs() domain.TxArgs {
 			{f.asset.assetType.name, f.asset.assetType.createdAt},
 			{f.asset.isin, f.asset.assetType.name, f.asset.createdAt, f.asset.updatedAt},
 			{f.user.upk, f.user.createdAt},
-			{f.asset.isin, f.user.upk, f.user.upk, f.createdAt, f.updatedAt, f.asset.assetType.name},
+			{f.asset.isin, f.user.upk, f.createdAt, f.updatedAt, f.asset.assetType.name},
 		},
 	}
 }

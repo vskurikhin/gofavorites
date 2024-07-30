@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-29 22:09 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-31 15:59 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * properties.go
@@ -15,13 +15,14 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"fmt"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/vskurikhin/gofavorites/internal/tool"
-	"google.golang.org/grpc/credentials"
 	"log/slog"
 	"net"
 	"sync"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/vskurikhin/gofavorites/internal/tool"
+	"google.golang.org/grpc/credentials"
 )
 
 const (
@@ -41,6 +42,7 @@ const (
 	propertyJwtExpiresIn                   = "jwt-expires-in"
 	propertyJwtMaxAgeSec                   = "jwt-max-age-sec"
 	propertyJwtSecret                      = "jwt-secret"
+	propertyLogger                         = "logger"
 	propertyMongodbPool                    = "mongodb-pool"
 	propertyUpkRSAPrivateKey               = "upk-rsa-private-key"
 	propertyUpkRSAPublicKey                = "upk-rsa-public-key"
@@ -65,7 +67,9 @@ type Properties interface {
 	JwtExpiresIn() time.Duration
 	JwtMaxAgeSec() int
 	JwtSecret() string
+	Logger() *slog.Logger
 	MongodbPool() *tool.MongoPool
+	SlogJSON() bool
 	OutboundIP() net.IP
 	UpkRSAPrivateKey() *rsa.PrivateKey
 	UpkRSAPublicKey() *rsa.PublicKey
@@ -90,46 +94,46 @@ func GetProperties() Properties {
 		flm := makeFlagsParse()
 
 		cacheExpire, err := getCacheExpire(flm, env, yml)
-		slog.Warn(MSG+" GetProperties", "cacheExpire", cacheExpire, "err", err)
+		slog.Debug(MSG+"GetProperties", "cacheExpire", cacheExpire, "err", err)
 		cacheGCInterval, err := getCacheGCInterval(flm, env, yml)
-		slog.Warn(MSG+" GetProperties", "cacheGCInterval", cacheGCInterval, "err", err)
+		slog.Debug(MSG+"GetProperties", "cacheGCInterval", cacheGCInterval, "err", err)
 
 		dbPool, err := makeDBPool(flm, env, yml)
-		slog.Warn(MSG+" GetProperties", "dbDisable", err)
+		slog.Debug(MSG+"GetProperties", "dbDisable", err)
 
 		grpcAddress, err := getGRPCAddress(flm, env, yml)
-		slog.Warn(MSG+" GetProperties", "grpcAddress", grpcAddress, "err", err)
+		slog.Debug(MSG+"GetProperties", "grpcAddress", grpcAddress, "err", err)
 		tgRPCCredentials, err := getGRPCTransportCredentials(flm, env, yml)
-		slog.Warn(MSG+" GetProperties", "grpcTransportCredentials", tgRPCCredentials, "err", err)
+		slog.Debug(MSG+"GetProperties", "grpcTransportCredentials", tgRPCCredentials, "err", err)
 
 		httpAddress, err := getHTTPAddress(flm, env, yml)
-		slog.Warn(MSG+" GetProperties", "httpAddress", httpAddress, "err", err)
+		slog.Debug(MSG+"GetProperties", "httpAddress", httpAddress, "err", err)
 		tHTTPConfig, err := getHTTPTLSConfig(flm, env, yml)
-		slog.Warn(MSG+" GetProperties", "tHTTPConfig", tHTTPConfig, "err", err)
+		slog.Debug(MSG+"GetProperties", "tHTTPConfig", tHTTPConfig, "err", err)
 
 		assetGRPCAddress, err := getExternalAssetGRPCAddress(flm, env, yml)
-		slog.Warn(MSG+" GetProperties", "assetGRPCAddress", assetGRPCAddress, "err", err)
+		slog.Debug(MSG+"GetProperties", "assetGRPCAddress", assetGRPCAddress, "err", err)
 		authGRPCAddress, err := getExternalAuthGRPCAddress(flm, env, yml)
-		slog.Warn(MSG+" GetProperties", "authGRPCAddress", authGRPCAddress, "err", err)
+		slog.Debug(MSG+"GetProperties", "authGRPCAddress", authGRPCAddress, "err", err)
 		requestTimeoutInterval, err := getExternalRequestTimeoutInterval(flm, env, yml)
-		slog.Warn(MSG+" GetProperties", "requestTimeoutInterval", requestTimeoutInterval, "err", err)
+		slog.Debug(MSG+"GetProperties", "requestTimeoutInterval", requestTimeoutInterval, "err", err)
 
 		jwtExpiresIn, err := getJwtExpiresIn(flm, env, yml)
-		slog.Warn(MSG+" GetProperties", "jwtExpiresIn", jwtExpiresIn, "err", err)
+		slog.Debug(MSG+"GetProperties", "jwtExpiresIn", jwtExpiresIn, "err", err)
 		jwtMaxAgeSec, err := getJwtMaxAgeSec(flm, env, yml)
-		slog.Warn(MSG+" GetProperties", "jwtMaxAgeSec", jwtMaxAgeSec, "err", err)
+		slog.Debug(MSG+"GetProperties", "jwtMaxAgeSec", jwtMaxAgeSec, "err", err)
 		jwtSecret, err := getJwtSecret(flm, env, yml)
-		slog.Warn(MSG+" GetProperties", "jwtSecret", jwtSecret, "err", err)
+		slog.Debug(MSG+"GetProperties", "jwtSecret", jwtSecret, "err", err)
 
 		mongodbPool, err := makeMongodbPool(flm, env, yml)
-		slog.Warn(MSG+" GetProperties", "mongodbDisable", err)
+		slog.Debug(MSG+"GetProperties", "mongodbDisable", err)
 
 		upkRSAPrivateKey, err := getRSAPrivateKey(flm, env, yml)
-		slog.Warn(MSG+" GetProperties", "upkRSAPrivateKey", upkRSAPrivateKey, "err", err)
+		slog.Debug(MSG+"GetProperties", "upkRSAPrivateKey", upkRSAPrivateKey, "err", err)
 		upkRSAPublicKey, err := getRSAPublicKey(flm, env, yml)
-		slog.Warn(MSG+" GetProperties", "upkRSAPublicKey", upkRSAPublicKey, "err", err)
+		slog.Debug(MSG+"GetProperties", "upkRSAPublicKey", upkRSAPublicKey, "err", err)
 		upkSecretKey, err := getUpkSecretKey(flm, env, yml, upkRSAPrivateKey)
-		slog.Warn(MSG+" GetProperties", "upkSecretKey", base64.StdEncoding.EncodeToString(upkSecretKey), "err", err)
+		slog.Debug(MSG+"GetProperties", "upkSecretKey", base64.StdEncoding.EncodeToString(upkSecretKey), "err", err)
 
 		properties = getProperties(
 			WithCacheExpire(cacheExpire),
@@ -148,12 +152,14 @@ func GetProperties() Properties {
 			WithJwtExpiresIn(jwtExpiresIn),
 			WithJwtMaxAgeSec(jwtMaxAgeSec),
 			WithJwtSecret(jwtSecret),
+			WithLogger(setupLogger(slogJSON(flm))),
 			withMongodbPool(mongodbPool),
 			WithUpkRSAPrivateKey(upkRSAPrivateKey),
 			WithUpkRSAPublicKey(upkRSAPublicKey),
 			WithUpkSecretKey(upkSecretKey),
 		)
 	})
+
 	return properties
 }
 
@@ -434,6 +440,38 @@ func (p *mapProperties) JwtSecret() string {
 	return ""
 }
 
+// WithLogger — TODO.
+func WithLogger(logger *slog.Logger) func(*mapProperties) {
+	return func(p *mapProperties) {
+		if logger != nil {
+			p.mp.Store(propertyLogger, logger)
+		}
+	}
+}
+
+// Logger — TODO.
+func (p *mapProperties) Logger() *slog.Logger {
+	if a, ok := p.mp.Load(propertyLogger); ok {
+		if logger, ok := a.(*slog.Logger); ok {
+			return logger
+		}
+	}
+	return slog.Default()
+}
+
+func (p *mapProperties) MongodbPool() *tool.MongoPool {
+	if p, ok := p.mp.Load(propertyMongodbPool); ok {
+		if pool, ok := p.(*tool.MongoPool); ok {
+			return pool
+		}
+	}
+	return nil
+}
+
+func (p *mapProperties) SlogJSON() bool {
+	return slogJSON(p.Flags())
+}
+
 // WithUpkRSAPrivateKey — TODO.
 func WithUpkRSAPrivateKey(privateKey *rsa.PrivateKey) func(*mapProperties) {
 	return func(p *mapProperties) {
@@ -518,15 +556,6 @@ func withMongodbPool(pool *tool.MongoPool) func(*mapProperties) {
 	}
 }
 
-func (p *mapProperties) MongodbPool() *tool.MongoPool {
-	if p, ok := p.mp.Load(propertyMongodbPool); ok {
-		if pool, ok := p.(*tool.MongoPool); ok {
-			return pool
-		}
-	}
-	return nil
-}
-
 func (p *mapProperties) OutboundIP() net.IP {
 	return nil
 }
@@ -578,6 +607,15 @@ UpkSecretKey: %v
 		p.UpkRSAPublicKey(),
 		p.UpkSecretKey(),
 	)
+}
+
+func slogJSON(flags map[string]interface{}) bool {
+	if sj, ok := flags[flagSlogJson]; ok {
+		if slogJSON, ok := sj.(*bool); ok {
+			return *slogJSON
+		}
+	}
+	return false
 }
 
 func getProperties(opts ...func(*mapProperties)) *mapProperties {

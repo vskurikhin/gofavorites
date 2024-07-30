@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-29 23:34 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-31 15:59 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * user_search_service.go
@@ -12,20 +12,22 @@ package services
 
 import (
 	"context"
+	"log/slog"
+	"sync"
+	"time"
+
 	"github.com/vskurikhin/gofavorites/internal/domain"
 	"github.com/vskurikhin/gofavorites/internal/domain/entity"
 	"github.com/vskurikhin/gofavorites/internal/domain/repo"
 	"github.com/vskurikhin/gofavorites/internal/env"
 	"github.com/vskurikhin/gofavorites/internal/models"
 	"github.com/vskurikhin/gofavorites/internal/tool"
-	pb "github.com/vskurikhin/gofavorites/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
-	"log/slog"
-	"sync"
-	"time"
+
+	pb "github.com/vskurikhin/gofavorites/proto"
 )
 
 type UserSearchService interface {
@@ -38,6 +40,7 @@ type userSearchService struct {
 	opts            []grpc.DialOption
 	repoUser        domain.Repo[*entity.User]
 	requestInterval time.Duration
+	sLog            *slog.Logger
 }
 
 var _ UserSearchService = (*userSearchService)(nil)
@@ -63,6 +66,7 @@ func GetUserSearchService(prop env.Properties) UserSearchService {
 		userSearchServ.opts = opts
 		userSearchServ.repoUser = repo.GetUserPostgresCachedRepo(prop)
 		userSearchServ.requestInterval = prop.ExternalRequestTimeoutInterval()
+		userSearchServ.sLog = prop.Logger()
 	})
 	return userSearchServ
 }
@@ -133,7 +137,11 @@ func (u *userSearchService) grpcLookupPersonalKey(ctx context.Context, personalK
 	resp, err := c.Get(ctx, &request)
 
 	for i := 1; err != nil && tool.IsUpperBoundWithSleep(i, 300, u.requestInterval); i++ {
-		slog.Warn(env.MSG+" UserSearchService.grpcLookupPersonalKey", "err", err)
+		u.sLog.ErrorContext(ctx,
+			env.MSG+"UserSearchService.grpcLookupPersonalKey",
+			"msg", "user search service gRPC lookup personal key",
+			"err", err,
+		)
 		time.Sleep(300 * time.Millisecond * time.Duration(i))
 		resp, err = c.Get(ctx, &request)
 	}
@@ -160,7 +168,11 @@ func (u *userSearchService) grpcLookupUpk(ctx context.Context, upk string) bool 
 	resp, err := c.Get(ctx, &request)
 
 	for i := 1; err != nil && tool.IsUpperBoundWithSleep(i, 300, u.requestInterval); i++ {
-		slog.Warn(env.MSG+" UserSearchService.grpcLookupUpk", "err", err)
+		u.sLog.ErrorContext(ctx,
+			env.MSG+"UserSearchService.grpcLookupUpk",
+			"msg", "user search service gRPC lookup upk",
+			"err", err,
+		)
 		time.Sleep(300 * time.Millisecond * time.Duration(i))
 		resp, err = c.Get(ctx, &request)
 	}

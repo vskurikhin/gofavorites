@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-29 13:42 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-31 16:17 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * trace.go
@@ -19,17 +19,17 @@ import (
 
 func TraceInOut(ctx context.Context, name, format string, values ...any) func() {
 
-	if slog.Default().Enabled(ctx, slog.LevelDebug) {
+	if !slog.Default().Enabled(ctx, slog.LevelDebug) {
 		return func() {}
 	}
 	start := time.Now()
-	f := fmt.Sprintf(" in: %s(", name) + format + ")"
+	f := fmt.Sprintf(" %s(", name) + format + ")"
 	i := fmt.Sprintf(f, values...)
-	slog.Debug(fmt.Sprintf("%s %s", MSG, name), "trace", i)
+	sLog.DebugContext(ctx, MSG+"trace", "callIn", i)
 
 	return func() {
-		o := fmt.Sprintf("out: %s [%s]", name, time.Since(start))
-		slog.Debug(fmt.Sprintf("%s %s", MSG, name), "trace", o)
+		o := fmt.Sprintf("%s [%s]", name, time.Since(start))
+		sLog.DebugContext(ctx, MSG+"trace", "callOut", o)
 	}
 }
 

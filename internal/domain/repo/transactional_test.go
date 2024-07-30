@@ -3,12 +3,13 @@ package repo
 import (
 	"context"
 	"database/sql"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/vskurikhin/gofavorites/internal/domain/entity"
 	"github.com/vskurikhin/gofavorites/internal/env"
 	"github.com/vskurikhin/gofavorites/internal/tool"
-	"testing"
 )
 
 func TestTxPostgres(t *testing.T) {

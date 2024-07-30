@@ -14,11 +14,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"testing"
+	"time"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/vskurikhin/gofavorites/internal/tool"
-	"testing"
-	"time"
 )
 
 func TestUser(t *testing.T) {
@@ -43,9 +44,9 @@ func TestUser(t *testing.T) {
 
 func testUserCloneable(t *testing.T) {
 	expected := MakeUser(tool.RandStringBytes(32), MakeTAttributes(
-		sql.NullBool{true, true},
+		sql.NullBool{Bool: true, Valid: true},
 		time.Time{},
-		sql.NullTime{time.Time{}, false},
+		sql.NullTime{},
 	))
 	got := expected.Copy()
 	assert.NotNil(t, got)
@@ -55,9 +56,9 @@ func testUserCloneable(t *testing.T) {
 func testUserJSON(t *testing.T) {
 	upk := tool.RandStringBytes(32)
 	expected := MakeUser(upk, MakeTAttributes(
-		sql.NullBool{true, true},
+		sql.NullBool{Bool: true, Valid: true},
 		time.Time{},
-		sql.NullTime{time.Time{}, false},
+		sql.NullTime{},
 	))
 	j, err := expected.ToJSON()
 	assert.Nil(t, err)

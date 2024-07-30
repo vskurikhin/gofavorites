@@ -13,6 +13,10 @@ package controllers
 import (
 	"bytes"
 	"fmt"
+	"net/http/httptest"
+	"testing"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 	"github.com/gofiber/fiber/v2/utils"
@@ -23,9 +27,6 @@ import (
 	"github.com/vskurikhin/gofavorites/internal/models"
 	"github.com/vskurikhin/gofavorites/internal/services"
 	"go.uber.org/mock/gomock"
-	"net/http/httptest"
-	"testing"
-	"time"
 )
 
 func TestFavoritesGet(t *testing.T) {

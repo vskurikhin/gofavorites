@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-29 23:34 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-31 15:59 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * asset_search_service.go
@@ -12,19 +12,21 @@ package services
 
 import (
 	"context"
+	"log/slog"
+	"sync"
+	"time"
+
 	"github.com/vskurikhin/gofavorites/internal/domain"
 	"github.com/vskurikhin/gofavorites/internal/domain/entity"
 	"github.com/vskurikhin/gofavorites/internal/domain/repo"
 	"github.com/vskurikhin/gofavorites/internal/env"
 	"github.com/vskurikhin/gofavorites/internal/tool"
-	pb "github.com/vskurikhin/gofavorites/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
-	"log/slog"
-	"sync"
-	"time"
+
+	pb "github.com/vskurikhin/gofavorites/proto"
 )
 
 type AssetSearchService interface {
@@ -37,6 +39,7 @@ type assetSearchService struct {
 	opts             []grpc.DialOption
 	repoAsset        domain.Repo[*entity.Asset]
 	requestInterval  time.Duration
+	sLog             *slog.Logger
 }
 
 var _ AssetSearchService = (*assetSearchService)(nil)
@@ -62,6 +65,7 @@ func GetAssetSearchService(prop env.Properties) AssetSearchService {
 		assetSearchServ.opts = opts
 		assetSearchServ.repoAsset = repo.GetAssetPostgresCachedRepo(prop)
 		assetSearchServ.requestInterval = prop.ExternalRequestTimeoutInterval()
+		assetSearchServ.sLog = prop.Logger()
 	})
 	return assetSearchServ
 }
@@ -128,7 +132,11 @@ func (a *assetSearchService) grpcLookup(ctx context.Context, isin string) bool {
 	resp, err := c.Get(ctx, &request)
 
 	for i := 1; err != nil && tool.IsUpperBoundWithSleep(i, 300, a.requestInterval); i++ {
-		slog.Warn(env.MSG+" AssetSearchService.grpcLookup", "err", err)
+		a.sLog.ErrorContext(ctx,
+			env.MSG+"AssetSearchService.grpcLookup",
+			"msg", "asset search service gRPC lookup",
+			"err", err,
+		)
 		time.Sleep(300 * time.Millisecond * time.Duration(i))
 		resp, err = c.Get(ctx, &request)
 	}

@@ -11,9 +11,10 @@
 package tool
 
 import (
+	"testing"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestNoRowsInResultSet(t *testing.T) {

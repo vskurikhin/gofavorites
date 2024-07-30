@@ -12,10 +12,11 @@
 package env
 
 import (
-	"github.com/spf13/pflag"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+
+	"github.com/spf13/pflag"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMakeFlagsParse(t *testing.T) {

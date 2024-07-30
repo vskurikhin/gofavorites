@@ -13,6 +13,12 @@ package services
 import (
 	"context"
 	"fmt"
+	"log"
+	"math/rand"
+	"net"
+	"testing"
+	"time"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/vskurikhin/gofavorites/internal/domain"
 	"github.com/vskurikhin/gofavorites/internal/domain/entity"
@@ -25,11 +31,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/credentials/local"
-	"log"
-	"math/rand"
-	"net"
-	"testing"
-	"time"
 )
 
 func TestUserSearchService(t *testing.T) {
@@ -214,6 +215,7 @@ func getUserSearchService(prop env.Properties, repoUser domain.Repo[*entity.User
 	userSearchServ.opts = opts
 	userSearchServ.repoUser = repoUser
 	userSearchServ.requestInterval = prop.ExternalRequestTimeoutInterval()
+	userSearchServ.sLog = prop.Logger()
 	return userSearchServ
 }
 

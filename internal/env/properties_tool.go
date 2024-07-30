@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-29 22:18 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-03 12:36 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * properties_tool.go
@@ -16,12 +16,16 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"fmt"
+	"log/slog"
+	"os"
+	"strconv"
+	"time"
+
+	"github.com/vskurikhin/gofavorites/internal/alog"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/vskurikhin/gofavorites/internal/tool"
 	"google.golang.org/grpc/credentials"
-	"log/slog"
-	"strconv"
-	"time"
 )
 
 var ErrEmptyAddress = fmt.Errorf("can't configure epmty address")
@@ -294,7 +298,7 @@ func makeDBPool(flm map[string]interface{}, env *environments, yml Config) (*pgx
 			getFlagDatabaseDSN()
 		}
 		setIfFlagChanged(flagDatabaseDSN, getFlagDatabaseDSN)
-		slog.Warn(MSG, "DatabaseDSN", dsn)
+		slog.Debug(MSG+"makeDBPool", "DatabaseDSN", dsn)
 
 		return tool.DBConnect(dsn), nil
 	}
@@ -317,7 +321,7 @@ func makeMongodbPool(flm map[string]interface{}, env *environments, yml Config) 
 			getFlagDatabaseDSN()
 		}
 		setIfFlagChanged(flagMongodbDSN, getFlagDatabaseDSN)
-		slog.Warn(MSG, "MongodbDSN", dsn)
+		slog.Debug(MSG+"makeMongodbPool", "MongodbDSN", dsn)
 
 		return tool.MongodbConnect(dsn), nil
 	}
@@ -372,6 +376,20 @@ func serverAddressPrepareProperty(
 		err = ErrEmptyAddress
 	}
 	return address, err
+}
+
+func setupLogger(slogJSON bool) *slog.Logger {
+	if slogJSON {
+		alog.NewLogger(alog.NewHandlerJSON(os.Stdout, nil))
+	} else {
+		opts := alog.PrettyHandlerOptions{
+			SlogOpts: slog.HandlerOptions{
+				Level: slog.LevelDebug,
+			},
+		}
+		alog.NewLogger(alog.NewPrettyHandlerText(os.Stdout, opts))
+	}
+	return alog.GetLogger()
 }
 
 func stringsAddressPrepareProperty(name string, flag interface{}, env []string, yaml string) (string, error) {

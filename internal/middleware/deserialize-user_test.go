@@ -12,15 +12,16 @@ package middleware
 
 import (
 	"fmt"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/utils"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/vskurikhin/gofavorites/internal/env"
 	"io"
 	"math/rand"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/utils"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/vskurikhin/gofavorites/internal/env"
 )
 
 // go test -run TestDeserializeUser

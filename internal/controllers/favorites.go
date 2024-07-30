@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-29 20:14 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-31 14:52 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites.go
@@ -11,14 +11,16 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/vskurikhin/gofavorites/internal/controllers/dto"
 	"github.com/vskurikhin/gofavorites/internal/env"
 	"github.com/vskurikhin/gofavorites/internal/models"
 	"github.com/vskurikhin/gofavorites/internal/services"
-	"sync"
-	"time"
 )
 
 type Favorites struct {
@@ -72,7 +74,8 @@ func (f *Favorites) Get(c *fiber.Ctx) error {
 			JSON(errors)
 	}
 	model := models.FavoritesFromDto(payload, user, "")
-	favorites, err := f.favoritesServ.ApiFavoritesGet(c.Context(), model)
+	ctx := context.WithValue(c.Context(), "request-id", requestId)
+	favorites, err := f.favoritesServ.ApiFavoritesGet(ctx, model)
 
 	if err != nil {
 		return c.
@@ -104,7 +107,8 @@ func (f *Favorites) GetForUser(c *fiber.Ctx) error {
 			JSON(fiber.Map{"status": "fail", "requestId": requestId, "message": "user failed"})
 	}
 	model := models.MakeUser(user, "")
-	favorites, err := f.favoritesServ.ApiFavoritesGetForUser(c.Context(), model)
+	ctx := context.WithValue(c.Context(), "request-id", requestId)
+	favorites, err := f.favoritesServ.ApiFavoritesGetForUser(ctx, model)
 
 	if err != nil {
 		return c.
@@ -150,7 +154,8 @@ func (f *Favorites) Set(c *fiber.Ctx) error {
 			JSON(errors)
 	}
 	model := models.FavoritesFromDto(payload, user, "")
-	favorites, err := f.favoritesServ.ApiFavoritesSet(c.Context(), model)
+	ctx := context.WithValue(c.Context(), "request-id", requestId)
+	favorites, err := f.favoritesServ.ApiFavoritesSet(ctx, model)
 	response := favorites.ToDto()
 
 	if err != nil {

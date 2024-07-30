@@ -11,10 +11,11 @@ package services
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/vskurikhin/gofavorites/internal/env"
 	"github.com/vskurikhin/gofavorites/internal/tool"
-	"testing"
 )
 
 func TestUpkUtilService(t *testing.T) {

@@ -13,10 +13,11 @@ package entity
 import (
 	"context"
 	"database/sql"
-	"github.com/stretchr/testify/assert"
-	"github.com/vskurikhin/gofavorites/internal/tool"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/vskurikhin/gofavorites/internal/tool"
 )
 
 func TestAssetType(t *testing.T) {
@@ -39,7 +40,7 @@ func TestAssetType(t *testing.T) {
 }
 
 func testAssetTypeCloneable(t *testing.T) {
-	ta := MakeTAttributes(sql.NullBool{true, true}, time.Time{}, sql.NullTime{time.Time{}, false})
+	ta := MakeTAttributes(sql.NullBool{Bool: true, Valid: true}, time.Time{}, sql.NullTime{})
 	expected := MakeAssetType(tool.RandStringBytes(32), ta)
 	got := expected.Copy()
 	assert.NotNil(t, got)
@@ -48,7 +49,7 @@ func testAssetTypeCloneable(t *testing.T) {
 
 func testAssetTypeJSON(t *testing.T) {
 	name := tool.RandStringBytes(32)
-	ta := MakeTAttributes(sql.NullBool{true, true}, time.Time{}, sql.NullTime{time.Time{}, false})
+	ta := MakeTAttributes(sql.NullBool{Bool: true, Valid: true}, time.Time{}, sql.NullTime{})
 	expected := MakeAssetType(name, ta)
 	j, err := expected.ToJSON()
 	assert.Nil(t, err)

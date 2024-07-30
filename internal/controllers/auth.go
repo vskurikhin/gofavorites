@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-29 11:23 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-31 00:15 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * auth.go
@@ -12,13 +12,14 @@ package controllers
 
 import (
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/vskurikhin/gofavorites/internal/controllers/dto"
 	"github.com/vskurikhin/gofavorites/internal/env"
 	"golang.org/x/crypto/bcrypt"
-	"sync"
-	"time"
 )
 
 type Auth struct {

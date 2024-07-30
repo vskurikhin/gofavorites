@@ -12,9 +12,10 @@ package tool
 
 import (
 	"database/sql"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSQLTypeConverters(t *testing.T) {
@@ -38,25 +39,25 @@ func TestSQLTypeConverters(t *testing.T) {
 
 func testConvertNullBoolToBoolPointer(t *testing.T) {
 	assert.Nil(t, ConvertNullBoolToBoolPointer(sql.NullBool{}))
-	assert.True(t, *ConvertNullBoolToBoolPointer(sql.NullBool{true, true}))
+	assert.True(t, *ConvertNullBoolToBoolPointer(sql.NullBool{Bool: true, Valid: true}))
 }
 
 func testConvertBoolPointerToNullBool(t *testing.T) {
 	fl, tr := false, true
 	assert.Equal(t, sql.NullBool{}, ConvertBoolPointerToNullBool(nil))
-	assert.Equal(t, sql.NullBool{false, true}, ConvertBoolPointerToNullBool(&fl))
-	assert.Equal(t, sql.NullBool{true, true}, ConvertBoolPointerToNullBool(&tr))
+	assert.Equal(t, sql.NullBool{Valid: true}, ConvertBoolPointerToNullBool(&fl))
+	assert.Equal(t, sql.NullBool{Bool: true, Valid: true}, ConvertBoolPointerToNullBool(&tr))
 }
 
 func testConvertNullTimeToTimePointer(t *testing.T) {
 	assert.Nil(t, ConvertNullTimeToTimePointer(sql.NullTime{}))
-	assert.Equal(t, time.Time{}, *ConvertNullTimeToTimePointer(sql.NullTime{time.Time{}, true}))
+	assert.Equal(t, time.Time{}, *ConvertNullTimeToTimePointer(sql.NullTime{Valid: true}))
 }
 
 func testConvertTimePointerToNullTime(t *testing.T) {
 	tm := time.Time{}
 	assert.Equal(t, sql.NullTime{}, ConvertTimePointerToNullTime(nil))
-	assert.Equal(t, sql.NullTime{tm, true}, ConvertTimePointerToNullTime(&tm))
+	assert.Equal(t, sql.NullTime{Time: tm, Valid: true}, ConvertTimePointerToNullTime(&tm))
 }
 
 //!-

@@ -13,6 +13,7 @@ package entity
 import (
 	"context"
 	"fmt"
+
 	"github.com/vskurikhin/gofavorites/internal/domain"
 )
 

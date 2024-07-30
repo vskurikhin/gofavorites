@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-30 10:52 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-31 14:12 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * flag_parse.go
@@ -11,8 +11,9 @@
 package env
 
 import (
-	"github.com/spf13/pflag"
 	"time"
+
+	"github.com/spf13/pflag"
 )
 
 const (
@@ -34,6 +35,7 @@ const (
 	flagJwtMaxAgeSec                   = "Jwt-max-age-sec"
 	flagJwtSecret                      = "jwt-secret"
 	flagMongodbDSN                     = "mongodb-dsn"
+	flagSlogJson                       = "slog-json"
 	flagUpkPrivateKeyFile              = "upk-private-key-file"
 	flagUpkPublicKeyFile               = "upk-public-key-file"
 	flagUpkSecret                      = "upk-secret"
@@ -138,6 +140,12 @@ func makeFlagsParse() map[string]interface{} {
 			"m",
 			"mongodb://mongouser:password@localhost:27017/db?authSource=admin",
 			"database DSN",
+		)
+		flagsMap[flagSlogJson] = pflag.BoolP(
+			flagSlogJson,
+			"s",
+			false,
+			"slog JSON output",
 		)
 		flagsMap[flagUpkPrivateKeyFile] = pflag.String(
 			flagUpkPrivateKeyFile,

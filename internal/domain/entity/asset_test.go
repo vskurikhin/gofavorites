@@ -14,11 +14,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"testing"
+	"time"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/vskurikhin/gofavorites/internal/tool"
-	"testing"
-	"time"
 )
 
 func TestAsset(t *testing.T) {
@@ -46,9 +47,9 @@ func testAssetCloneable(t *testing.T) {
 		tool.RandStringBytes(32),
 		AssetType{},
 		MakeTAttributes(
-			sql.NullBool{true, true},
+			sql.NullBool{Bool: true, Valid: true},
 			time.Time{},
-			sql.NullTime{time.Time{}, false},
+			sql.NullTime{},
 		))
 	got := expected.Copy()
 	assert.NotNil(t, got)
@@ -61,9 +62,9 @@ func testAssetJSON(t *testing.T) {
 		isin,
 		AssetType{},
 		MakeTAttributes(
-			sql.NullBool{true, true},
+			sql.NullBool{Bool: true, Valid: true},
 			time.Time{},
-			sql.NullTime{time.Time{}, false},
+			sql.NullTime{},
 		))
 	j, err := expected.ToJSON()
 	assert.Nil(t, err)

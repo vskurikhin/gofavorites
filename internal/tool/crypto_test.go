@@ -15,9 +15,10 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCrypto(t *testing.T) {

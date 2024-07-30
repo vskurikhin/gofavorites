@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-29 19:13 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-31 00:14 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * upk_util_service.go
@@ -11,9 +11,10 @@ package services
 import (
 	"crypto/rsa"
 	"encoding/base64"
+	"sync"
+
 	"github.com/vskurikhin/gofavorites/internal/env"
 	"github.com/vskurikhin/gofavorites/internal/tool"
-	"sync"
 )
 
 type UpkUtilService interface {

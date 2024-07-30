@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-30 14:51 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-31 00:15 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * json_helpers.go
@@ -12,8 +12,9 @@ package entity
 
 import (
 	"database/sql"
-	"github.com/goccy/go-json"
 	"time"
+
+	"github.com/goccy/go-json"
 )
 
 type JsonNullBool struct {

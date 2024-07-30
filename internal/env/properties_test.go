@@ -13,11 +13,12 @@ package env
 
 import (
 	"fmt"
-	"github.com/spf13/pflag"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"sync"
 	"testing"
+
+	"github.com/spf13/pflag"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetProperties(t *testing.T) {

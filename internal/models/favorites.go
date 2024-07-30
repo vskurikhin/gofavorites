@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-30 13:38 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-31 14:52 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites.go
@@ -10,12 +10,13 @@ package models
 
 import (
 	"database/sql"
+	"math"
+
 	"github.com/google/uuid"
 	"github.com/ssoroka/slice"
 	"github.com/vskurikhin/gofavorites/internal/controllers/dto"
 	"github.com/vskurikhin/gofavorites/internal/domain/entity"
 	pb "github.com/vskurikhin/gofavorites/proto"
-	"math"
 )
 
 type Asset struct {
