@@ -55,6 +55,12 @@ HTTPTLSCAFile:
 HTTPTLSCertFile: 
 HTTPTLSEnabled: false
 HTTPTLSKeyFile: 
+MongoHost: 
+MongoName: 
+MongoEnabled: false
+MongoPort: 0
+MongoUserName: 
+MongoUserPassword: 
 Token: 
 UpkRSAPrivateKeyFile: 
 UpkRSAPublicKeyFile: 
@@ -91,6 +97,12 @@ HTTPTLSCAFile:
 HTTPTLSCertFile: 
 HTTPTLSEnabled: false
 HTTPTLSKeyFile: 
+MongoHost: 
+MongoName: 
+MongoEnabled: false
+MongoPort: 0
+MongoUserName: 
+MongoUserPassword: 
 Token: 
 UpkRSAPrivateKeyFile: 
 UpkRSAPublicKeyFile: 

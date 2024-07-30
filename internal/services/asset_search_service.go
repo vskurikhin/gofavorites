@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-26 16:51 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-29 23:34 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * asset_search_service.go
@@ -23,7 +23,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
 	"log/slog"
-	"os"
 	"sync"
 	"time"
 )
@@ -113,7 +112,6 @@ func (a *assetSearchService) dbLookup(ctx context.Context, isin string) bool {
 }
 
 func (a *assetSearchService) grpcLookup(ctx context.Context, isin string) bool {
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	conn, err := grpc.NewClient(a.assetGRPCAddress, a.opts...)
 	if err != nil {
@@ -123,15 +121,15 @@ func (a *assetSearchService) grpcLookup(ctx context.Context, isin string) bool {
 	c := pb.NewAssetServiceClient(conn)
 	var request pb.AssetRequest
 	request.Asset = &pb.Asset{Isin: isin}
-	ctx, cancel := context.WithTimeout(ctx, a.requestInterval)
+	ctx, cancel := context.WithTimeout(ctx, 300*time.Millisecond)
 	defer func() {
 		cancel()
 	}()
 	resp, err := c.Get(ctx, &request)
 
-	for i := 1; err != nil && tool.IsUpperBound(i, a.requestInterval); i++ {
-		logger.Warn(env.MSG+" AssetSearchService.grpcLookup", "err", err)
-		time.Sleep(200 * time.Millisecond * time.Duration(i))
+	for i := 1; err != nil && tool.IsUpperBoundWithSleep(i, 300, a.requestInterval); i++ {
+		slog.Warn(env.MSG+" AssetSearchService.grpcLookup", "err", err)
+		time.Sleep(300 * time.Millisecond * time.Duration(i))
 		resp, err = c.Get(ctx, &request)
 	}
 	if err == nil && resp.Status == pb.Status_OK {

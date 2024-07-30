@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-29 21:04 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-29 21:40 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * config.go
@@ -51,6 +51,12 @@ type Config interface {
 	JwtExpiresIn() time.Duration
 	JwtMaxAgeSec() int
 	JwtSecret() string
+	MongoEnabled() bool
+	MongoHost() string
+	MongoName() string
+	MongoPort() int
+	MongoUserName() string
+	MongoUserPassword() string
 	Token() string
 	UpkRSAPrivateKeyFile() string
 	UpkRSAPublicKeyFile() string
@@ -89,6 +95,10 @@ type config struct {
 		}
 		JWT struct {
 			jwtConfig `mapstructure:",squash"`
+		}
+		MONGO struct {
+			Enabled  bool
+			dbConfig `mapstructure:",squash"`
 		}
 		goFavoritesConfig `mapstructure:",squash"`
 		UPK               struct {
@@ -396,6 +406,54 @@ func (y *config) JwtSecret() string {
 	return ""
 }
 
+func (y *config) MongoEnabled() bool {
+
+	if y != nil {
+		return y.Favorites.MONGO.Enabled
+	}
+	return false
+}
+
+func (y *config) MongoHost() string {
+
+	if y != nil {
+		return y.Favorites.MONGO.Host
+	}
+	return ""
+}
+
+func (y *config) MongoName() string {
+
+	if y != nil {
+		return y.Favorites.MONGO.Name
+	}
+	return ""
+}
+
+func (y *config) MongoPort() int {
+
+	if y != nil {
+		return int(y.Favorites.MONGO.Port)
+	}
+	return 0
+}
+
+func (y *config) MongoUserName() string {
+
+	if y != nil {
+		return y.Favorites.MONGO.UserName
+	}
+	return ""
+}
+
+func (y *config) MongoUserPassword() string {
+
+	if y != nil {
+		return y.Favorites.MONGO.UserPassword
+	}
+	return ""
+}
+
 func (y *config) Token() string {
 
 	if y != nil {
@@ -458,6 +516,12 @@ HTTPTLSCAFile: %s
 HTTPTLSCertFile: %s
 HTTPTLSEnabled: %v
 HTTPTLSKeyFile: %s
+MongoHost: %s
+MongoName: %s
+MongoEnabled: %v
+MongoPort: %d
+MongoUserName: %s
+MongoUserPassword: %s
 Token: %s
 UpkRSAPrivateKeyFile: %s
 UpkRSAPublicKeyFile: %s
@@ -490,6 +554,12 @@ UpkSecretKey: %s`,
 		y.HTTPTLSCertFile(),
 		y.HTTPTLSEnabled(),
 		y.HTTPTLSKeyFile(),
+		y.MongoHost(),
+		y.MongoName(),
+		y.MongoEnabled(),
+		y.MongoPort(),
+		y.MongoUserName(),
+		base64.StdEncoding.EncodeToString([]byte(y.MongoUserPassword())),
 		y.Token(),
 		y.UpkRSAPrivateKeyFile(),
 		y.UpkRSAPublicKeyFile(),

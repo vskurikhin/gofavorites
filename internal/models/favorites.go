@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-29 14:28 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-30 09:22 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites.go
@@ -9,9 +9,11 @@
 package models
 
 import (
+	"database/sql"
 	"github.com/google/uuid"
 	"github.com/ssoroka/slice"
 	"github.com/vskurikhin/gofavorites/internal/controllers/dto"
+	"github.com/vskurikhin/gofavorites/internal/domain/entity"
 	pb "github.com/vskurikhin/gofavorites/proto"
 	"math"
 )
@@ -29,11 +31,21 @@ func (a Asset) AssetType() string {
 	return a.assetType
 }
 
+func (a Asset) ToEntity() entity.Asset {
+	at := entity.MakeAssetType(a.assetType, entity.DefaultTAttributes())
+	return entity.MakeAsset(a.isin, at, entity.DefaultTAttributes())
+}
+
 type Favorites struct {
 	id      uuid.UUID
 	asset   Asset
 	user    User
 	version int64
+}
+
+func AssetFromEntity(entity entity.Asset) Asset {
+	at := entity.AssetType()
+	return Asset{isin: entity.Isin(), assetType: at.Name()}
 }
 
 func (f Favorites) Id() uuid.UUID {
@@ -52,6 +64,34 @@ func (f Favorites) Version() int64 {
 	return f.version
 }
 
+func (f Favorites) WithUpk(upk string) Favorites {
+	t := f
+	t.user.upk = upk
+	return t
+}
+
+func (f Favorites) ToDto() dto.Favorites {
+	return dto.Favorites{
+		ID:        f.id.String(),
+		Isin:      f.asset.isin,
+		AssetType: f.asset.assetType,
+	}
+}
+
+func (f Favorites) ToEntity() entity.Favorites {
+
+	var version sql.NullInt64
+
+	if f.version > 0 {
+		version.Int64 = f.version
+		version.Valid = true
+	}
+	return entity.MakeFavorites(
+		f.id, f.asset.ToEntity(), f.user.ToEntity(), version,
+		entity.DefaultTAttributes(),
+	)
+}
+
 func (f Favorites) ToProto() *pb.Favorites {
 	return &pb.Favorites{
 		Asset: &pb.Asset{
@@ -64,14 +104,6 @@ func (f Favorites) ToProto() *pb.Favorites {
 			PersonalKey: f.user.personalKey,
 			Upk:         f.user.upk,
 		},
-	}
-}
-
-func (f Favorites) ToDto() dto.Favorites {
-	return dto.Favorites{
-		ID:        f.id.String(),
-		Isin:      f.asset.isin,
-		AssetType: f.asset.assetType,
 	}
 }
 
@@ -89,6 +121,7 @@ func FavoritesSliceToDto(favorites []Favorites) (result []dto.Favorites) {
 type User struct {
 	personalKey string
 	upk         string
+	version     int64
 }
 
 func (u User) PersonalKey() string {
@@ -99,27 +132,47 @@ func (u User) Upk() string {
 	return u.upk
 }
 
+func (u User) Version() int64 {
+	return u.version
+}
+
+func (u User) ToEntity() entity.User {
+	return entity.MakeUser(u.upk, entity.DefaultTAttributes())
+}
+
 func FavoritesFromDto(dto dto.Favorites, personalKey, upk string) Favorites {
 
 	assetType := dto.AssetType
 	isin := dto.Isin
-	asset := MakeAsset(isin, assetType)
+	asset := makeAsset(isin, assetType)
 	user := MakeUser(personalKey, upk)
 
-	return MakeFavorites(uuid.Max, asset, user, math.MaxInt64)
+	return makeFavorites(uuid.Max, asset, user, math.MinInt64)
+}
+
+func FavoritesFromEntity(entity entity.Favorites) Favorites {
+
+	asset := AssetFromEntity(entity.Asset())
+	user := UserFromEntity(entity.User())
+
+	return makeFavorites(entity.ID(), asset, user, entity.Version().Int64)
 }
 
 func FavoritesFromProto(proto *pb.Favorites) Favorites {
 
 	if proto == nil {
-		return Favorites{id: uuid.Max, version: math.MaxInt64}
+		return Favorites{id: uuid.Max, version: math.MinInt64}
 	}
 	assetType := proto.GetAsset().GetAssetType().GetName()
 	isin := proto.GetAsset().GetIsin()
-	asset := MakeAsset(isin, assetType)
+	asset := makeAsset(isin, assetType)
 	user := MakeUser(proto.GetUser().GetPersonalKey(), proto.GetUser().GetUpk())
 
-	return MakeFavorites(uuid.Max, asset, user, math.MaxInt64)
+	return makeFavorites(uuid.Max, asset, user, math.MinInt64)
+}
+
+func UserFromEntity(entity entity.User) User {
+	return User{upk: entity.Upk(), version: entity.Version()}
 }
 
 func UserFromProto(proto *pb.User) User {
@@ -130,14 +183,14 @@ func UserFromProto(proto *pb.User) User {
 	return MakeUser(proto.GetPersonalKey(), proto.GetUpk())
 }
 
-func MakeAsset(isin, assetType string) Asset {
+func makeAsset(isin, assetType string) Asset {
 	return Asset{
 		isin:      isin,
 		assetType: assetType,
 	}
 }
 
-func MakeFavorites(id uuid.UUID, asset Asset, user User, version int64) Favorites {
+func makeFavorites(id uuid.UUID, asset Asset, user User, version int64) Favorites {
 	return Favorites{
 		id:      id,
 		asset:   asset,

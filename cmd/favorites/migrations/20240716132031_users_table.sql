@@ -4,6 +4,7 @@
 CREATE TABLE users
 (
     upk        varchar PRIMARY KEY,
+    version    bigint    NOT NULL DEFAULT 0,
     deleted    bool,
     created_at timestamp NOT NULL,
     updated_at timestamp

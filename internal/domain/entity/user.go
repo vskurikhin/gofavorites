@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-20 11:01 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-30 10:27 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * user.go
@@ -22,7 +22,8 @@ import (
 
 type User struct {
 	TAttributes
-	upk string
+	upk     string
+	version int64
 }
 
 var _ domain.Entity = (*User)(nil)
@@ -35,6 +36,7 @@ func GetUser(ctx context.Context, repo domain.Repo[*User], upk string) (User, er
 	result, err := repo.Get(ctx, result, func(scanner domain.Scanner) {
 		e = scanner.Scan(
 			&result.upk,
+			&result.version,
 			&result.deleted,
 			&result.createdAt,
 			&result.updatedAt,
@@ -68,19 +70,23 @@ func IsUserNotFound(u User, err error) bool {
 	return tool.NoRowsInResultSet(err) || u == User{}
 }
 
-func (u *User) Upk() string {
+func (u User) Upk() string {
 	return u.upk
 }
 
-func (u *User) Deleted() sql.NullBool {
+func (u User) Version() int64 {
+	return u.version
+}
+
+func (u User) Deleted() sql.NullBool {
 	return u.deleted
 }
 
-func (u *User) CreatedAt() time.Time {
+func (u User) CreatedAt() time.Time {
 	return u.createdAt
 }
 
-func (u *User) UpdatedAt() sql.NullTime {
+func (u User) UpdatedAt() sql.NullTime {
 	return u.updatedAt
 }
 
@@ -93,7 +99,7 @@ func (u *User) Delete(ctx context.Context, repo domain.Repo[*User]) (err error) 
 
 	_, e := repo.Delete(ctx, u, func(s domain.Scanner) {
 		t := *u
-		err = s.Scan(&t.deleted, &t.updatedAt)
+		err = s.Scan(&t.version, &t.deleted, &t.updatedAt)
 		if err == nil {
 			*u = t
 		}
@@ -109,11 +115,15 @@ func (u *User) DeleteArgs() []any {
 }
 
 func (u *User) DeleteSQL() string {
-	return `UPDATE users SET deleted = true WHERE upk = $1 RETURNING deleted, updated_at`
+	return `UPDATE users
+	SET version = version + 1, deleted = true
+	WHERE upk = $1
+	RETURNING version, deleted, updated_at`
 }
 
 type userJSON struct {
 	UPK       string
+	Version   int64
 	Deleted   *bool `json:",omitempty"`
 	CreatedAt time.Time
 	UpdatedAt *time.Time `json:",omitempty"`
@@ -128,6 +138,7 @@ func (u *User) FromJSON(data []byte) (err error) {
 		return err
 	}
 	u.upk = t.UPK
+	u.version = t.Version
 	u.deleted = tool.ConvertBoolPointerToNullBool(t.Deleted)
 	u.createdAt = t.CreatedAt
 	u.updatedAt = tool.ConvertTimePointerToNullTime(t.UpdatedAt)
@@ -144,18 +155,18 @@ func (u *User) GetByFilterArgs() []any {
 }
 
 func (u *User) GetByFilterSQL() string {
-	return `SELECT upk, deleted, created_at, updated_at FROM users WHERE deleted IS NOT TRUE`
+	return `SELECT upk, version, deleted, created_at, updated_at FROM users WHERE deleted IS NOT TRUE`
 }
 
 func (u *User) GetSQL() string {
-	return `SELECT upk, deleted, created_at, updated_at FROM users WHERE upk = $1`
+	return `SELECT upk, version, deleted, created_at, updated_at FROM users WHERE upk = $1`
 }
 
 func (u *User) Insert(ctx context.Context, repo domain.Repo[*User]) (err error) {
 
 	_, e := repo.Insert(ctx, u, func(s domain.Scanner) {
 		t := *u
-		err = s.Scan(&t.upk, &t.createdAt)
+		err = s.Scan(&t.upk, &t.version, &t.createdAt)
 		if err == nil {
 			*u = t
 		}
@@ -167,11 +178,14 @@ func (u *User) Insert(ctx context.Context, repo domain.Repo[*User]) (err error) 
 }
 
 func (u *User) InsertArgs() []any {
-	return []any{u.upk, u.createdAt}
+	return []any{u.upk, u.version, u.createdAt}
 }
 
 func (u *User) InsertSQL() string {
-	return `INSERT INTO users (upk, created_at) VALUES ($1, $2) RETURNING upk, created_at`
+	return `INSERT INTO users
+	(upk, version, created_at)
+	VALUES ($1, $2, $3)
+	RETURNING upk, version, created_at`
 }
 
 func (u *User) Key() string {
@@ -180,8 +194,9 @@ func (u *User) Key() string {
 
 func (u *User) String() string {
 	return fmt.Sprintf(
-		"{%s %v %v %v}\n",
+		"{%s %d %v %v %v}\n",
 		u.upk,
+		u.version,
 		u.deleted,
 		u.createdAt,
 		u.updatedAt,
@@ -192,6 +207,7 @@ func (u *User) ToJSON() ([]byte, error) {
 
 	result, err := json.Marshal(userJSON{
 		UPK:       u.upk,
+		Version:   u.version,
 		Deleted:   tool.ConvertNullBoolToBoolPointer(u.deleted),
 		CreatedAt: u.createdAt,
 		UpdatedAt: tool.ConvertNullTimeToTimePointer(u.updatedAt),
@@ -206,7 +222,7 @@ func (u *User) Update(ctx context.Context, repo domain.Repo[*User]) (err error) 
 
 	_, e := repo.Update(ctx, u, func(s domain.Scanner) {
 		t := *u
-		err = s.Scan(&t.updatedAt)
+		err = s.Scan(&t.version, &t.updatedAt)
 		if err == nil {
 			*u = t
 		}
@@ -222,7 +238,7 @@ func (u *User) UpdateArgs() []any {
 }
 
 func (u *User) UpdateSQL() string {
-	return `UPDATE users SET updated_at = $2 WHERE upk = $1 RETURNING updated_at`
+	return `UPDATE users SET version = version + 1, updated_at = $2 WHERE upk = $1 RETURNING version, updated_at`
 }
 
 //!-

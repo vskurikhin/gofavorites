@@ -12,9 +12,9 @@ favorites:
     username: dbuser
     password: password
   external:
-    asset_grpc_address: localhost:8444
-    auth_grpc_address: localhost:8444
-    request_timeout_interval_ms: 500
+    asset_grpc_address: 127.0.0.1:8444
+    auth_grpc_address: 127.0.0.1:8444
+    request_timeout_interval_ms: 911
   grpc:
     address: localhost
     enabled: true
@@ -38,10 +38,15 @@ favorites:
     jwt_secret: TzzVGdLUJGcYKaf5he4zeLW5QdSJws9UoUug3Q3kCMeLVijBSjPY3k0pNu2XWhB
     jwt_expired_in: 60m
     jwt_max_age_sec: 3600
+  mongo:
+    enabled: true
+    name: db
+    host: localhost
+    port: 27017
+    username: mongouser
+    password: password
   token: '$2a$11$ZTzzVGdLUJGcYKJws9UoUug3Q3kCMELVziajBSJPY3k0pNu2XWHBy'
   upk:
     rsa_private_key_file: cert/upk-private-key.pem
     rsa_public_key_file: cert/upk-public-key.pem
     secret: g16Ug0b1zVaCYQzxD45C6p99fUxMkaSL2npjmi5qBjRMAy6kjpZP0/zahKE4zQGvTlp7lKavV4z3RWIm9Uch1pBgaYLZ/pAZDbgr8roqVc/QEzQnsaLqoe7ZzOcPsj7NzbrXz/l+rWVAGdyAkLGs7NIZ3GgNlyZ5lrjglAIRdHA6PpW0jBzbcKb5Z5Y5U80N75+wrenlWPFUKTrN8exuUhzLK6FHWpAzuivD+pg42bZFvdSLE/0oXd0U1W+SxSBXv3RxEkRMquYG+9/VHpT745BzF+QQlR+CicLC5XaUusAZKtqFf3LokISPY1kxjP32gW3SqtZThZa/4pPMpesrXA==
-
-

@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-20 11:01 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-30 10:29 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * asset.go
@@ -117,23 +117,23 @@ func IsAssetNotFound(a Asset, err error) bool {
 	return tool.NoRowsInResultSet(err) || a == Asset{}
 }
 
-func (a *Asset) Isin() string {
+func (a Asset) Isin() string {
 	return a.isin
 }
 
-func (a *Asset) AssetType() AssetType {
+func (a Asset) AssetType() AssetType {
 	return a.assetType
 }
 
-func (a *Asset) Deleted() sql.NullBool {
+func (a Asset) Deleted() sql.NullBool {
 	return a.deleted
 }
 
-func (a *Asset) CreatedAt() time.Time {
+func (a Asset) CreatedAt() time.Time {
 	return a.createdAt
 }
 
-func (a *Asset) UpdatedAt() sql.NullTime {
+func (a Asset) UpdatedAt() sql.NullTime {
 	return a.updatedAt
 }
 

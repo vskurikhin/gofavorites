@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-29 16:42 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-30 10:52 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * environments.go
@@ -33,6 +33,7 @@ type environments struct {
 	JwtExpiresIn                   time.Duration `env:"JWT_EXPIRED_IN"`
 	JwtMaxAge                      int           `env:"JWT_MAX_AGE_SEC"`
 	JwtSecret                      string        `env:"JWT_SECRET"`
+	MongodbDSN                     string        `env:"MONGODB_DSN"`
 	UpkPrivateKeyFile              string        `env:"UPK_PRIVATE_KEY_FILE"`
 	UpkPublicKeyFile               string        `env:"UPK_PUBLIC_KEY_FILE"`
 	UpkSecret                      string        `env:"UPK_SECRET"`

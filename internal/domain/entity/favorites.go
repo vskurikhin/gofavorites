@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-26 10:39 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-30 10:27 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites.go
@@ -18,10 +18,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/vskurikhin/gofavorites/internal/domain"
 	"github.com/vskurikhin/gofavorites/internal/env"
-	"github.com/vskurikhin/gofavorites/internal/models"
 	"github.com/vskurikhin/gofavorites/internal/tool"
 	"log/slog"
-	"math"
 	"time"
 )
 
@@ -78,10 +76,10 @@ const (
 	DO NOTHING`
 
 	FavoritesUpsertTxUserSQL = `INSERT INTO users
-	(upk, created_at)
-	VALUES ($1, $2)
+	(upk, version, created_at)
+	VALUES ($1, 1, $2)
 	ON CONFLICT (upk)
-	DO NOTHING`
+	DO UPDATE SET version = users.version + 1`
 )
 
 type Favorites struct {
@@ -166,21 +164,6 @@ func GetFavoritesForUser(ctx context.Context, repo domain.Repo[*Favorites], upk 
 	return results, err
 }
 
-func FavoritesFromModel(favorites models.Favorites) Favorites {
-
-	var id uuid.UUID
-	if favorites.Id() == uuid.Max {
-		id = uuid.New()
-	} else {
-		id = favorites.Id()
-	}
-	at := MakeAssetType(favorites.Asset().AssetType(), DefaultTAttributes())
-	asset := MakeAsset(favorites.Asset().Isin(), at, DefaultTAttributes())
-	user := MakeUser(favorites.User().Upk(), DefaultTAttributes())
-
-	return MakeFavorites(id, asset, user, sql.NullInt64{}, DefaultTAttributes())
-}
-
 func MakeFavorites(id uuid.UUID, asset Asset, user User, version sql.NullInt64, a TAttributes) Favorites {
 	return Favorites{
 		TAttributes: struct {
@@ -203,31 +186,31 @@ func IsFavoritesNotFound(f Favorites, err error) bool {
 	return tool.NoRowsInResultSet(err) || f == Favorites{}
 }
 
-func (f *Favorites) ID() uuid.UUID {
+func (f Favorites) ID() uuid.UUID {
 	return f.id
 }
 
-func (f *Favorites) Asset() Asset {
+func (f Favorites) Asset() Asset {
 	return f.asset
 }
 
-func (f *Favorites) User() User {
+func (f Favorites) User() User {
 	return f.user
 }
 
-func (f *Favorites) Version() sql.NullInt64 {
+func (f Favorites) Version() sql.NullInt64 {
 	return f.version
 }
 
-func (f *Favorites) Deleted() sql.NullBool {
+func (f Favorites) Deleted() sql.NullBool {
 	return f.deleted
 }
 
-func (f *Favorites) CreatedAt() time.Time {
+func (f Favorites) CreatedAt() time.Time {
 	return f.createdAt
 }
 
-func (f *Favorites) UpdatedAt() sql.NullTime {
+func (f Favorites) UpdatedAt() sql.NullTime {
 	return f.updatedAt
 }
 
@@ -415,20 +398,6 @@ func (f *Favorites) ToJSON() ([]byte, error) {
 	return result, nil
 }
 
-func (f *Favorites) ToModel() models.Favorites {
-
-	asset := models.MakeAsset(f.asset.isin, f.asset.assetType.name)
-	user := models.MakeUser("", f.user.upk)
-	var version int64
-
-	if f.version.Valid {
-		version = f.version.Int64
-	} else {
-		version = math.MaxInt64
-	}
-	return models.MakeFavorites(f.id, asset, user, version)
-}
-
 func (f *Favorites) UpdateArgs() []any {
 	return []any{f.asset.isin, f.user.upk, f.version, f.updatedAt}
 }
@@ -437,11 +406,22 @@ func (f *Favorites) UpdateSQL() string {
 	return FavoritesUpdateSQL
 }
 
+//const FavoritesUpsertTxFavoritesSQL = `INSERT INTO favorites
+//    (isin, user_upk, version, created_at)
+//    VALUES ($1, $2, (SELECT u.version FROM users u WHERE u.upk = $2), $3)
+//	ON CONFLICT (isin, user_upk)
+//	DO UPDATE SET version = (SELECT u.version FROM users u WHERE u.upk = $2), updated_at = $4
+//    RETURNING id, isin, user_upk, version, deleted, created_at, updated_at,
+//	(SELECT created_at FROM asset_types WHERE name = $5),
+//	(SELECT created_at FROM assets WHERE isin = $1),
+//	(SELECT updated_at FROM assets WHERE isin = $1),
+//	(SELECT created_at FROM users WHERE upk = $2)`
+
 const FavoritesUpsertTxFavoritesSQL = `INSERT INTO favorites
     (isin, user_upk, version, created_at)
-    VALUES ($1, $2, $3, $4)
+    VALUES ($1, $2, (SELECT u.version FROM users u WHERE u.upk = $3), $4)
 	ON CONFLICT (isin, user_upk)
-	DO UPDATE SET version = $3, updated_at = $5
+	DO UPDATE SET version = (SELECT u.version FROM users u WHERE u.upk = $2), updated_at = $5
     RETURNING id, isin, user_upk, version, deleted, created_at, updated_at,
 	(SELECT created_at FROM asset_types WHERE name = $6),
 	(SELECT created_at FROM assets WHERE isin = $1),
@@ -493,7 +473,7 @@ func (f *Favorites) UpsertTxArgs() domain.TxArgs {
 			{f.asset.assetType.name, f.asset.assetType.createdAt},
 			{f.asset.isin, f.asset.assetType.name, f.asset.createdAt, f.asset.updatedAt},
 			{f.user.upk, f.user.createdAt},
-			{f.asset.isin, f.user.upk, f.version, f.createdAt, f.updatedAt, f.asset.assetType.name},
+			{f.asset.isin, f.user.upk, f.user.upk, f.createdAt, f.updatedAt, f.asset.assetType.name},
 		},
 	}
 }

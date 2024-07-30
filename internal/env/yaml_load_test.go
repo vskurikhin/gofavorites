@@ -66,6 +66,10 @@ func TestLoadConfig(t *testing.T) {
 					JWT struct {
 						jwtConfig `mapstructure:",squash"`
 					}
+					MONGO struct {
+						Enabled  bool
+						dbConfig `mapstructure:",squash"`
+					}
 					goFavoritesConfig `mapstructure:",squash"`
 					UPK               struct {
 						upkConfig `mapstructure:",squash"`
@@ -115,7 +119,7 @@ func TestLoadConfig(t *testing.T) {
 						Enabled: true,
 						grpcConfig: grpcConfig{
 							Address: "localhost",
-							Port:    8443,
+							Port:    8442,
 							Proto:   "tcp",
 						},
 						TLS: struct {
@@ -141,7 +145,7 @@ func TestLoadConfig(t *testing.T) {
 						Enabled: true,
 						httpConfig: httpConfig{
 							Address: "localhost",
-							Port:    443,
+							Port:    8443,
 						},
 						TLS: struct {
 							Enabled   bool
@@ -162,6 +166,19 @@ func TestLoadConfig(t *testing.T) {
 							JwtSecret:    "HyZPFEaRf5he4zezLWy5QdSvAdOBWoAgJq5wTvoUH06TYVucOnSGPhSRPp7mkFF",
 							JwtExpiresIn: time.Duration(60) * time.Minute,
 							JwtMaxAgeSec: 60,
+						},
+					},
+					MONGO: struct {
+						Enabled  bool
+						dbConfig `mapstructure:",squash"`
+					}{
+						Enabled: false,
+						dbConfig: dbConfig{
+							Name:         "db",
+							Host:         "localhost",
+							Port:         27017,
+							UserName:     "mongouser",
+							UserPassword: "password",
 						},
 					},
 					goFavoritesConfig: goFavoritesConfig{

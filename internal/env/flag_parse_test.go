@@ -52,6 +52,7 @@ func tryMakeFlagsParse(t *testing.T) {
 		flagHTTPCertFile,
 		flagHTTPKeyFile,
 		flagJwtSecret,
+		flagMongodbDSN,
 		flagUpkPrivateKeyFile,
 		flagUpkPublicKeyFile,
 		flagUpkSecret,

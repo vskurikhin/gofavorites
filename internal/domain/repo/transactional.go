@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-26 11:26 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-30 10:15 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * transactional.go
@@ -114,10 +114,11 @@ func scanPostgreTxArgs(ctx context.Context, pool *pgxpool.Pool, txArgs domain.Tx
 		ct, err := tx.Exec(ctx, txArgs.SQLs[i], args...)
 
 		if err != nil {
+			slog.Error(env.MSG+" scanPostgreTxArgs", "err", err)
 			return err
 		}
 		slog.Debug(
-			env.MSG+" read",
+			env.MSG+" scanPostgreTxArgs",
 			"commandTag", ct.String(),
 			"commandTag.RowsAffected()", ct.RowsAffected(),
 		)

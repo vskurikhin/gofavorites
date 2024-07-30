@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-29 21:01 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-29 22:09 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * properties.go
@@ -41,6 +41,7 @@ const (
 	propertyJwtExpiresIn                   = "jwt-expires-in"
 	propertyJwtMaxAgeSec                   = "jwt-max-age-sec"
 	propertyJwtSecret                      = "jwt-secret"
+	propertyMongodbPool                    = "mongodb-pool"
 	propertyUpkRSAPrivateKey               = "upk-rsa-private-key"
 	propertyUpkRSAPublicKey                = "upk-rsa-public-key"
 	propertyUpkSecretKey                   = "upk-secret-key"
@@ -61,10 +62,11 @@ type Properties interface {
 	GRPCTransportCredentials() credentials.TransportCredentials
 	HTTPAddress() string
 	HTTPTLSConfig() *tls.Config
-	OutboundIP() net.IP
 	JwtExpiresIn() time.Duration
 	JwtMaxAgeSec() int
 	JwtSecret() string
+	MongodbPool() *tool.MongoPool
+	OutboundIP() net.IP
 	UpkRSAPrivateKey() *rsa.PrivateKey
 	UpkRSAPublicKey() *rsa.PublicKey
 	UpkSecretKey() []byte
@@ -119,6 +121,9 @@ func GetProperties() Properties {
 		jwtSecret, err := getJwtSecret(flm, env, yml)
 		slog.Warn(MSG+" GetProperties", "jwtSecret", jwtSecret, "err", err)
 
+		mongodbPool, err := makeMongodbPool(flm, env, yml)
+		slog.Warn(MSG+" GetProperties", "mongodbDisable", err)
+
 		upkRSAPrivateKey, err := getRSAPrivateKey(flm, env, yml)
 		slog.Warn(MSG+" GetProperties", "upkRSAPrivateKey", upkRSAPrivateKey, "err", err)
 		upkRSAPublicKey, err := getRSAPublicKey(flm, env, yml)
@@ -143,6 +148,7 @@ func GetProperties() Properties {
 			WithJwtExpiresIn(jwtExpiresIn),
 			WithJwtMaxAgeSec(jwtMaxAgeSec),
 			WithJwtSecret(jwtSecret),
+			withMongodbPool(mongodbPool),
 			WithUpkRSAPrivateKey(upkRSAPrivateKey),
 			WithUpkRSAPublicKey(upkRSAPublicKey),
 			WithUpkSecretKey(upkSecretKey),
@@ -503,6 +509,24 @@ func (p *mapProperties) DBPool() *pgxpool.Pool {
 	return nil
 }
 
+// withMongodbPool — Флаги.
+func withMongodbPool(pool *tool.MongoPool) func(*mapProperties) {
+	return func(p *mapProperties) {
+		if pool != nil {
+			p.mp.Store(propertyMongodbPool, pool)
+		}
+	}
+}
+
+func (p *mapProperties) MongodbPool() *tool.MongoPool {
+	if p, ok := p.mp.Load(propertyMongodbPool); ok {
+		if pool, ok := p.(*tool.MongoPool); ok {
+			return pool
+		}
+	}
+	return nil
+}
+
 func (p *mapProperties) OutboundIP() net.IP {
 	return nil
 }
@@ -525,6 +549,7 @@ HTTPTransportCredentials: %v
 JwtExpiresIn: %v
 JwtMaxAgeSec: %d
 JwtSecret: %s
+MongodbPool: %v
 OutboundIP: %v
 UpkRSAPrivateKey: %v
 UpkRSAPublicKey: %v
@@ -547,6 +572,7 @@ UpkSecretKey: %v
 		p.JwtExpiresIn(),
 		p.JwtMaxAgeSec(),
 		p.JwtSecret(),
+		p.MongodbPool(),
 		p.OutboundIP(),
 		p.UpkRSAPrivateKey(),
 		p.UpkRSAPublicKey(),

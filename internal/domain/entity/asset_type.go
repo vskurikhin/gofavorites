@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-20 11:01 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-30 10:29 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * asset_type.go
@@ -64,19 +64,19 @@ func MakeAssetType(name string, a TAttributes) AssetType {
 	}
 }
 
-func (a *AssetType) Name() string {
+func (a AssetType) Name() string {
 	return a.name
 }
 
-func (a *AssetType) Deleted() sql.NullBool {
+func (a AssetType) Deleted() sql.NullBool {
 	return a.deleted
 }
 
-func (a *AssetType) CreatedAt() time.Time {
+func (a AssetType) CreatedAt() time.Time {
 	return a.createdAt
 }
 
-func (a *AssetType) UpdatedAt() sql.NullTime {
+func (a AssetType) UpdatedAt() sql.NullTime {
 	return a.updatedAt
 }
 

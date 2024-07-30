@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-29 16:43 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-30 10:52 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * flag_parse.go
@@ -33,6 +33,7 @@ const (
 	flagJwtExpiresIn                   = "jwt-expires-in"
 	flagJwtMaxAgeSec                   = "Jwt-max-age-sec"
 	flagJwtSecret                      = "jwt-secret"
+	flagMongodbDSN                     = "mongodb-dsn"
 	flagUpkPrivateKeyFile              = "upk-private-key-file"
 	flagUpkPublicKeyFile               = "upk-public-key-file"
 	flagUpkSecret                      = "upk-secret"
@@ -131,6 +132,12 @@ func makeFlagsParse() map[string]interface{} {
 			flagJwtSecret,
 			"",
 			"JWT secret",
+		)
+		flagsMap[flagMongodbDSN] = pflag.StringP(
+			flagMongodbDSN,
+			"m",
+			"mongodb://mongouser:password@localhost:27017/db?authSource=admin",
+			"database DSN",
 		)
 		flagsMap[flagUpkPrivateKeyFile] = pflag.String(
 			flagUpkPrivateKeyFile,

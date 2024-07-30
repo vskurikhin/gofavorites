@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-29 19:47 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-29 22:18 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * properties_tool.go
@@ -299,6 +299,29 @@ func makeDBPool(flm map[string]interface{}, env *environments, yml Config) (*pgx
 		return tool.DBConnect(dsn), nil
 	}
 	return nil, fmt.Errorf("connect to DataBase disabled")
+}
+
+func makeMongodbPool(flm map[string]interface{}, env *environments, yml Config) (*tool.MongoPool, error) {
+	if yml.MongoEnabled() {
+
+		dsn := fmt.Sprintf(
+			"mongodb://%s:%s@%s:%d/%s?authSource=admin",
+			yml.MongoUserName(), yml.MongoUserPassword(), yml.MongoHost(), yml.MongoPort(), yml.MongoName(),
+		)
+		getFlagDatabaseDSN := func() {
+			dsn = *(flm[flagMongodbDSN].(*string))
+		}
+		if env.MongodbDSN != "" {
+			dsn = env.MongodbDSN
+		} else if dsn == "mongodb://:@:/?authSource=admin" {
+			getFlagDatabaseDSN()
+		}
+		setIfFlagChanged(flagMongodbDSN, getFlagDatabaseDSN)
+		slog.Warn(MSG, "MongodbDSN", dsn)
+
+		return tool.MongodbConnect(dsn), nil
+	}
+	return nil, fmt.Errorf("connect to MongoDB disabled")
 }
 
 func parseEnvAddress(address []string) string {

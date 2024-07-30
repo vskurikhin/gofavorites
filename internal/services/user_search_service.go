@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-26 10:59 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-29 23:34 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * user_search_service.go
@@ -124,7 +124,7 @@ func (u *userSearchService) grpcLookupPersonalKey(ctx context.Context, personalK
 	}
 	defer func() { _ = conn.Close() }()
 	c := pb.NewUserServiceClient(conn)
-	ctx, cancel := context.WithTimeout(ctx, u.requestInterval)
+	ctx, cancel := context.WithTimeout(ctx, 300*time.Millisecond)
 	defer func() {
 		cancel()
 	}()
@@ -132,8 +132,9 @@ func (u *userSearchService) grpcLookupPersonalKey(ctx context.Context, personalK
 	request.User = &pb.User{PersonalKey: personalKey}
 	resp, err := c.Get(ctx, &request)
 
-	for i := 1; err != nil && tool.IsUpperBound(i, u.requestInterval); i++ {
-		time.Sleep(200 * time.Millisecond * time.Duration(i))
+	for i := 1; err != nil && tool.IsUpperBoundWithSleep(i, 300, u.requestInterval); i++ {
+		slog.Warn(env.MSG+" UserSearchService.grpcLookupPersonalKey", "err", err)
+		time.Sleep(300 * time.Millisecond * time.Duration(i))
 		resp, err = c.Get(ctx, &request)
 	}
 	if resp != nil && resp.Status == pb.Status_OK {
@@ -150,7 +151,7 @@ func (u *userSearchService) grpcLookupUpk(ctx context.Context, upk string) bool 
 	}
 	defer func() { _ = conn.Close() }()
 	c := pb.NewUserServiceClient(conn)
-	ctx, cancel := context.WithTimeout(ctx, u.requestInterval)
+	ctx, cancel := context.WithTimeout(ctx, 300*time.Millisecond)
 	defer func() {
 		cancel()
 	}()
@@ -158,9 +159,9 @@ func (u *userSearchService) grpcLookupUpk(ctx context.Context, upk string) bool 
 	request.User = &pb.User{Upk: upk}
 	resp, err := c.Get(ctx, &request)
 
-	for i := 1; err != nil && tool.IsUpperBound(i, u.requestInterval); i++ {
-		slog.Warn(env.MSG+" UserSearchService.grpcLookup", "err", err)
-		time.Sleep(200 * time.Millisecond * time.Duration(i))
+	for i := 1; err != nil && tool.IsUpperBoundWithSleep(i, 300, u.requestInterval); i++ {
+		slog.Warn(env.MSG+" UserSearchService.grpcLookupUpk", "err", err)
+		time.Sleep(300 * time.Millisecond * time.Duration(i))
 		resp, err = c.Get(ctx, &request)
 	}
 	if err == nil && resp.Status == pb.Status_OK {

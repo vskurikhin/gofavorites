@@ -18,7 +18,7 @@ favorites:
   grpc:
     address: localhost
     enabled: true
-    port: 8443
+    port: 8442
     proto: tcp
     tls:
       enabled: true
@@ -28,7 +28,7 @@ favorites:
   http:
     address: localhost
     enabled: true
-    port: 443
+    port: 8443
     tls:
       enabled: true
       ca_file: cert/http-test_ca-cert.pem
@@ -38,6 +38,13 @@ favorites:
     jwt_secret: RlMCEknHyZPFEaf5he4zeLWy5QdSvdOBWoAgJq5wy5QdSvOBWoAgJq5wtUH06TY
     jwt_expired_in: 60m
     jwt_max_age_sec: 3600
+  mongo:
+    enabled: false
+    name: db
+    host: localhost
+    port: 27017
+    username: mongouser
+    password: password
   token: $2a$11$ZTzzVGdLUJGcYKJws9UoUug3Q3kCMELVziajBSJPY3k0pNu2XWHBy
   upk:
     rsa_private_key_file: cert/upk-private-key.pem
