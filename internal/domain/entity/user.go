@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-30 10:27 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-30 14:51 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * user.go
@@ -24,6 +24,14 @@ type User struct {
 	TAttributes
 	upk     string
 	version int64
+}
+
+type user struct {
+	UPK       string
+	Version   int64
+	Deleted   JsonNullBool `json:",omitempty"`
+	CreatedAt time.Time
+	UpdatedAt JsonNullTime `json:",omitempty"`
 }
 
 var _ domain.Entity = (*User)(nil)
@@ -121,17 +129,9 @@ func (u *User) DeleteSQL() string {
 	RETURNING version, deleted, updated_at`
 }
 
-type userJSON struct {
-	UPK       string
-	Version   int64
-	Deleted   *bool `json:",omitempty"`
-	CreatedAt time.Time
-	UpdatedAt *time.Time `json:",omitempty"`
-}
-
 func (u *User) FromJSON(data []byte) (err error) {
 
-	var t userJSON
+	var t user
 	err = json.Unmarshal(data, &t)
 
 	if err != nil {
@@ -139,9 +139,9 @@ func (u *User) FromJSON(data []byte) (err error) {
 	}
 	u.upk = t.UPK
 	u.version = t.Version
-	u.deleted = tool.ConvertBoolPointerToNullBool(t.Deleted)
+	u.deleted = t.Deleted.ToNullBool()
 	u.createdAt = t.CreatedAt
-	u.updatedAt = tool.ConvertTimePointerToNullTime(t.UpdatedAt)
+	u.updatedAt = t.UpdatedAt.ToNullTime()
 
 	return nil
 }
@@ -205,12 +205,12 @@ func (u *User) String() string {
 
 func (u *User) ToJSON() ([]byte, error) {
 
-	result, err := json.Marshal(userJSON{
+	result, err := json.Marshal(user{
 		UPK:       u.upk,
 		Version:   u.version,
-		Deleted:   tool.ConvertNullBoolToBoolPointer(u.deleted),
+		Deleted:   FromNullBool(u.deleted),
 		CreatedAt: u.createdAt,
-		UpdatedAt: tool.ConvertNullTimeToTimePointer(u.updatedAt),
+		UpdatedAt: FromNullTime(u.updatedAt),
 	})
 	if err != nil {
 		return nil, err

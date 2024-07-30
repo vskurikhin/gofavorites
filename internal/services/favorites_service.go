@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-30 10:50 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-30 12:03 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites_service.go
@@ -16,16 +16,14 @@ import (
 	"github.com/ssoroka/slice"
 	"github.com/vskurikhin/gofavorites/internal/domain"
 	"github.com/vskurikhin/gofavorites/internal/domain/entity"
+	"github.com/vskurikhin/gofavorites/internal/domain/mongo"
 	"github.com/vskurikhin/gofavorites/internal/domain/repo"
 	"github.com/vskurikhin/gofavorites/internal/env"
 	"github.com/vskurikhin/gofavorites/internal/models"
 	"github.com/vskurikhin/gofavorites/internal/tool"
 	pb "github.com/vskurikhin/gofavorites/proto"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/sync/errgroup"
 	"log/slog"
-	"os"
 	"sync"
 )
 
@@ -38,7 +36,7 @@ type favoritesService struct {
 	pb.UnimplementedFavoritesServiceServer
 	assetLookup   AssetSearchService
 	dftFavorites  domain.Dft[*entity.Favorites]
-	mongodbPool   *tool.MongoPool
+	mongo         mongo.Mongo
 	repoFavorites domain.Repo[*entity.Favorites]
 	upkUtil       UpkUtilService
 	userLookup    UserSearchService
@@ -57,7 +55,7 @@ func GetFavoritesService(prop env.Properties) FavoritesService {
 		favoritesServ = new(favoritesService)
 		favoritesServ.assetLookup = GetAssetSearchService(prop)
 		favoritesServ.dftFavorites = repo.GetFavoritesTxPostgres(prop)
-		favoritesServ.mongodbPool = prop.MongodbPool()
+		favoritesServ.mongo = mongo.GetMongoRepo(prop)
 		favoritesServ.repoFavorites = repo.GetFavoritesPostgresCachedRepo(prop)
 		favoritesServ.upkUtil = GetUpkUtilService(prop)
 		favoritesServ.userLookup = GetUserSearchService(prop)
@@ -248,83 +246,20 @@ func (f *favoritesService) set(ctx context.Context, model models.Favorites) (mod
 		return fmt.Errorf("asset by isin: %s not found", model.Asset().Isin())
 	})
 	if err = g.Wait(); err != nil {
-		slog.Error(env.MSG+" FavoritesService.Set", "err", err)
+		slog.Error(env.MSG+" FavoritesService.set", "err", err)
 	} else {
 		model = model.WithUpk(upk)
 		favorites := model.ToEntity()
 		err = favorites.Upsert(ctx, f.dftFavorites, func() {
-			_, _ = fmt.Fprintf(os.Stderr, "in transaction version: %d\n", favorites.Version().Int64)
-			conn, err := f.mongodbPool.GetConnection()
-
+			err := f.mongo.Save(ctx, favorites)
 			if err != nil {
-				return
-			}
-			defer func() { _ = f.mongodbPool.CloseConnection(conn) }()
-
-			collection := tool.GetCollection(conn, "db", "favorites")
-			user := favorites.User()
-			asset := favorites.Asset()
-			cur, err := collection.Find(ctx, bson.D{
-				{"upk", user.Upk()},
-				{"isin", asset.Isin()},
-			})
-			if err != nil {
-				return
-			}
-			defer func() { _ = cur.Close(ctx) }()
-			if cur.RemainingBatchLength() == 0 {
-				res, err := collection.InsertOne(ctx, bson.D{
-					{"upk", user.Upk()},
-					{"isin", asset.Isin()},
-					{"version", favorites.Version().Int64},
-				})
-				slog.Debug(env.MSG+" FavoritesService.Set", "res.InsertedID", res.InsertedID, "err", err)
-
-			} else {
-				for cur.Next(ctx) {
-					// To decode into a struct, use cursor.Decode()
-					result := struct {
-						ID      primitive.ObjectID `bson:"_id"`
-						Upk     string             `bson:"upk"`
-						Isin    string             `bson:"isin"`
-						Version int64              `bson:"version"`
-					}{}
-					err := cur.Decode(&result)
-					if err != nil {
-						slog.Debug(env.MSG+" FavoritesService.Set", "cur.Decode(&result)", err)
-						return
-					}
-
-					// do something with result...
-					fmt.Fprintf(os.Stderr, "result: %v\n", result)
-					_, _ = fmt.Fprintf(os.Stderr, "in transaction result.Version < favorites.Version().Int64: %v\n", result.Version < favorites.Version().Int64)
-
-					if result.Version < favorites.Version().Int64 {
-						filter := bson.D{{"_id", result.ID}}
-						update := bson.D{{"$set",
-							bson.D{
-								{"upk", favorites.User().Upk()},
-								{"isin", favorites.Asset().Isin()},
-								{"version", favorites.Version().Int64},
-							}},
-						}
-						res, err := collection.UpdateOne(ctx, filter, update)
-						if err != nil {
-							slog.Debug(env.MSG+" FavoritesService.Set", "collection.UpdateOne", err)
-							return
-						}
-						slog.Debug(env.MSG+" FavoritesService.Set", "res.UpsertedID", res.UpsertedID, "err", err)
-					}
-				}
-			}
-			if err := cur.Err(); err != nil {
-				slog.Debug(env.MSG+" FavoritesService.Set", "cur.Err()", err)
+				slog.Error(env.MSG+" FavoritesService.set in transaction", "err", err)
 				return
 			}
 		})
 
 		if err != nil {
-			slog.Error(env.MSG+" FavoritesService.Set", "err", err)
+			slog.Error(env.MSG+" FavoritesService.set", "err", err)
 		} else {
 			response = models.FavoritesFromEntity(favorites)
 		}

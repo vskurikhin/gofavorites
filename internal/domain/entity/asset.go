@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-30 10:29 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-30 14:51 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * asset.go
@@ -56,6 +56,14 @@ const (
 	WHERE isin = $1
 	RETURNING asset_type, updated_at`
 
+	AssetUpsertTxAssetSQL = `INSERT INTO assets
+	(isin, asset_type, created_at)
+	VALUES ($1, $2, $3)
+	ON CONFLICT (isin)
+	DO UPDATE SET asset_type = $2, updated_at = $4
+	RETURNING isin, asset_type, deleted, created_at, updated_at,
+	(SELECT created_at FROM asset_types WHERE name = $2)`
+
 	AssetUpsertTxAssetTypeSQL = `INSERT INTO asset_types
 	(name, created_at)
 	VALUES ($1, $2)
@@ -67,6 +75,14 @@ type Asset struct {
 	TAttributes
 	isin      string
 	assetType AssetType
+}
+
+type asset struct {
+	Isin      string
+	AssetType assetType
+	Deleted   JsonNullBool `json:",omitempty"`
+	CreatedAt time.Time    `json:",omitempty"`
+	UpdatedAt JsonNullTime `json:",omitempty"`
 }
 
 var _ domain.Entity = (*Asset)(nil)
@@ -145,27 +161,27 @@ func (a *Asset) Copy() domain.Entity {
 
 func (a *Asset) Delete(ctx context.Context, dtf domain.Dft[*Asset], inTransaction func()) (err error) {
 
-	var isin, assetType string
-	var deleted sql.NullBool
-	var createdAt time.Time
-	var updatedAt sql.NullTime
-
-	e := dtf.DoDelete(ctx, a, func(scanner domain.Scanner) {
+	var (
+		as Asset
+		at AssetType
+	)
+	er0 := dtf.DoDelete(ctx, a, func(scanner domain.Scanner) {
 		err = scanner.Scan(
-			&isin, &assetType, &deleted, &createdAt, &updatedAt,
+			&as.isin, &at.name, &as.deleted, &as.createdAt, &as.updatedAt,
 		)
-		if err == nil {
-			inTransaction()
-		} else {
+		if err != nil {
 			slog.Error(env.MSG+" Delete", "err", err)
+		} else {
+			a.isin = as.isin
+			a.deleted = as.deleted
+			a.createdAt = as.createdAt
+			a.updatedAt = as.updatedAt
+			a.assetType.name = at.name
+			inTransaction()
 		}
 	})
-	if e != nil {
-		return e
-	}
-	if err == nil {
-		at := a.assetType
-		*a = MakeAsset(isin, at, MakeTAttributes(deleted, createdAt, updatedAt))
+	if er0 != nil {
+		return er0
 	}
 	return err
 }
@@ -189,31 +205,23 @@ func (a *Asset) DeleteTxArgs() domain.TxArgs {
 	}
 }
 
-type assetJSON struct {
-	Isin      string
-	AssetType assetTypeJSON
-	Deleted   *bool      `json:",omitempty"`
-	CreatedAt time.Time  `json:",omitempty"`
-	UpdatedAt *time.Time `json:",omitempty"`
-}
-
 func (a *Asset) FromJSON(data []byte) (err error) {
 
-	var t assetJSON
+	var t asset
 	err = json.Unmarshal(data, &t)
 
 	if err != nil {
 		return err
 	}
 	a.isin = t.Isin
-	a.deleted = tool.ConvertBoolPointerToNullBool(t.Deleted)
+	a.deleted = t.Deleted.ToNullBool()
 	a.createdAt = t.CreatedAt
-	a.updatedAt = tool.ConvertTimePointerToNullTime(t.UpdatedAt)
+	a.updatedAt = t.UpdatedAt.ToNullTime()
 
 	a.assetType.name = t.AssetType.Name
-	a.assetType.deleted = tool.ConvertBoolPointerToNullBool(t.AssetType.Deleted)
+	a.assetType.deleted = t.AssetType.Deleted.ToNullBool()
 	a.assetType.createdAt = t.AssetType.CreatedAt
-	a.assetType.updatedAt = tool.ConvertTimePointerToNullTime(t.AssetType.UpdatedAt)
+	a.assetType.updatedAt = t.AssetType.UpdatedAt.ToNullTime()
 
 	return nil
 }
@@ -262,17 +270,17 @@ func (a *Asset) String() string {
 
 func (a *Asset) ToJSON() ([]byte, error) {
 
-	result, err := json.Marshal(assetJSON{
+	result, err := json.Marshal(asset{
 		Isin: a.isin,
-		AssetType: assetTypeJSON{
+		AssetType: assetType{
 			Name:      a.assetType.name,
-			Deleted:   tool.ConvertNullBoolToBoolPointer(a.assetType.deleted),
+			Deleted:   FromNullBool(a.assetType.deleted),
 			CreatedAt: a.assetType.createdAt,
-			UpdatedAt: tool.ConvertNullTimeToTimePointer(a.assetType.updatedAt),
+			UpdatedAt: FromNullTime(a.assetType.updatedAt),
 		},
-		Deleted:   tool.ConvertNullBoolToBoolPointer(a.deleted),
+		Deleted:   FromNullBool(a.deleted),
 		CreatedAt: a.createdAt,
-		UpdatedAt: tool.ConvertNullTimeToTimePointer(a.updatedAt),
+		UpdatedAt: FromNullTime(a.updatedAt),
 	})
 	if err != nil {
 		return nil, err
@@ -288,31 +296,26 @@ func (a *Asset) UpdateSQL() string {
 	return AssetUpdateSQL
 }
 
-const AssetUpsertTxAssetSQL = `INSERT INTO assets
-	(isin, asset_type, created_at)
-	VALUES ($1, $2, $3)
-	ON CONFLICT (isin)
-	DO UPDATE SET asset_type = $2, updated_at = $4
-	RETURNING isin, asset_type, deleted, created_at, updated_at,
-	(SELECT created_at FROM asset_types WHERE name = $2)`
-
 func (a *Asset) Upsert(ctx context.Context, dtf domain.Dft[*Asset], inTransaction func()) (err error) {
 
-	var isin, assetType string
-	var deleted sql.NullBool
-	var createdAt, atCreatedAt time.Time
-	var updatedAt sql.NullTime
-
+	var (
+		as Asset
+		at AssetType
+	)
 	e := dtf.DoUpsert(ctx, a, func(scanner domain.Scanner) {
 		err = scanner.Scan(
-			&isin, &assetType, &deleted, &createdAt, &updatedAt, &atCreatedAt,
+			&as.isin, &at.name, &as.deleted, &as.createdAt, &as.updatedAt, &at.createdAt,
 		)
-		if err == nil {
-			at := a.assetType
-			*a = MakeAsset(isin, at, MakeTAttributes(deleted, createdAt, updatedAt))
-			inTransaction()
-		} else {
+		if err != nil {
 			slog.Error(env.MSG+" Upsert", "err", err)
+		} else {
+			a.isin = as.isin
+			a.deleted = as.deleted
+			a.createdAt = as.createdAt
+			a.updatedAt = as.updatedAt
+			a.assetType.name = at.name
+			a.assetType.createdAt = at.createdAt
+			inTransaction()
 		}
 	})
 	if e != nil {

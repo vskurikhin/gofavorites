@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-30 10:29 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-30 14:51 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * asset_type.go
@@ -16,13 +16,19 @@ import (
 	"fmt"
 	"github.com/goccy/go-json"
 	"github.com/vskurikhin/gofavorites/internal/domain"
-	"github.com/vskurikhin/gofavorites/internal/tool"
 	"time"
 )
 
 type AssetType struct {
 	TAttributes
 	name string
+}
+
+type assetType struct {
+	Name      string
+	Deleted   JsonNullBool `json:",omitempty"`
+	CreatedAt time.Time
+	UpdatedAt JsonNullTime `json:",omitempty"`
 }
 
 var _ domain.Entity = (*AssetType)(nil)
@@ -108,25 +114,18 @@ func (a *AssetType) DeleteSQL() string {
 	return `UPDATE asset_types SET deleted = true WHERE name = $1 RETURNING deleted, updated_at`
 }
 
-type assetTypeJSON struct {
-	Name      string
-	Deleted   *bool `json:",omitempty"`
-	CreatedAt time.Time
-	UpdatedAt *time.Time `json:",omitempty"`
-}
-
 func (a *AssetType) FromJSON(data []byte) (err error) {
 
-	var t assetTypeJSON
+	var t assetType
 	err = json.Unmarshal(data, &t)
 
 	if err != nil {
 		return err
 	}
 	a.name = t.Name
-	a.deleted = tool.ConvertBoolPointerToNullBool(t.Deleted)
+	a.deleted = t.Deleted.ToNullBool()
 	a.createdAt = t.CreatedAt
-	a.updatedAt = tool.ConvertTimePointerToNullTime(t.UpdatedAt)
+	a.updatedAt = t.UpdatedAt.ToNullTime()
 
 	return nil
 }
@@ -186,11 +185,11 @@ func (a *AssetType) String() string {
 
 func (a *AssetType) ToJSON() ([]byte, error) {
 
-	result, err := json.Marshal(assetTypeJSON{
+	result, err := json.Marshal(assetType{
 		Name:      a.name,
-		Deleted:   tool.ConvertNullBoolToBoolPointer(a.deleted),
+		Deleted:   FromNullBool(a.deleted),
 		CreatedAt: a.createdAt,
-		UpdatedAt: tool.ConvertNullTimeToTimePointer(a.updatedAt),
+		UpdatedAt: FromNullTime(a.updatedAt),
 	})
 	if err != nil {
 		return nil, err

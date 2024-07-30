@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-30 09:22 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-30 13:38 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites.go
@@ -44,8 +44,10 @@ type Favorites struct {
 }
 
 func AssetFromEntity(entity entity.Asset) Asset {
-	at := entity.AssetType()
-	return Asset{isin: entity.Isin(), assetType: at.Name()}
+	return Asset{
+		isin:      entity.Isin(),
+		assetType: entity.AssetType().Name(),
+	}
 }
 
 func (f Favorites) Id() uuid.UUID {
