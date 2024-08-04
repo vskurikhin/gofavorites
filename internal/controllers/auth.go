@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-31 00:15 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-03 17:29 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * auth.go
@@ -12,21 +12,18 @@ package controllers
 
 import (
 	"fmt"
-	"sync"
-	"time"
-
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/vskurikhin/gofavorites/internal/controllers/dto"
 	"github.com/vskurikhin/gofavorites/internal/env"
+	"github.com/vskurikhin/gofavorites/internal/jwt"
 	"golang.org/x/crypto/bcrypt"
+	"sync"
 )
 
 type Auth struct {
-	token        string
-	jwtExpiresIn time.Duration
-	jwtMaxAge    int
-	jwtSecret    string
+	token      string
+	jwtManager jwt.Manager
+	jwtMaxAge  int
 }
 
 var (
@@ -39,9 +36,8 @@ func GetAuthController(prop env.Properties) *Auth {
 	onceAuth.Do(func() {
 		authCont = new(Auth)
 		authCont.token = prop.Config().Token()
-		authCont.jwtExpiresIn = prop.JwtExpiresIn()
+		authCont.jwtManager = jwt.GetJWTManager(prop)
 		authCont.jwtMaxAge = prop.JwtMaxAgeSec()
-		authCont.jwtSecret = prop.JwtSecret()
 	})
 	return authCont
 }
@@ -73,16 +69,8 @@ func (a *Auth) SignInUser(c *fiber.Ctx) error {
 				"message": "Invalid email or Password", "requestId": requestId,
 			})
 	}
-	tokenByte := jwt.New(jwt.SigningMethodHS256)
-	now := time.Now().UTC()
-	claims := tokenByte.Claims.(jwt.MapClaims)
 
-	claims["sub"] = payload.UserName
-	claims["exp"] = now.Add(a.jwtExpiresIn).Unix()
-	claims["iat"] = now.Unix()
-	claims["nbf"] = now.Unix()
-
-	tokenString, err := tokenByte.SignedString([]byte(a.jwtSecret))
+	tokenString, err := a.jwtManager.Generate(payload)
 
 	c.Cookie(&fiber.Cookie{
 		Name:     "token",

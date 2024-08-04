@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-31 00:15 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-03 17:35 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * deserialize-user.go
@@ -10,16 +10,16 @@ package middleware
 
 import (
 	"fmt"
+	"github.com/vskurikhin/gofavorites/internal/jwt"
 	"strings"
 	"sync"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/vskurikhin/gofavorites/internal/env"
 )
 
 type UserJwtHandler struct {
-	jwtSecret string
+	jwtManager jwt.Manager
 }
 
 var (
@@ -31,7 +31,7 @@ func GetUserJwtHandler(prop env.Properties) *UserJwtHandler {
 
 	onceUserJwt.Do(func() {
 		userJwtMidl = new(UserJwtHandler)
-		userJwtMidl.jwtSecret = prop.JwtSecret()
+		userJwtMidl.jwtManager = jwt.GetJWTManager(prop)
 	})
 	return userJwtMidl
 }
@@ -51,14 +51,9 @@ func (u *UserJwtHandler) DeserializeUser(c *fiber.Ctx) error {
 			Status(fiber.StatusUnauthorized).
 			JSON(fiber.Map{"status": "fail", "message": "You are not logged in"})
 	}
-	tokenByte, err := jwt.Parse(tokenString, func(jwtToken *jwt.Token) (interface{}, error) {
-		if _, ok := jwtToken.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %s", jwtToken.Header["alg"])
-		}
+	claims, err := u.jwtManager.Verify(tokenString)
 
-		return []byte(u.jwtSecret), nil
-	})
-	if err != nil {
+	if err != nil || claims == nil {
 		return c.
 			Status(fiber.StatusUnauthorized).
 			JSON(fiber.Map{
@@ -66,14 +61,7 @@ func (u *UserJwtHandler) DeserializeUser(c *fiber.Ctx) error {
 				"message": fmt.Sprintf("invalidate token: %v", err),
 			})
 	}
-	claims, ok := tokenByte.Claims.(jwt.MapClaims)
-	if !ok || !tokenByte.Valid {
-		return c.
-			Status(fiber.StatusUnauthorized).
-			JSON(fiber.Map{"status": "fail", "message": "invalid token claim"})
-
-	}
-	c.Locals("user", fmt.Sprint(claims["sub"]))
+	c.Locals("user", fmt.Sprint(claims.UserName()))
 
 	return c.Next()
 }

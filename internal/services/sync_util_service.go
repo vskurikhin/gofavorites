@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-08-03 14:47 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-03 17:39 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * sync_util_service.go
@@ -40,6 +40,7 @@ type syncUtilService struct {
 	repoFavoritesDeleted domain.Repo[*entity.FavoritesDeleted]
 	sLog                 *slog.Logger
 	userLookup           UserSearchService
+	userRepo             domain.Repo[*entity.User]
 }
 
 var _ SyncUtilService = (*syncUtilService)(nil)
@@ -59,6 +60,7 @@ func GetSyncUtilService(prop env.Properties) SyncUtilService {
 		syncUtilServ.repoFavoritesDeleted = repo.GetFavoritesDeletedPostgresRepo(prop)
 		syncUtilServ.sLog = prop.Logger()
 		syncUtilServ.userLookup = GetUserSearchService(prop)
+		syncUtilServ.userRepo = repo.GetUserPostgresCachedRepo(prop)
 	})
 	return syncUtilServ
 }
@@ -104,17 +106,17 @@ func (s syncUtilService) Sync(
 
 	if maxPostgresUser.Version() > maxMongodbUser.Version() {
 		s.sLog.InfoContext(ctx, env.MSG+"Sync", "maxPostgresUser", maxPostgresUser)
-		go s.syncToMongoDB(ctx, pgDBFavorites, maxPostgresUser.Upk())
+		go s.syncToMongoDB(ctx, pgDBFavorites, maxPostgresUser)
 		result = pgDBFavorites
 	} else if maxPostgresUser.Version() < maxMongodbUser.Version() {
 		s.sLog.InfoContext(ctx, env.MSG+"Sync", "maxMongodb", maxMongodbUser)
-		go s.syncToPostgreSQL(ctx, mongodbFavorites, maxPostgresUser.Upk())
+		go s.syncToPostgreSQL(ctx, mongodbFavorites, maxMongodbUser)
 		result = mongodbFavorites
 	}
 	return result, nil
 }
 
-func (s *syncUtilService) syncToMongoDB(ctx context.Context, favorites []entity.Favorites, upk string) {
+func (s *syncUtilService) syncToMongoDB(ctx context.Context, favorites []entity.Favorites, user entity.User) {
 
 	for _, fav := range favorites {
 
@@ -138,7 +140,7 @@ func (s *syncUtilService) syncToMongoDB(ctx context.Context, favorites []entity.
 			}
 		}
 	}
-	favoritesDeleted, err := entity.GetFavoritesDeletedForUser(ctx, s.repoFavoritesDeleted, upk)
+	favoritesDeleted, err := entity.GetFavoritesDeletedForUser(ctx, s.repoFavoritesDeleted, user.Upk())
 	if err != nil {
 		s.sLog.ErrorContext(ctx, env.MSG+"syncToMongoDB get favorites deleted", "err", err)
 	}
@@ -153,9 +155,9 @@ func (s *syncUtilService) syncToMongoDB(ctx context.Context, favorites []entity.
 	}
 }
 
-func (s *syncUtilService) syncToPostgreSQL(ctx context.Context, favorites []entity.Favorites, upk string) {
+func (s *syncUtilService) syncToPostgreSQL(ctx context.Context, favorites []entity.Favorites, user entity.User) {
 
-	deleted := entity.MakeFavoritesDeletedUser(upk)
+	deleted := entity.MakeFavoritesDeletedUser(user.Upk())
 
 	if err := deleted.Delete(ctx, s.repoFavoritesDeleted); err != nil {
 		s.sLog.ErrorContext(ctx, env.MSG+"syncToPostgreSQL delete in PostgreSQL", "err", err)
@@ -168,8 +170,12 @@ func (s *syncUtilService) syncToPostgreSQL(ctx context.Context, favorites []enti
 			s.sLog.DebugContext(ctx, env.MSG+"syncToPostgreSQL favorite add to batchFavorites", "favorite", favorite)
 		}
 	}
-	if err := s.batch.Do(ctx, batchFavorites, upk); err != nil {
+	if err := s.batch.Do(ctx, batchFavorites, user.Upk()); err != nil {
 		s.sLog.ErrorContext(ctx, env.MSG+"syncToPostgreSQL batch to PostgreSQL", "err", err)
+	} else {
+		if er0 := user.Update(ctx, s.userRepo); err != nil {
+			s.sLog.ErrorContext(ctx, env.MSG+"syncToPostgreSQL batch to PostgreSQL and update user", "er0", er0)
+		}
 	}
 }
 

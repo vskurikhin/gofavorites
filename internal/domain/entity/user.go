@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-08-03 13:52 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-03 17:21 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * user.go
@@ -251,11 +251,11 @@ func (u *User) Update(ctx context.Context, repo domain.Repo[*User]) (err error) 
 }
 
 func (u *User) UpdateArgs() []any {
-	return []any{u.upk, u.updatedAt}
+	return []any{u.upk, u.version, u.updatedAt}
 }
 
 func (u *User) UpdateSQL() string {
-	return `UPDATE users SET version = version + 1, updated_at = $2 WHERE upk = $1 RETURNING version, updated_at`
+	return `UPDATE users SET version = $2, updated_at = $3 WHERE upk = $1 RETURNING version, updated_at`
 }
 
 //!-

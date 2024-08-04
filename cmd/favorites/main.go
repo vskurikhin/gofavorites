@@ -23,9 +23,12 @@ import (
 	"github.com/vskurikhin/gofavorites/internal/alog"
 	"github.com/vskurikhin/gofavorites/internal/controllers"
 	"github.com/vskurikhin/gofavorites/internal/env"
+	"github.com/vskurikhin/gofavorites/internal/interceptors"
 	"github.com/vskurikhin/gofavorites/internal/middleware"
 	"github.com/vskurikhin/gofavorites/internal/services"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/reflection"
 	"log"
 	"log/slog"
 	"net"
@@ -34,8 +37,8 @@ import (
 	"syscall"
 	"time"
 
-	slogf "github.com/samber/slog-fiber"
 	pb "github.com/vskurikhin/gofavorites/proto"
+	_ "google.golang.org/grpc/encoding/gzip"
 )
 
 var (
@@ -166,7 +169,7 @@ func makeHTTP(prop env.Properties) *fiber.App {
 	micro.Use(requestid.New())
 
 	if prop.SlogJSON() {
-		app.Use(slogf.New(slogLogger))
+		app.Use(alog.New(slogLogger))
 		micro.Use(alog.New(slogLogger))
 	} else {
 		app.Use(logHandler)
@@ -208,10 +211,26 @@ func makeHTTP(prop env.Properties) *fiber.App {
 
 func makeGRPC(prop env.Properties) *grpc.Server {
 
-	opts := []grpc.ServerOption{grpc.Creds(prop.GRPCTransportCredentials())}
+	var opts []grpc.ServerOption
+	authInterceptor := interceptors.GetAuthInterceptor(prop)
+
+	if prop.Config().GRPCTLSEnabled() {
+		opts = []grpc.ServerOption{
+			grpc.Creds(prop.GRPCTransportCredentials()),
+			grpc.StreamInterceptor(authInterceptor.Stream()),
+			grpc.UnaryInterceptor(authInterceptor.Unary()),
+		}
+	} else {
+		opts = []grpc.ServerOption{
+			grpc.Creds(insecure.NewCredentials()),
+			grpc.StreamInterceptor(authInterceptor.Stream()),
+			grpc.UnaryInterceptor(authInterceptor.Unary()),
+		}
+	}
 	grpcServer := grpc.NewServer(opts...)
 	favoritesService := services.GetFavoritesService(prop)
 	pb.RegisterFavoritesServiceServer(grpcServer, favoritesService)
+	reflection.Register(grpcServer)
 
 	return grpcServer
 }

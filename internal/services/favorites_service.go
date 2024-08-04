@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-08-03 13:52 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-04 15:19 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites_service.go
@@ -124,7 +124,7 @@ func (f *favoritesService) GetForUser(ctx context.Context, request *pb.UserFavor
 		response.Status = pb.Status_FAIL
 		return &response, err
 	}
-	response.Favorites = make([]*pb.Favorites, len(favorites))
+	response.Favorites = make([]*pb.Favorites, 0, len(favorites))
 
 	for _, fav := range favorites {
 		item := fav.ToProto()
