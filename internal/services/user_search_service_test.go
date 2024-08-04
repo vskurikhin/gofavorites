@@ -83,7 +83,7 @@ func TestUserSearchService(t *testing.T) {
 
 func testGetUserSearchService(t *testing.T) {
 	prop := env.GetProperties()
-	got := GetUserSearchService(prop)
+	got := GetFavoritesService(prop)
 	assert.NotNil(t, got)
 }
 
@@ -148,7 +148,7 @@ func testUserSearchServiceLookupPositiveCase3(t *testing.T) {
 	repoUser.
 		EXPECT().
 		Get(context.Background(), gomock.Any(), gomock.Any()).
-		Return(nil, repo.ErrNotFound).
+		Return(&entity.User{}, nil).
 		AnyTimes()
 	defer func() {
 		cancel()

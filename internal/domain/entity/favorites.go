@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-08-03 10:29 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-04 20:14 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites.go
@@ -195,7 +195,7 @@ func GetFavoritesForUser(ctx context.Context, repo domain.Repo[*Favorites], upk 
 		return &result
 	})
 	if er0 != nil {
-		return results, err
+		return results, er0
 	}
 	return results, err
 }

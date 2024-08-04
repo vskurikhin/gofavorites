@@ -18,12 +18,16 @@ func TestTxPostgres(t *testing.T) {
 		fRun func(*testing.T)
 	}{
 		{
-			name: "negative test #1 Asset TxPostgres Repo",
+			name: "test #1 negative Asset TxPostgres Repo",
 			fRun: testAssetTxPostgresNegative,
 		},
 		{
-			name: "negative test #3 Favorites TxPostgres Repo",
+			name: "test #2 negative Favorites TxPostgres Repo",
 			fRun: testFavoritesTxPostgresNegative,
+		},
+		{
+			name: "test #3 positive",
+			fRun: testAssetTxPostgresPositive,
 		},
 	}
 
@@ -108,7 +112,7 @@ func testFavoritesTxPostgresNegative(t *testing.T) {
 	assert.Equal(t, ErrBadPool, err)
 
 	_, err = entity.GetFavoritesForUser(context.TODO(), repo, upk)
-	assert.Nil(t, err)
+	assert.NotNil(t, err)
 
 	err = expected.Delete(context.TODO(), dft, inTransaction)
 	assert.NotNil(t, err)

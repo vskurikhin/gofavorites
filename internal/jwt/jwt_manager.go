@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-08-04 14:16 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-04 22:01 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * jwt_manager.go
@@ -12,11 +12,12 @@ package jwt
 
 import (
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/vskurikhin/gofavorites/internal/controllers/dto"
 	"github.com/vskurikhin/gofavorites/internal/env"
-	"sync"
-	"time"
 )
 
 type Manager interface {

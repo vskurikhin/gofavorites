@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-08-03 12:36 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-04 18:46 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * properties_tool.go
@@ -242,7 +242,7 @@ func intPrepareProperty(name string, flag interface{}, env int, yaml int) (int, 
 
 func loadRSAPrivateKey(name string, flag interface{}, env string, yaml string) (*rsa.PrivateKey, error) {
 
-	err, fileName := getFileName(name, flag, env, yaml)
+	fileName, err := getFileName(name, flag, env, yaml)
 
 	if err != nil {
 		return nil, err
@@ -252,7 +252,7 @@ func loadRSAPrivateKey(name string, flag interface{}, env string, yaml string) (
 
 func loadRSAPublicKey(name string, flag interface{}, env string, yaml string) (*rsa.PublicKey, error) {
 
-	err, fileName := getFileName(name, flag, env, yaml)
+	fileName, err := getFileName(name, flag, env, yaml)
 
 	if err != nil {
 		return nil, err
@@ -260,9 +260,11 @@ func loadRSAPublicKey(name string, flag interface{}, env string, yaml string) (*
 	return tool.LoadPublicKey(fileName), err
 }
 
-func getFileName(name string, flag interface{}, env string, yaml string) (error, string) {
+func getFileName(name string, flag interface{}, env string, yaml string) (string, error) {
+
 	var err error
 	var fileName string
+
 	getFlag := func() {
 		if a, ok := flag.(*string); !ok {
 			err = fmt.Errorf("bad value")
@@ -279,7 +281,8 @@ func getFileName(name string, flag interface{}, env string, yaml string) (error,
 		getFlag()
 	}
 	setIfFlagChanged(name, getFlag)
-	return err, fileName
+
+	return fileName, err
 }
 
 func makeDBPool(flm map[string]interface{}, env *environments, yml Config) (*pgxpool.Pool, error) {

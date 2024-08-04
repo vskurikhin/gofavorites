@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-31 17:21 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-05 23:27 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * mongo_pool.go
@@ -12,7 +12,6 @@ package tool
 
 import (
 	"context"
-	"log"
 	"sync"
 	"time"
 
@@ -60,7 +59,7 @@ func (mp *MongoPool) createToChan() {
 	client, err := mongo.Connect(mp.getContextTimeOut(), options.Client().ApplyURI(mp.uri))
 
 	if err != nil {
-		log.Fatalf("Create the MongoPool failed，err=%v", err)
+		sLog.Error(MSG+"Create the MongoPool failed", "err", err)
 	}
 	mp.pool <- client
 	mp.connections++
@@ -72,7 +71,7 @@ func (mp *MongoPool) CloseConnection(conn *mongo.Client) error {
 		return nil
 	default:
 		if err := conn.Disconnect(context.TODO()); err != nil {
-			log.Fatalf("Close the MongoPool failed，err=%v", err)
+			sLog.Error(MSG+"Close the MongoPool failed", "err", err)
 			return err
 		}
 		mp.connections--

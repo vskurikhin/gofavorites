@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-08-04 14:30 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-04 22:01 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * auth_interceptor.go
@@ -12,14 +12,15 @@ package interceptors
 
 import (
 	"context"
+	"log/slog"
+	"sync"
+
 	"github.com/vskurikhin/gofavorites/internal/env"
 	"github.com/vskurikhin/gofavorites/internal/jwt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-	"log/slog"
-	"sync"
 )
 
 type AuthInterceptor interface {

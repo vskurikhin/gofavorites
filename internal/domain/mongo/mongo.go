@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-08-03 13:52 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-04 22:13 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * mongo.go
@@ -24,7 +24,6 @@ import (
 	"github.com/vskurikhin/gofavorites/internal/env"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const (
@@ -38,7 +37,6 @@ const (
 type Mongo interface {
 	Delete(ctx context.Context, entity entity.Favorites) error
 	Load(ctx context.Context, upk string) ([]entity.Favorites, error)
-	MaxVersion(ctx context.Context, upk string) int64
 	Save(ctx context.Context, entity entity.Favorites) error
 }
 
@@ -125,30 +123,6 @@ func (r *repo) Load(ctx context.Context, upk string) ([]entity.Favorites, error)
 		result = append(result, fv)
 	}
 	return result, nil
-}
-
-func (r *repo) MaxVersion(ctx context.Context, upk string) int64 {
-
-	conn, err := r.mongodbPool.GetConnection()
-
-	if err != nil {
-		return 0
-	}
-	defer func() { _ = r.mongodbPool.CloseConnection(conn) }()
-
-	collection := tool.GetCollection(conn, r.dbName, Collection)
-	opts := options.FindOne().SetSort(bson.D{{Key: Version, Value: -1}})
-	res := collection.FindOne(ctx, bson.D{
-		{Key: UPK, Value: upk},
-	}, opts)
-
-	var result favorites
-	err = res.Decode(&result)
-
-	if err != nil {
-		return 0
-	}
-	return result.Version
 }
 
 func (r *repo) Save(ctx context.Context, entity entity.Favorites) error {

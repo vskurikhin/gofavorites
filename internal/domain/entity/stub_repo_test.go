@@ -108,7 +108,7 @@ var _ domain.Repo[domain.Entity] = (*stubRepoErr[domain.Entity])(nil)
 
 func (p *stubRepoErr[E]) Delete(_ context.Context, entity E, scan func(domain.Scanner)) (E, error) {
 	scan(&stubScannerErr{})
-	return entity, nil
+	return entity, fmt.Errorf("")
 }
 
 func (p *stubRepoErr[E]) Get(_ context.Context, entity E, scan func(domain.Scanner)) (E, error) {

@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-31 13:56 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-04 17:59 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * slog_fiber.go
@@ -300,3 +300,6 @@ func extractTraceSpanID(ctx context.Context, withTraceID bool, withSpanID bool) 
 
 	return attrs
 }
+
+//!-
+/* vim: set tabstop=4 softtabstop=4 shiftwidth=4 noexpandtab: */

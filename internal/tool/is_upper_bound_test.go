@@ -35,3 +35,9 @@ func TestIsUpperBound(t *testing.T) {
 		fmt.Fprintf(os.Stderr, "i: %d, sleep: %v, UpperBound: %v\n", i, 100*time.Millisecond*time.Duration(i), 1000*time.Millisecond)
 	}
 }
+
+func TestIsUpperBoundWithSleep(t *testing.T) {
+	for i := 1; IsUpperBoundWithSleep(i, 1000, time.Millisecond); i++ {
+		time.Sleep(time.Millisecond * time.Duration(i) * 100)
+	}
+}

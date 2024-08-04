@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-31 14:52 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-05 22:59 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites.go
@@ -28,10 +28,6 @@ func (a Asset) Isin() string {
 	return a.isin
 }
 
-func (a Asset) AssetType() string {
-	return a.assetType
-}
-
 func (a Asset) ToEntity() entity.Asset {
 	at := entity.MakeAssetType(a.assetType, entity.DefaultTAttributes())
 	return entity.MakeAsset(a.isin, at, entity.DefaultTAttributes())
@@ -51,20 +47,12 @@ func AssetFromEntity(entity entity.Asset) Asset {
 	}
 }
 
-func (f Favorites) Id() uuid.UUID {
-	return f.id
-}
-
 func (f Favorites) Asset() Asset {
 	return f.asset
 }
 
 func (f Favorites) User() User {
 	return f.user
-}
-
-func (f Favorites) Version() int64 {
-	return f.version
 }
 
 func (f Favorites) WithUpk(upk string) Favorites {
@@ -133,10 +121,6 @@ func (u User) PersonalKey() string {
 
 func (u User) Upk() string {
 	return u.upk
-}
-
-func (u User) Version() int64 {
-	return u.version
 }
 
 func (u User) ToEntity() entity.User {
