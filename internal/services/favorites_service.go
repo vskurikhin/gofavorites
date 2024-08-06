@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-08-04 15:19 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-06 21:05 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites_service.go
@@ -7,7 +7,7 @@
  */
 //!+
 
-// Package services TODO.
+// Package services сервисы бизнес логики.
 package services
 
 import (
@@ -31,6 +31,7 @@ import (
 	pb "github.com/vskurikhin/gofavorites/proto"
 )
 
+// FavoritesService основная бизнес логика, консолидирует gRPC и HTTP (endpoints) конечные точки.
 type FavoritesService interface {
 	ApiFavoritesService
 	pb.FavoritesServiceServer
@@ -55,6 +56,8 @@ var (
 	favoritesServ *favoritesService
 )
 
+// GetFavoritesService — потокобезопасное (thread-safe) создание
+// сервиса сохранения, получения и получения списка биржевых инструментов для пользователя.
 func GetFavoritesService(prop env.Properties) FavoritesService {
 
 	onceFavorites.Do(func() {
@@ -71,21 +74,25 @@ func GetFavoritesService(prop env.Properties) FavoritesService {
 	return favoritesServ
 }
 
+// ApiFavoritesGet получения биржевого инструментов для пользователя (API для HTTP).
 func (f *favoritesService) ApiFavoritesGet(ctx context.Context, favorites models.Favorites) (models.Favorites, error) {
 	defer tool.TraceInOut(ctx, "ApiFavoritesGet", "%v", favorites)()
 	return f.get(ctx, favorites)
 }
 
+// ApiFavoritesGetForUser получения списка биржевых инструментов для пользователя (API для HTTP).
 func (f *favoritesService) ApiFavoritesGetForUser(ctx context.Context, user models.User) ([]models.Favorites, error) {
 	defer tool.TraceInOut(ctx, "ApiFavoritesGetForUser", "%v", user)()
 	return f.getForUser(ctx, user)
 }
 
+// ApiFavoritesSet сохранение биржевого инструментов для пользователя (API для HTTP).
 func (f *favoritesService) ApiFavoritesSet(ctx context.Context, favorites models.Favorites) (models.Favorites, error) {
 	defer tool.TraceInOut(ctx, "ApiFavoritesSet", "%v", favorites)()
 	return f.set(ctx, favorites)
 }
 
+// Get получения биржевого инструментов для пользователя.
 func (f *favoritesService) Get(ctx context.Context, request *pb.FavoritesRequest) (*pb.FavoritesResponse, error) {
 
 	var response pb.FavoritesResponse
@@ -108,6 +115,7 @@ func (f *favoritesService) Get(ctx context.Context, request *pb.FavoritesRequest
 	return &response, err
 }
 
+// GetForUser получения списка биржевых инструментов для пользователя.
 func (f *favoritesService) GetForUser(ctx context.Context, request *pb.UserFavoritesRequest) (*pb.UserFavoritesResponse, error) {
 
 	var response pb.UserFavoritesResponse
@@ -135,6 +143,7 @@ func (f *favoritesService) GetForUser(ctx context.Context, request *pb.UserFavor
 	return &response, err
 }
 
+// Set сохранение биржевого инструментов для пользователя.
 func (f *favoritesService) Set(ctx context.Context, request *pb.FavoritesRequest) (*pb.FavoritesResponse, error) {
 
 	var response pb.FavoritesResponse

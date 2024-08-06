@@ -7,7 +7,7 @@
  */
 //!+
 
-// Package controllers TODO.
+// Package controllers REST-ful (endpoints) конечные точки REST веб-сервиса.
 package controllers
 
 import (

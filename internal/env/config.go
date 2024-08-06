@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-29 21:40 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-06 18:20 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * config.go
@@ -18,6 +18,7 @@ import (
 
 var _ Config = (*config)(nil)
 
+// Config статичная конфигурация собранная из Yaml-файла.
 type Config interface {
 	fmt.Stringer
 	CacheEnabled() bool
@@ -149,7 +150,6 @@ type tlsConfig struct {
 	KeyFile  string `mapstructure:"key_file"`
 }
 
-// moduleConfig could be in a module specific package
 type goFavoritesConfig struct {
 	Token string `mapstructure:"token"`
 }
@@ -160,6 +160,7 @@ type upkConfig struct {
 	Secret            string `mapstructure:"secret"`
 }
 
+// CacheEnabled тумблер включения локального кэша.
 func (y *config) CacheEnabled() bool {
 
 	if y != nil {
@@ -168,6 +169,7 @@ func (y *config) CacheEnabled() bool {
 	return false
 }
 
+// CacheExpireMs срок действия записи в кэше истекает в миллисекундах.
 func (y *config) CacheExpireMs() int {
 
 	if y != nil {
@@ -176,6 +178,7 @@ func (y *config) CacheExpireMs() int {
 	return 0
 }
 
+// CacheGCIntervalSec интервал очистки кэша в секундах.
 func (y *config) CacheGCIntervalSec() int {
 
 	if y != nil {
@@ -184,6 +187,7 @@ func (y *config) CacheGCIntervalSec() int {
 	return 0
 }
 
+// DBEnabled тумблер подключения к базе данных PostgreSQL.
 func (y *config) DBEnabled() bool {
 
 	if y != nil {
@@ -192,6 +196,7 @@ func (y *config) DBEnabled() bool {
 	return false
 }
 
+// DBHost хост базы данных PostgreSQL.
 func (y *config) DBHost() string {
 
 	if y != nil {
@@ -200,6 +205,7 @@ func (y *config) DBHost() string {
 	return ""
 }
 
+// DBName имя базы данных PostgreSQL.
 func (y *config) DBName() string {
 
 	if y != nil {
@@ -208,6 +214,7 @@ func (y *config) DBName() string {
 	return ""
 }
 
+// DBPort порт базы данных PostgreSQL.
 func (y *config) DBPort() int {
 
 	if y != nil {
@@ -216,6 +223,7 @@ func (y *config) DBPort() int {
 	return 0
 }
 
+// DBUserName имя пользователя базы данных PostgreSQL.
 func (y *config) DBUserName() string {
 
 	if y != nil {
@@ -224,6 +232,7 @@ func (y *config) DBUserName() string {
 	return ""
 }
 
+// DBUserPassword пароль пользователя базы данных PostgreSQL.
 func (y *config) DBUserPassword() string {
 
 	if y != nil {
@@ -232,6 +241,7 @@ func (y *config) DBUserPassword() string {
 	return ""
 }
 
+// Enabled тумблер старта приложения.
 func (y *config) Enabled() bool {
 
 	if y != nil {
@@ -240,6 +250,7 @@ func (y *config) Enabled() bool {
 	return false
 }
 
+// ExternalAssetGRPCAddress внешний адрес gRPC-сервиса по биржевым инструментам.
 func (y *config) ExternalAssetGRPCAddress() string {
 	if y != nil {
 		return y.Favorites.External.AssetGRPCAddress
@@ -247,6 +258,7 @@ func (y *config) ExternalAssetGRPCAddress() string {
 	return ""
 }
 
+// ExternalAuthGRPCAddress внешний адрес gRPC-сервиса аутентификации пользователей.
 func (y *config) ExternalAuthGRPCAddress() string {
 	if y != nil {
 		return y.Favorites.External.AuthGRPCAddress
@@ -254,6 +266,7 @@ func (y *config) ExternalAuthGRPCAddress() string {
 	return ""
 }
 
+// ExternalRequestTimeoutInterval интервал ожидания ответа от внешних gRPC-сервисов.
 func (y *config) ExternalRequestTimeoutInterval() int {
 
 	if y != nil {
@@ -262,6 +275,7 @@ func (y *config) ExternalRequestTimeoutInterval() int {
 	return 0
 }
 
+// GRPCAddress адрес для выставления конечных точек gRPC-сервера.
 func (y *config) GRPCAddress() string {
 
 	if y != nil {
@@ -270,6 +284,7 @@ func (y *config) GRPCAddress() string {
 	return ""
 }
 
+// GRPCEnabled тумблер включения gRPC-сервера.
 func (y *config) GRPCEnabled() bool {
 
 	if y != nil {
@@ -278,6 +293,7 @@ func (y *config) GRPCEnabled() bool {
 	return false
 }
 
+// GRPCPort порт для gRPC-сервера.
 func (y *config) GRPCPort() int {
 
 	if y != nil {
@@ -286,6 +302,7 @@ func (y *config) GRPCPort() int {
 	return 0
 }
 
+// GRPCProto протокол для gRPC-сервера.
 func (y *config) GRPCProto() string {
 
 	if y != nil {
@@ -294,6 +311,7 @@ func (y *config) GRPCProto() string {
 	return ""
 }
 
+// GRPCTLSCAFile корневой сертификат центра сертификации который выдал TLS сертификат для gRPC-сервера.
 func (y *config) GRPCTLSCAFile() string {
 
 	if y != nil {
@@ -302,6 +320,7 @@ func (y *config) GRPCTLSCAFile() string {
 	return ""
 }
 
+// GRPCTLSCertFile TLS сертификат для gRPC-сервера.
 func (y *config) GRPCTLSCertFile() string {
 
 	if y != nil {
@@ -310,6 +329,7 @@ func (y *config) GRPCTLSCertFile() string {
 	return ""
 }
 
+// GRPCTLSKeyFile TLS ключ для gRPC-сервера.
 func (y *config) GRPCTLSKeyFile() string {
 
 	if y != nil {
@@ -318,6 +338,7 @@ func (y *config) GRPCTLSKeyFile() string {
 	return ""
 }
 
+// GRPCTLSEnabled тумблер включения на gRPC-сервере TLS шифрования.
 func (y *config) GRPCTLSEnabled() bool {
 
 	if y != nil {
@@ -326,6 +347,7 @@ func (y *config) GRPCTLSEnabled() bool {
 	return false
 }
 
+// HTTPAddress адрес для выставления конечных точек HTTP-сервера.
 func (y *config) HTTPAddress() string {
 
 	if y != nil {
@@ -334,6 +356,7 @@ func (y *config) HTTPAddress() string {
 	return ""
 }
 
+// HTTPEnabled тумблер включения HTTP-сервера.
 func (y *config) HTTPEnabled() bool {
 
 	if y != nil {
@@ -342,6 +365,7 @@ func (y *config) HTTPEnabled() bool {
 	return false
 }
 
+// HTTPPort порт для HTTP-сервера.
 func (y *config) HTTPPort() int {
 
 	if y != nil {
@@ -350,6 +374,7 @@ func (y *config) HTTPPort() int {
 	return 0
 }
 
+// HTTPTLSCAFile корневой сертификат центра сертификации который выдал TLS сертификат для HTTP-сервера.
 func (y *config) HTTPTLSCAFile() string {
 
 	if y != nil {
@@ -358,6 +383,7 @@ func (y *config) HTTPTLSCAFile() string {
 	return ""
 }
 
+// HTTPTLSCertFile TLS сертификат для HTTP-сервера.
 func (y *config) HTTPTLSCertFile() string {
 
 	if y != nil {
@@ -366,6 +392,7 @@ func (y *config) HTTPTLSCertFile() string {
 	return ""
 }
 
+// HTTPTLSKeyFile TLS ключ для HTTP-сервера.
 func (y *config) HTTPTLSKeyFile() string {
 
 	if y != nil {
@@ -374,6 +401,7 @@ func (y *config) HTTPTLSKeyFile() string {
 	return ""
 }
 
+// HTTPTLSEnabled тумблер включения на HTTP-сервере TLS шифрования.
 func (y *config) HTTPTLSEnabled() bool {
 
 	if y != nil {
@@ -382,6 +410,9 @@ func (y *config) HTTPTLSEnabled() bool {
 	return false
 }
 
+// JwtExpiresIn Утверждение «exp» (время истечения срока действия)
+// определяет время истечения срока действия или после чего JWT
+// НЕ ДОЛЖЕН приниматься в обработку.
 func (y *config) JwtExpiresIn() time.Duration {
 
 	if y != nil {
@@ -390,6 +421,7 @@ func (y *config) JwtExpiresIn() time.Duration {
 	return 0
 }
 
+// JwtMaxAgeSec определяет время жизни куки в секундах.
 func (y *config) JwtMaxAgeSec() int {
 
 	if y != nil {
@@ -398,6 +430,7 @@ func (y *config) JwtMaxAgeSec() int {
 	return 0
 }
 
+// JwtSecret секрет для подписи JWТокена.
 func (y *config) JwtSecret() string {
 
 	if y != nil {
@@ -406,6 +439,7 @@ func (y *config) JwtSecret() string {
 	return ""
 }
 
+// MongoEnabled тумблер подключения к MongoDB.
 func (y *config) MongoEnabled() bool {
 
 	if y != nil {
@@ -414,6 +448,7 @@ func (y *config) MongoEnabled() bool {
 	return false
 }
 
+// MongoHost хост MongoDB.
 func (y *config) MongoHost() string {
 
 	if y != nil {
@@ -422,6 +457,7 @@ func (y *config) MongoHost() string {
 	return ""
 }
 
+// MongoName имя базы данных MongoDB.
 func (y *config) MongoName() string {
 
 	if y != nil {
@@ -430,6 +466,7 @@ func (y *config) MongoName() string {
 	return ""
 }
 
+// MongoPort порт базы данных MongoDB.
 func (y *config) MongoPort() int {
 
 	if y != nil {
@@ -438,6 +475,7 @@ func (y *config) MongoPort() int {
 	return 0
 }
 
+// MongoUserName имя пользователя базы данных MongoDB.
 func (y *config) MongoUserName() string {
 
 	if y != nil {
@@ -446,6 +484,7 @@ func (y *config) MongoUserName() string {
 	return ""
 }
 
+// MongoUserPassword пароль пользователя базы данных MongoDB.
 func (y *config) MongoUserPassword() string {
 
 	if y != nil {
@@ -462,6 +501,8 @@ func (y *config) Token() string {
 	return ""
 }
 
+// UpkRSAPrivateKeyFile RSA ключ для дешифрации секрета
+// который применяется в симметричном шифровании UPK (User Personal Key).
 func (y *config) UpkRSAPrivateKeyFile() string {
 
 	if y != nil {
@@ -470,6 +511,8 @@ func (y *config) UpkRSAPrivateKeyFile() string {
 	return ""
 }
 
+// UpkRSAPublicKeyFile RSA ключ для шифрования секрета
+// который применяется в симметричном шифровании UPK (User Personal Key).
 func (y *config) UpkRSAPublicKeyFile() string {
 
 	if y != nil {
@@ -478,6 +521,7 @@ func (y *config) UpkRSAPublicKeyFile() string {
 	return ""
 }
 
+// UpkSecret секрет который применяется в симметричном шифровании UPK (User Personal Key).
 func (y *config) UpkSecret() string {
 
 	if y != nil {

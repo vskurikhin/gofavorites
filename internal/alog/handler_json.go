@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-08-04 22:01 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-06 17:18 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * handler_json.go
@@ -7,7 +7,7 @@
  */
 //!+
 
-// Package alog TODO.
+// Package alog кастомизация slog логгера.
 package alog
 
 import (
@@ -19,11 +19,13 @@ import (
 	"github.com/google/uuid"
 )
 
+// HandlerJSON промышленный JSON логгер.
 type HandlerJSON struct {
 	slog.Handler
 	l *log.Logger
 }
 
+// Handle обработчик промышленного JSON логгера.
 func (h *HandlerJSON) Handle(ctx context.Context, r slog.Record) error {
 
 	id := uuid.Max.String()

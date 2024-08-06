@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-08-03 17:39 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-06 21:05 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * sync_util_service.go
@@ -7,7 +7,7 @@
  */
 //!+
 
-// Package services TODO.
+// Package services сервисы бизнес логики.
 package services
 
 import (
@@ -49,6 +49,8 @@ var (
 	syncUtilServ *syncUtilService
 )
 
+// GetSyncUtilService — потокобезопасное (thread-safe) создание
+// сервиса синхронизации биржевых инструментов для пользователя между базами данных MongoDB и PostgreSQL.
 func GetSyncUtilService(prop env.Properties) SyncUtilService {
 
 	onceSyncUtil.Do(func() {
@@ -65,6 +67,7 @@ func GetSyncUtilService(prop env.Properties) SyncUtilService {
 	return syncUtilServ
 }
 
+// Sync синхронизация биржевых инструментов для пользователя между базами данных MongoDB и PostgreSQL.
 func (s syncUtilService) Sync(
 	ctx context.Context,
 	mongodbFavorites, pgDBFavorites []entity.Favorites,

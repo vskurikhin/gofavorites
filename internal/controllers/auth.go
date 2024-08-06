@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-08-04 22:01 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-06 20:17 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * auth.go
@@ -7,7 +7,7 @@
  */
 //!+
 
-// Package controllers TODO.
+// Package controllers REST-ful (endpoints) конечные точки REST веб-сервиса.
 package controllers
 
 import (
@@ -32,6 +32,8 @@ var (
 	authCont *Auth
 )
 
+// GetAuthController — потокобезопасное (thread-safe) создание
+// REST веб-сервиса аутентификации.
 func GetAuthController(prop env.Properties) *Auth {
 
 	onceAuth.Do(func() {
@@ -43,6 +45,20 @@ func GetAuthController(prop env.Properties) *Auth {
 	return authCont
 }
 
+// SignInUser handler
+//
+//	@Summary		аутентификация
+//	@Description	аутентификация пользователя
+//	@Tags			Auth
+//	@Accept			json
+//	@Produce		json
+//	@Security		none
+//	@Param			request			body		dto.SignInRequest	true	"Формат запроса JSON (body)"
+//	@Success		200				{object}	dto.SignInRequest	"пользователь успешно аутентифицирован"
+//	@Failure		400				{object}	dto.SignInRequest	"неверный формат запроса"
+//	@Failure		401				{object}	dto.SignInRequest	"неверная пара логин/пароль"
+//	@Failure		500				{string}	string			"Internal Server Error"
+//	@Router			/api/auth/login	[post]
 func (a *Auth) SignInUser(c *fiber.Ctx) error {
 
 	var payload dto.SignInRequest
@@ -64,7 +80,7 @@ func (a *Auth) SignInUser(c *fiber.Ctx) error {
 
 	if err != nil {
 		return c.
-			Status(fiber.StatusBadRequest).
+			Status(fiber.StatusUnauthorized).
 			JSON(fiber.Map{
 				"status":  "fail",
 				"message": "Invalid email or Password", "requestId": requestId,

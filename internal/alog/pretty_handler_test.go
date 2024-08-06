@@ -7,7 +7,7 @@
  */
 //!+
 
-// Package alog TODO.
+// Package alog кастомизация slog логгера.
 package alog
 
 import (

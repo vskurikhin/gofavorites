@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-08-04 22:01 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-06 20:17 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * auth_interceptor.go
@@ -122,12 +122,12 @@ func (a *authInterceptor) authorize(ctx context.Context, method string) error {
 }
 
 func authMethods() map[string][]string {
-	const laptopServicePath = "/proto.FavoritesService/"
+	const methodServicePath = "/proto.FavoritesService/"
 
 	return map[string][]string{
-		laptopServicePath + "Get":        {"USER"},
-		laptopServicePath + "GetForUser": {"USER"},
-		laptopServicePath + "Set":        {"USER"},
+		methodServicePath + "Get":        {"USER"},
+		methodServicePath + "GetForUser": {"USER"},
+		methodServicePath + "Set":        {"USER"},
 	}
 }
 

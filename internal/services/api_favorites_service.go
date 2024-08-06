@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-31 00:15 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-06 20:17 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * api_favorites_service.go
@@ -7,7 +7,7 @@
  */
 //!+
 
-// Package services TODO.
+// Package services сервисы бизнес логики.
 package services
 
 import (

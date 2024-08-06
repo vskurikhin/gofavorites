@@ -7,7 +7,7 @@
  */
 //!+
 
-// Package services TODO.
+// Package services сервисы бизнес логики.
 package services
 
 import (

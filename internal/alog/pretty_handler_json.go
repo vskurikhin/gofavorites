@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-08-04 16:29 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-06 17:18 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * pretty_handler_json.go
@@ -7,7 +7,7 @@
  */
 //!+
 
-// Package tool TODO.
+// Package alog кастомизация slog логгера.
 package alog
 
 //import (

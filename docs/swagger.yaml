@@ -1,0 +1,174 @@
+basePath: /api
+definitions:
+  dto.Favorites:
+    properties:
+      asset_type:
+        type: string
+      id:
+        type: string
+      isin:
+        type: string
+    required:
+      - asset_type
+      - isin
+    type: object
+  dto.SignInRequest:
+    properties:
+      password:
+        type: string
+      user_name:
+        type: string
+    required:
+      - password
+      - user_name
+    type: object
+host: localhost:8443
+info:
+  contact:
+    email: fiber@swagger.io
+    name: API Support
+  description: This is a sample swagger for Fiber
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Fiber Example API
+  version: "1.0"
+paths:
+  /api/auth/login:
+    post:
+      consumes:
+        - application/json
+      description: аутентификация пользователя
+      parameters:
+        - description: Формат запроса JSON (body)
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: '#/definitions/dto.SignInRequest'
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: пользователь успешно аутентифицирован
+          schema:
+            $ref: '#/definitions/dto.SignInRequest'
+        "400":
+          description: неверный формат запроса
+          schema:
+            $ref: '#/definitions/dto.SignInRequest'
+        "401":
+          description: неверная пара логин/пароль
+          schema:
+            $ref: '#/definitions/dto.SignInRequest'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+        - none: [ ]
+      summary: аутентификация
+      tags:
+        - Auth
+  /api/favorites/get:
+    get:
+      consumes:
+        - application/json
+      description: избранное получения инструментов для пользователя
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: успешная обработка запроса
+          schema:
+            items:
+              items:
+                $ref: '#/definitions/dto.Favorites'
+              type: array
+            type: array
+        "401":
+          description: пользователь не авторизован
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+        - BearerAuth: [ ]
+      summary: избранное
+      tags:
+        - Favorites
+    post:
+      consumes:
+        - application/json
+      description: избранное получения инструмента для пользователя
+      parameters:
+        - description: Формат запроса JSON (body)
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: '#/definitions/dto.Favorites'
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: получение инструмента
+          schema:
+            $ref: '#/definitions/dto.Favorites'
+        "400":
+          description: неверный формат запроса
+          schema:
+            type: string
+        "401":
+          description: пользователь не авторизован
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+        - none: [ ]
+      summary: избранное
+      tags:
+        - Favorites
+  /api/favorites/set:
+    post:
+      consumes:
+        - application/json
+      description: избранное сохранение инструмента для пользователя
+      parameters:
+        - description: Формат запроса JSON (body)
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: '#/definitions/dto.Favorites'
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: получение инструмента
+          schema:
+            $ref: '#/definitions/dto.Favorites'
+        "400":
+          description: неверный формат запроса
+          schema:
+            type: string
+        "401":
+          description: пользователь не авторизован
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+        - none: [ ]
+      summary: избранное
+      tags:
+        - Favorites
+swagger: "2.0"

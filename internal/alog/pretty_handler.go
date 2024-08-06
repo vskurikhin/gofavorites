@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-08-03 12:36 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-06 17:24 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * pretty_handler.go
@@ -7,7 +7,7 @@
  */
 //!+
 
-// Package alog TODO.
+// Package alog кастомизация slog логгера.
 package alog
 
 import (
@@ -27,11 +27,13 @@ type PrettyHandlerOptions struct {
 	SlogOpts slog.HandlerOptions
 }
 
+// PrettyHandler «симпатичный» логгер.
 type PrettyHandler struct {
 	slog.Handler
 	l *log.Logger
 }
 
+// Handle обработчик «симпатичный» логгера.
 func (h *PrettyHandler) Handle(ctx context.Context, r slog.Record) error {
 
 	var level string

@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-31 14:52 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-06 20:17 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * favorites.go
@@ -7,7 +7,7 @@
  */
 //!+
 
-// Package controllers TODO.
+// Package controllers REST-ful (endpoints) конечные точки REST веб-сервиса.
 package controllers
 
 import (
@@ -36,6 +36,8 @@ var (
 	favoritesCont *Favorites
 )
 
+// GetFavoritesController — потокобезопасное (thread-safe) создание
+// REST веб-сервиса основной бизнес логики.
 func GetFavoritesController(prop env.Properties) *Favorites {
 
 	onceFavorites.Do(func() {
@@ -49,6 +51,20 @@ func GetFavoritesController(prop env.Properties) *Favorites {
 	return favoritesCont
 }
 
+// Get handler
+//
+//	@Summary		избранное
+//	@Description	избранное получения инструмента для пользователя
+//	@Tags			Favorites
+//	@Accept			json
+//	@Produce		json
+//	@Security		none
+//	@Param			request			body		dto.Favorites	true	"Формат запроса JSON (body)"
+//	@Success		200				{object}	dto.Favorites	"получение инструмента"
+//	@Failure		400				{object}	string	"неверный формат запроса"
+//	@Failure		401				{object}	string	"пользователь не авторизован"
+//	@Failure		500				{string}	string	"Internal Server Error"
+//	@Router			/api/favorites/get	[post]
 func (f *Favorites) Get(c *fiber.Ctx) error {
 
 	var payload dto.Favorites
@@ -96,6 +112,18 @@ func (f *Favorites) Get(c *fiber.Ctx) error {
 		})
 }
 
+// GetForUser handler
+//
+//	@Summary		избранное
+//	@Description	избранное получения инструментов для пользователя
+//	@Tags			Favorites
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200				{array}		[]dto.Favorites	"успешная обработка запроса"
+//	@Failure		401				{object}	string	"пользователь не авторизован"
+//	@Failure		500				{string}	string	"Internal Server Error"
+//	@Router			/api/favorites/get 	[get]
 func (f *Favorites) GetForUser(c *fiber.Ctx) error {
 
 	requestId := c.Locals("requestid")
@@ -129,6 +157,20 @@ func (f *Favorites) GetForUser(c *fiber.Ctx) error {
 		})
 }
 
+// Set handler
+//
+//	@Summary		избранное
+//	@Description	избранное сохранение инструмента для пользователя
+//	@Tags			Favorites
+//	@Accept			json
+//	@Produce		json
+//	@Security		none
+//	@Param			request			body		dto.Favorites	true	"Формат запроса JSON (body)"
+//	@Success		200				{object}	dto.Favorites	"получение инструмента"
+//	@Failure		400				{object}	string	"неверный формат запроса"
+//	@Failure		401				{object}	string	"пользователь не авторизован"
+//	@Failure		500				{string}	string	"Internal Server Error"
+//	@Router			/api/favorites/set	[post]
 func (f *Favorites) Set(c *fiber.Ctx) error {
 
 	var payload dto.Favorites

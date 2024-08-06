@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-31 15:59 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-06 20:32 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * user_search_service.go
@@ -7,7 +7,7 @@
  */
 //!+
 
-// Package services TODO.
+// Package services сервисы бизнес логики.
 package services
 
 import (
@@ -49,6 +49,8 @@ var (
 	userSearchServ *userSearchService
 )
 
+// GetUserSearchService — потокобезопасное (thread-safe) создание
+// сервиса поиска пользователей в базе данных или в системе аутентификации.
 func GetUserSearchService(prop env.Properties) UserSearchService {
 
 	onceUserSearch.Do(func() {
@@ -73,6 +75,7 @@ func GetUserSearchService(prop env.Properties) UserSearchService {
 
 const cntUserSearchLookupJobs = 3
 
+// Lookup поиск пользователя в базе данных или в системе аутентификации.
 func (u *userSearchService) Lookup(ctx context.Context, user models.User) bool {
 
 	var wg sync.WaitGroup

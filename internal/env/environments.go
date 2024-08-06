@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-31 00:15 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-06 17:50 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * environments.go
@@ -16,6 +16,7 @@ import (
 	c0env "github.com/caarlos0/env"
 )
 
+// Environments статичная конфигурация из переменных окружения.
 type environments struct {
 	CacheExpireMs                  int           `env:"CACHE_EXPIRE_MS"`
 	CacheGCIntervalSec             int           `env:"CACHE_GC_INTERVAL_SEC"`

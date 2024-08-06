@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-31 14:33 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-06 17:21 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * logger.go
@@ -7,7 +7,7 @@
  */
 //!+
 
-// Package alog TODO.
+// Package alog кастомизация slog логгера.
 package alog
 
 import (
@@ -20,10 +20,12 @@ var (
 	logger     *slog.Logger
 )
 
+// GetLogger получение логгера.
 func GetLogger() *slog.Logger {
 	return logger
 }
 
+// NewLogger потокобезопасное (thread-safe) создание логгера.
 func NewLogger(handler slog.Handler) {
 	onceLogger.Do(func() {
 		logger = slog.New(handler)

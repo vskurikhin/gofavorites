@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-31 15:59 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-06 20:32 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * asset_search_service.go
@@ -7,7 +7,7 @@
  */
 //!+
 
-// Package services TODO.
+// Package services сервисы бизнес логики.
 package services
 
 import (
@@ -48,6 +48,8 @@ var (
 	assetSearchServ *assetSearchService
 )
 
+// GetAssetSearchService — потокобезопасное (thread-safe) создание
+// сервиса поиска биржевых инструментов в базе данных или во внешней системе.
 func GetAssetSearchService(prop env.Properties) AssetSearchService {
 
 	onceAssetSearch.Do(func() {
@@ -72,6 +74,7 @@ func GetAssetSearchService(prop env.Properties) AssetSearchService {
 
 const cntAssetSearchLookupJobs = 2
 
+// Lookup поиск биржевого инструмента в базе данных или во внешней системе.
 func (a *assetSearchService) Lookup(ctx context.Context, isin string) bool {
 
 	var wg sync.WaitGroup

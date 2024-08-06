@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-31 15:59 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-06 20:17 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * properties.go
@@ -49,6 +49,7 @@ const (
 	propertyUpkSecretKey                   = "upk-secret-key"
 )
 
+// Properties конфигурация собранная из Yaml-файла, переменных окружения и флагов командной строки.
 type Properties interface {
 	fmt.Stringer
 	CacheExpire() time.Duration
@@ -84,6 +85,7 @@ var properties Properties = (*mapProperties)(nil)
 var once = new(sync.Once)
 
 // GetProperties — свойства преобразованные из конфигурации и окружения.
+// потокобезопасное (thread-safe) создание.
 func GetProperties() Properties {
 
 	once.Do(func() {
@@ -163,7 +165,7 @@ func GetProperties() Properties {
 	return properties
 }
 
-// WithCacheExpire — TODO.
+// WithCacheExpire — срок действия записи в кэше.
 func WithCacheExpire(cacheExpire time.Duration) func(*mapProperties) {
 	return func(p *mapProperties) {
 		if cacheExpire > 0 {
@@ -172,7 +174,7 @@ func WithCacheExpire(cacheExpire time.Duration) func(*mapProperties) {
 	}
 }
 
-// CacheExpire — TODO.
+// CacheExpire геттер срока действия записи в кэше.
 func (p *mapProperties) CacheExpire() time.Duration {
 	if a, ok := p.mp.Load(propertyCacheExpireMs); ok {
 		if cacheExpire, ok := a.(time.Duration); ok {
@@ -182,7 +184,7 @@ func (p *mapProperties) CacheExpire() time.Duration {
 	return 0
 }
 
-// WithCacheGCInterval — TODO.
+// WithCacheGCInterval — интервал очистки кэша.
 func WithCacheGCInterval(cacheGCInterval time.Duration) func(*mapProperties) {
 	return func(p *mapProperties) {
 		if cacheGCInterval > 0 {
@@ -191,7 +193,7 @@ func WithCacheGCInterval(cacheGCInterval time.Duration) func(*mapProperties) {
 	}
 }
 
-// CacheGCInterval — TODO.
+// CacheGCInterval геттер интервала очистки кэша.
 func (p *mapProperties) CacheGCInterval() time.Duration {
 	if a, ok := p.mp.Load(propertyCacheGCIntervalSec); ok {
 		if cacheGCInterval, ok := a.(time.Duration); ok {
@@ -227,7 +229,7 @@ func WithEnvironments(env environments) func(*mapProperties) {
 	}
 }
 
-// Environments — флаги командной строки.
+// Environments геттер Окружения.
 func (p *mapProperties) Environments() environments {
 	if f, ok := p.mp.Load(propertyEnvironments); ok {
 		if env, ok := f.(environments); ok {
@@ -237,14 +239,14 @@ func (p *mapProperties) Environments() environments {
 	return environments{}
 }
 
-// WithExternalAssetGRPCAddress — Окружение.
+// WithExternalAssetGRPCAddress — внешний адрес gRPC-сервиса по биржевым инструментам.
 func WithExternalAssetGRPCAddress(address string) func(*mapProperties) {
 	return func(p *mapProperties) {
 		p.mp.Store(propertyExternalAssetGRPCAddress, address)
 	}
 }
 
-// ExternalAssetGRPCAddress — флаги командной строки.
+// ExternalAssetGRPCAddress геттер внешнего адреса gRPC-сервиса по биржевым инструментам.
 func (p *mapProperties) ExternalAssetGRPCAddress() string {
 	if a, ok := p.mp.Load(propertyExternalAssetGRPCAddress); ok {
 		if address, ok := a.(string); ok {
@@ -254,14 +256,14 @@ func (p *mapProperties) ExternalAssetGRPCAddress() string {
 	return ""
 }
 
-// WithExternalAuthGRPCAddress — Окружение.
+// WithExternalAuthGRPCAddress — внешний адрес gRPC-сервиса аутентификации пользователей.
 func WithExternalAuthGRPCAddress(address string) func(*mapProperties) {
 	return func(p *mapProperties) {
 		p.mp.Store(propertyExternalAuthGRPCAddress, address)
 	}
 }
 
-// ExternalAuthGRPCAddress — флаги командной строки.
+// ExternalAuthGRPCAddress геттер внешнего адреса gRPC-сервиса аутентификации пользователей.
 func (p *mapProperties) ExternalAuthGRPCAddress() string {
 	if a, ok := p.mp.Load(propertyExternalAuthGRPCAddress); ok {
 		if address, ok := a.(string); ok {
@@ -271,14 +273,14 @@ func (p *mapProperties) ExternalAuthGRPCAddress() string {
 	return ""
 }
 
-// WithExternalRequestTimeoutInterval — Окружение.
+// WithExternalRequestTimeoutInterval — интервал ожидания ответа от внешних gRPC-сервисов.
 func WithExternalRequestTimeoutInterval(timeoutInterval time.Duration) func(*mapProperties) {
 	return func(p *mapProperties) {
 		p.mp.Store(propertyExternalRequestTimeoutInterval, timeoutInterval)
 	}
 }
 
-// ExternalRequestTimeoutInterval — флаги командной строки.
+// ExternalRequestTimeoutInterval геттер интервала ожидания ответа от внешних gRPC-сервисов.
 func (p *mapProperties) ExternalRequestTimeoutInterval() time.Duration {
 	if a, ok := p.mp.Load(propertyExternalRequestTimeoutInterval); ok {
 		if timeoutInterval, ok := a.(time.Duration); ok {
@@ -316,7 +318,7 @@ func WithGRPCAddress(address string) func(*mapProperties) {
 	}
 }
 
-// GRPCAddress — геттер адреса gRPC сервера.
+// GRPCAddress геттер адреса gRPC сервера.
 func (p *mapProperties) GRPCAddress() string {
 	if a, ok := p.mp.Load(propertyGRPCAddress); ok {
 		if address, ok := a.(string); ok {
@@ -326,7 +328,7 @@ func (p *mapProperties) GRPCAddress() string {
 	return ""
 }
 
-// WithGRPCTransportCredentials — TODO.
+// WithGRPCTransportCredentials — TLS реквизиты для gRPC-сервера.
 func WithGRPCTransportCredentials(tCredentials credentials.TransportCredentials) func(*mapProperties) {
 	return func(p *mapProperties) {
 		if tCredentials != nil {
@@ -335,7 +337,7 @@ func WithGRPCTransportCredentials(tCredentials credentials.TransportCredentials)
 	}
 }
 
-// GRPCTransportCredentials — геттер TODO.
+// GRPCTransportCredentials геттер TLS реквизитов для gRPC-сервера.
 func (p *mapProperties) GRPCTransportCredentials() credentials.TransportCredentials {
 	if c, ok := p.mp.Load(propertyGRPCTransportCredentials); ok {
 		if tCredentials, ok := c.(credentials.TransportCredentials); ok {
@@ -354,7 +356,7 @@ func WithHTTPAddress(address string) func(*mapProperties) {
 	}
 }
 
-// HTTPAddress — геттер адреса HTTP сервера.
+// HTTPAddress геттер адреса HTTP сервера.
 func (p *mapProperties) HTTPAddress() string {
 	if a, ok := p.mp.Load(propertyHTTPAddress); ok {
 		if address, ok := a.(string); ok {
@@ -364,7 +366,7 @@ func (p *mapProperties) HTTPAddress() string {
 	return ""
 }
 
-// WithHTTPTLSConfig — TODO.
+// WithHTTPTLSConfig — TLS конфигурация для HTTP-сервера.
 func WithHTTPTLSConfig(tCredentials *tls.Config) func(*mapProperties) {
 	return func(p *mapProperties) {
 		if tCredentials != nil {
@@ -373,7 +375,7 @@ func WithHTTPTLSConfig(tCredentials *tls.Config) func(*mapProperties) {
 	}
 }
 
-// HTTPTLSConfig — геттер TODO.
+// HTTPTLSConfig геттер TLS конфигурации для HTTP-сервера.
 func (p *mapProperties) HTTPTLSConfig() *tls.Config {
 	if c, ok := p.mp.Load(propertyHTTPHTTPTLSConfig); ok {
 		if tCredentials, ok := c.(*tls.Config); ok {
@@ -383,7 +385,9 @@ func (p *mapProperties) HTTPTLSConfig() *tls.Config {
 	return nil
 }
 
-// WithJwtExpiresIn — TODO.
+// WithJwtExpiresIn — Утверждение «exp» (время истечения срока действия)
+// определяет время истечения срока действия или после чего JWT
+// НЕ ДОЛЖЕН приниматься в обработку.
 func WithJwtExpiresIn(jwtExpiresIn time.Duration) func(*mapProperties) {
 	return func(p *mapProperties) {
 		if jwtExpiresIn > 0 {
@@ -392,7 +396,7 @@ func WithJwtExpiresIn(jwtExpiresIn time.Duration) func(*mapProperties) {
 	}
 }
 
-// JwtExpiresIn — TODO.
+// JwtExpiresIn геттер времени истечения срока действия JWT.
 func (p *mapProperties) JwtExpiresIn() time.Duration {
 	if a, ok := p.mp.Load(propertyJwtExpiresIn); ok {
 		if jwtExpiresIn, ok := a.(time.Duration); ok {
@@ -402,7 +406,7 @@ func (p *mapProperties) JwtExpiresIn() time.Duration {
 	return 0
 }
 
-// WithJwtMaxAgeSec — TODO.
+// WithJwtMaxAgeSec — определяет время жизни куки в секундах.
 func WithJwtMaxAgeSec(maxAge int) func(*mapProperties) {
 	return func(p *mapProperties) {
 		if maxAge > 0 {
@@ -411,7 +415,7 @@ func WithJwtMaxAgeSec(maxAge int) func(*mapProperties) {
 	}
 }
 
-// JwtMaxAgeSec — TODO.
+// JwtMaxAgeSec геттер времени жизни куки в секундах.
 func (p *mapProperties) JwtMaxAgeSec() int {
 	if a, ok := p.mp.Load(propertyJwtMaxAgeSec); ok {
 		if maxAge, ok := a.(int); ok {
@@ -421,7 +425,7 @@ func (p *mapProperties) JwtMaxAgeSec() int {
 	return 0
 }
 
-// WithJwtSecret — TODO.
+// WithJwtSecret — секрет для подписи JWТокена.
 func WithJwtSecret(secret string) func(*mapProperties) {
 	return func(p *mapProperties) {
 		if secret != "" {
@@ -430,7 +434,7 @@ func WithJwtSecret(secret string) func(*mapProperties) {
 	}
 }
 
-// JwtSecret — TODO.
+// JwtSecret геттер секрета для подписи JWТокена.
 func (p *mapProperties) JwtSecret() string {
 	if a, ok := p.mp.Load(propertyJwtSecret); ok {
 		if secret, ok := a.(string); ok {
@@ -440,7 +444,7 @@ func (p *mapProperties) JwtSecret() string {
 	return ""
 }
 
-// WithLogger — TODO.
+// WithLogger — логгер приложения.
 func WithLogger(logger *slog.Logger) func(*mapProperties) {
 	return func(p *mapProperties) {
 		if logger != nil {
@@ -449,7 +453,7 @@ func WithLogger(logger *slog.Logger) func(*mapProperties) {
 	}
 }
 
-// Logger — TODO.
+// Logger получение логгера приложения.
 func (p *mapProperties) Logger() *slog.Logger {
 	if a, ok := p.mp.Load(propertyLogger); ok {
 		if logger, ok := a.(*slog.Logger); ok {
@@ -459,6 +463,7 @@ func (p *mapProperties) Logger() *slog.Logger {
 	return slog.Default()
 }
 
+// MongodbPool пул подключения к базе данных MongoDB.
 func (p *mapProperties) MongodbPool() *tool.MongoPool {
 	if p, ok := p.mp.Load(propertyMongodbPool); ok {
 		if pool, ok := p.(*tool.MongoPool); ok {
@@ -472,7 +477,8 @@ func (p *mapProperties) SlogJSON() bool {
 	return slogJSON(p.Flags())
 }
 
-// WithUpkRSAPrivateKey — TODO.
+// WithUpkRSAPrivateKey — RSA ключ для дешифрации секрета
+// который применяется в симметричном шифровании UPK (User Personal Key).
 func WithUpkRSAPrivateKey(privateKey *rsa.PrivateKey) func(*mapProperties) {
 	return func(p *mapProperties) {
 		if privateKey != nil {
@@ -481,7 +487,7 @@ func WithUpkRSAPrivateKey(privateKey *rsa.PrivateKey) func(*mapProperties) {
 	}
 }
 
-// UpkRSAPrivateKey — TODO.
+// UpkRSAPrivateKey геттер RSA ключа для дешифрации секрета.
 func (p *mapProperties) UpkRSAPrivateKey() *rsa.PrivateKey {
 	if a, ok := p.mp.Load(propertyUpkRSAPrivateKey); ok {
 		if PrivateKey, ok := a.(*rsa.PrivateKey); ok {
@@ -491,7 +497,8 @@ func (p *mapProperties) UpkRSAPrivateKey() *rsa.PrivateKey {
 	return nil
 }
 
-// WithUpkRSAPublicKey — TODO.
+// WithUpkRSAPublicKey — RSA ключ для шифрования секрета
+// который применяется в симметричном шифровании UPK (User Personal Key).
 func WithUpkRSAPublicKey(publicKey *rsa.PublicKey) func(*mapProperties) {
 	return func(p *mapProperties) {
 		if publicKey != nil {
@@ -500,7 +507,7 @@ func WithUpkRSAPublicKey(publicKey *rsa.PublicKey) func(*mapProperties) {
 	}
 }
 
-// UpkRSAPublicKey — TODO.
+// UpkRSAPublicKey геттер RSA ключа для шифрования секрета.
 func (p *mapProperties) UpkRSAPublicKey() *rsa.PublicKey {
 	if a, ok := p.mp.Load(propertyUpkRSAPublicKey); ok {
 		if publicKey, ok := a.(*rsa.PublicKey); ok {
@@ -510,7 +517,7 @@ func (p *mapProperties) UpkRSAPublicKey() *rsa.PublicKey {
 	return nil
 }
 
-// WithUpkSecretKey — TODO.
+// WithUpkSecretKey — секрет симметричного шифрования UPK (User Personal Key).
 func WithUpkSecretKey(secretKey []byte) func(*mapProperties) {
 	return func(p *mapProperties) {
 		if secretKey != nil {
@@ -519,7 +526,7 @@ func WithUpkSecretKey(secretKey []byte) func(*mapProperties) {
 	}
 }
 
-// UpkSecretKey — TODO.
+// UpkSecretKey геттер секрета симметричного шифрования UPK.
 func (p *mapProperties) UpkSecretKey() []byte {
 	if a, ok := p.mp.Load(propertyUpkSecretKey); ok {
 		if secretKey, ok := a.([]byte); ok {
@@ -529,7 +536,7 @@ func (p *mapProperties) UpkSecretKey() []byte {
 	return nil
 }
 
-// withDBPool — Флаги.
+// withDBPool — пул подключения к базе данных PostgreSQL.
 func withDBPool(pool *pgxpool.Pool) func(*mapProperties) {
 	return func(p *mapProperties) {
 		if pool != nil {
@@ -538,6 +545,7 @@ func withDBPool(pool *pgxpool.Pool) func(*mapProperties) {
 	}
 }
 
+// DBPool геттер пула подключения к базе данных PostgreSQL.
 func (p *mapProperties) DBPool() *pgxpool.Pool {
 	if p, ok := p.mp.Load(propertyDBPool); ok {
 		if pool, ok := p.(*pgxpool.Pool); ok {
@@ -547,7 +555,7 @@ func (p *mapProperties) DBPool() *pgxpool.Pool {
 	return nil
 }
 
-// withMongodbPool — Флаги.
+// withMongodbPool — пул подключения к базе данных MongoDB.
 func withMongodbPool(pool *tool.MongoPool) func(*mapProperties) {
 	return func(p *mapProperties) {
 		if pool != nil {

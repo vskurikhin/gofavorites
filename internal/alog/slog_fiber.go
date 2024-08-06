@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-08-04 17:59 by Victor N. Skurikhin.
+ * This file was last modified at 2024-08-06 17:21 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * slog_fiber.go
@@ -7,7 +7,7 @@
  */
 //!+
 
-// Package alog TODO.
+// Package alog кастомизация slog логгера.
 package alog
 
 import (
@@ -75,6 +75,7 @@ type Config struct {
 //
 // Requests with errors are logged using slog.Error().
 // Requests without errors are logged using slog.Info().
+// Исправленный. Оригинал: https://github.com/samber/slog-fiber
 func New(logger *slog.Logger) fiber.Handler {
 	return NewWithConfig(logger, Config{
 		DefaultLevel:     slog.LevelInfo,
