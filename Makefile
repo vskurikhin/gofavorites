@@ -75,6 +75,42 @@ cert:
 	@echo "Server's signed certificate"
 	@cd cert; openssl x509 -in server-cert.pem -noout -text
 
+##################
+# Implicit targets
+##################
+
+# This rulle is used to generate the message source files based
+# on the *.proto files.
+%.pb.go: %.proto
+	@protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ./$<
+
+%_search_service_mock_test.go: %_search_service.go
+	@mockgen -source=./$< -package=services > ./$@
+
+%_util_service_mock_test.go: %_util_service.go
+	@mockgen -source=./$< -package=services > ./$@
+
+$(SEARCH_SERVICE_DIR)/batch_mock_domain_test.go: $(BATCH_DIR)/batch.go
+	@mockgen -source=./$< -package=services > ./$@
+
+$(SEARCH_SERVICE_DIR)/mongo_mock_domain_test.go: $(MONGO_DIR)/mongo.go
+	@mockgen -source=./$< -package=services > ./$@
+
+$(SEARCH_SERVICE_DIR)/repo_mock_domain_test.go: $(REPO_DIR)/repo.go
+	@mockgen -source=./$< -package=services > ./$@
+
+$(SEARCH_SERVICE_DIR)/transactional_mock_domain_test.go: $(REPO_DIR)/transactional.go
+	@mockgen -source=./$< -package=services > ./$@
+
+$(CONTROLLERS_DIR)/api_favorites_service_mock_test.go: $(SEARCH_SERVICE_DIR)/api_favorites_service.go
+	@mockgen -source=./$< -package=controllers > ./$@
+
+####################################
+# Major source code-generate targets
+####################################
+generate: $(PROTO_PB_GO) $(SEARCH_SERVICE_MOCKS) $(UTIL_SERVICE_MOCKS) $(REPO_MOCKS) $(FAVORITES_MOCK) $(MONGO_MOCKS) $(BATCH_MOCKS)
+	@echo "  >  Done generating source files based on *.proto and Mock files."
+
 test:
 	@echo "  > Test Iteration ..."
 	go vet -vettool=$(which statictest) ./...

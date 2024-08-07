@@ -11,8 +11,9 @@ package tool
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestIfErrorThenPanic(t *testing.T) {

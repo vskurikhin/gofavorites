@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package proto;
+
+import "proto/asset.proto";
+import "proto/status.proto";
+import "proto/user.proto";
+
+option go_package = "github.com/vskurikhin/gofavorites/proto";
+option java_multiple_files = true;
+option java_package = "su.svn.gateway";
+option java_outer_classname = "FavoritesGrpcProto";
+
+service FavoritesService {
+  rpc Get(FavoritesRequest) returns (FavoritesResponse);
+  rpc GetForUser(UserFavoritesRequest) returns (UserFavoritesResponse);
+  rpc Set(FavoritesRequest) returns (FavoritesResponse);
+}
+
+message Favorites {
+  Asset asset = 1; // инструмент
+  User user = 2; // пользователь
+}
+
+message FavoritesRequest {
+  Favorites favorites = 1;  // инструмент
+}
+
+message FavoritesResponse {
+  Favorites favorites = 1;
+  Status status = 2;
+  string error = 3;
+}
+
+message UserFavoritesRequest {
+  User user = 1;  // пользователь
+}
+
+message UserFavoritesResponse {
+  repeated Favorites favorites = 1;
+  int32    count = 2;
+  Status status = 3;
+  string error = 4;
+}

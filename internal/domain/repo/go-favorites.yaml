@@ -1,0 +1,52 @@
+favorites:
+  enabled: true
+  cache:
+    enabled: true
+    expire_ms: 1000
+    gc_interval_sec: 10
+  db:
+    enabled: true
+    name: db
+    host: localhost
+    port: 5432
+    username: dbuser
+    password: password
+  external:
+    asset_grpc_address: localhost:8444
+    auth_grpc_address: localhost:8444
+    request_timeout_interval_ms: 3333
+  grpc:
+    address: localhost
+    enabled: true
+    port: 8442
+    proto: tcp
+    tls:
+      enabled: true
+      ca_file: cert/grpc-test_ca-cert.pem
+      cert_file: cert/grpc-test_server-cert.pem
+      key_file: cert/grpc-test_server-key.pem
+  http:
+    address: localhost
+    enabled: true
+    port: 8443
+    tls:
+      enabled: true
+      ca_file: cert/http-test_ca-cert.pem
+      cert_file: cert/http-test_server-cert.pem
+      key_file: cert/http-test_server-key.pem
+  jwt:
+    jwt_secret: RlMCEknHyZPFEaf5he4zeLWy5QdSvdOBWoAgJq5wy5QdSvOBWoAgJq5wtUH06TY
+    jwt_expired_in: 60m
+    jwt_max_age_sec: 3600
+  mongo:
+    enabled: false
+    name: db
+    host: localhost
+    port: 27017
+    username: mongouser
+    password: password
+  token: $2a$11$ZTzzVGdLUJGcYKJws9UoUug3Q3kCMELVziajBSJPY3k0pNu2XWHBy
+  upk:
+    rsa_private_key_file: cert/upk-private-key.pem
+    rsa_public_key_file: cert/upk-public-key.pem
+    secret: qYhaPtg+PIQtBhAU5fHCeQw7XIF3WLKoLPZnJgq1H//DDOB8o2qrP9goVCUZldOdwqLAHxWOGHuvXcwaIFRrD8I3Hz5tRCgCeI+cEZD9h4c4h6ADSjkcrPXg5eRwnANasBkKKZQz8noYwvt9Z9p7HdOtrBmQOi7OVjTfY0T2SnI=

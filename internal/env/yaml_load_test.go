@@ -12,8 +12,10 @@
 package env
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestLoadConfig(t *testing.T) {
@@ -34,12 +36,19 @@ func TestLoadConfig(t *testing.T) {
 			fRun:  LoadConfig,
 			want: want{
 				yamlConfig: &config{Favorites: struct {
+					Cache struct {
+						Enabled     bool
+						cacheConfig `mapstructure:",squash"`
+					}
 					DB struct {
 						Enabled  bool
 						dbConfig `mapstructure:",squash"`
 					}
-					Enabled bool
-					GRPC    struct {
+					Enabled  bool
+					External struct {
+						externalConfig `mapstructure:",squash"`
+					}
+					GRPC struct {
 						Enabled    bool
 						grpcConfig `mapstructure:",squash"`
 						TLS        struct {
@@ -55,8 +64,28 @@ func TestLoadConfig(t *testing.T) {
 							tlsConfig `mapstructure:",squash"`
 						}
 					}
+					JWT struct {
+						jwtConfig `mapstructure:",squash"`
+					}
+					MONGO struct {
+						Enabled  bool
+						dbConfig `mapstructure:",squash"`
+					}
 					goFavoritesConfig `mapstructure:",squash"`
+					UPK               struct {
+						upkConfig `mapstructure:",squash"`
+					}
 				}{
+					Cache: struct {
+						Enabled     bool
+						cacheConfig `mapstructure:",squash"`
+					}{
+						Enabled: true,
+						cacheConfig: cacheConfig{
+							ExpireMs:      1000,
+							GCIntervalSec: 10,
+						},
+					},
 					DB: struct {
 						Enabled  bool
 						dbConfig `mapstructure:",squash"`
@@ -71,6 +100,15 @@ func TestLoadConfig(t *testing.T) {
 						},
 					},
 					Enabled: true,
+					External: struct {
+						externalConfig `mapstructure:",squash"`
+					}{
+						externalConfig: externalConfig{
+							AssetGRPCAddress:       "localhost:8444",
+							AuthGRPCAddress:        "localhost:8444",
+							RequestTimeoutInterval: 3333,
+						},
+					},
 					GRPC: struct {
 						Enabled    bool
 						grpcConfig `mapstructure:",squash"`
@@ -82,7 +120,7 @@ func TestLoadConfig(t *testing.T) {
 						Enabled: true,
 						grpcConfig: grpcConfig{
 							Address: "localhost",
-							Port:    8443,
+							Port:    8442,
 							Proto:   "tcp",
 						},
 						TLS: struct {
@@ -91,9 +129,9 @@ func TestLoadConfig(t *testing.T) {
 						}{
 							Enabled: true,
 							tlsConfig: tlsConfig{
-								CAFile:   "cert/grpc-ca-cert.pem",
-								CertFile: "cert/grpc-server-cert.pem",
-								KeyFile:  "cert/grpc-server-key.pem",
+								CAFile:   "cert/grpc-test_ca-cert.pem",
+								CertFile: "cert/grpc-test_server-cert.pem",
+								KeyFile:  "cert/grpc-test_server-key.pem",
 							},
 						},
 					},
@@ -108,7 +146,7 @@ func TestLoadConfig(t *testing.T) {
 						Enabled: true,
 						httpConfig: httpConfig{
 							Address: "localhost",
-							Port:    443,
+							Port:    8443,
 						},
 						TLS: struct {
 							Enabled   bool
@@ -116,14 +154,45 @@ func TestLoadConfig(t *testing.T) {
 						}{
 							Enabled: true,
 							tlsConfig: tlsConfig{
-								CAFile:   "cert/http-ca-cert.pem",
-								CertFile: "cert/http-server-cert.pem",
-								KeyFile:  "cert/http-server-key.pem",
+								CAFile:   "cert/http-test_ca-cert.pem",
+								CertFile: "cert/http-test_server-cert.pem",
+								KeyFile:  "cert/http-test_server-key.pem",
 							},
 						},
 					},
+					JWT: struct {
+						jwtConfig `mapstructure:",squash"`
+					}{
+						jwtConfig: jwtConfig{
+							JwtSecret:    "HyZPFEaRf5he4zezLWy5QdSvAdOBWoAgJq5wTvoUH06TYVucOnSGPhSRPp7mkFF",
+							JwtExpiresIn: time.Duration(60) * time.Minute,
+							JwtMaxAgeSec: 60,
+						},
+					},
+					MONGO: struct {
+						Enabled  bool
+						dbConfig `mapstructure:",squash"`
+					}{
+						Enabled: false,
+						dbConfig: dbConfig{
+							Name:         "db",
+							Host:         "localhost",
+							Port:         27017,
+							UserName:     "mongouser",
+							UserPassword: "password",
+						},
+					},
 					goFavoritesConfig: goFavoritesConfig{
-						Token: "89h3f98hbwf987h3f98wenf89ehf",
+						Token: "$2a$11$ZTzzVGdLUJGcYKJws9UoUug3Q3kCMELVziajBSJPY3k0pNu2XWHBy",
+					},
+					UPK: struct {
+						upkConfig `mapstructure:",squash"`
+					}{
+						upkConfig: upkConfig{
+							RSAPrivateKeyFile: "cert/upk-private-key.pem",
+							RSAPublicKeyFile:  "cert/upk-public-key.pem",
+							Secret:            "qYhaPtg+PIQtBhAU5fHCeQw7XIF3WLKoLPZnJgq1H//DDOB8o2qrP9goVCUZldOdwqLAHxWOGHuvXcwaIFRrD8I3Hz5tRCgCeI+cEZD9h4c4h6ADSjkcrPXg5eRwnANasBkKKZQz8noYwvt9Z9p7HdOtrBmQOi7OVjTfY0T2SnI=",
+						},
 					},
 				}},
 				err: nil,

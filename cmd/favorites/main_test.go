@@ -13,6 +13,8 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
+	"math/rand"
 	"os"
 	"syscall"
 	"testing"
@@ -30,6 +32,11 @@ func TestWithoutArgs(t *testing.T) {
 	oldArgs := os.Args
 	defer func() { os.Args = oldArgs }()
 	os.Args = []string{"main"}
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	grpcPort := 65501 + rnd.Intn(30)
+	t.Setenv("GRPC_ADDRESS", fmt.Sprintf("127.0.0.1:%d", grpcPort))
+	httpPort := grpcPort + 1 + rnd.Intn(65535-grpcPort)
+	t.Setenv("HTTP_ADDRESS", fmt.Sprintf("127.0.0.1:%d", httpPort))
 	go func() {
 		time.Sleep(3 * time.Second)
 		_ = syscall.Kill(syscall.Getpid(), syscall.SIGINT)

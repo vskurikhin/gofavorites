@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package proto;
+
+import "proto/status.proto";
+
+option go_package = "github.com/vskurikhin/gofavorites/proto";
+option java_multiple_files = true;
+option java_package = "su.svn.gateway";
+option java_outer_classname = "UserGrpcProto";
+
+service UserService {
+  rpc Get(UserRequest) returns (UserResponse);
+}
+
+message User {
+  string personal_key = 1; // User personal key
+  string upk = 2; // Crypted User personal key
+}
+
+message UserRequest {
+  User user = 1;
+}
+
+message UserResponse {
+  User user = 1;
+  Status status = 2;
+  string error = 3;
+}

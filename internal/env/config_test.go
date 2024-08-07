@@ -12,8 +12,9 @@
 package env
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestConfig(t *testing.T) {
@@ -27,13 +28,19 @@ func TestConfig(t *testing.T) {
 			name:  `positive test #0 nil config`,
 			fRun:  nilConfig,
 			isNil: true,
-			want: `DBHost: 
+			want: `CacheEnabled: false
+CacheExpire: 0
+CacheGCInterval: 0
+DBHost: 
 DBName: 
 DBEnabled: false
 DBPort: 0
 DBUserName: 
 DBUserPassword: 
 Enabled: false
+ExternalAssetGRPCAddress: 
+ExternalAuthGRPCAddress: 
+ExternalRequestTimeoutInterval: 0
 GRPCAddress: 
 GRPCEnabled: false
 GRPCPort: 0
@@ -49,18 +56,33 @@ HTTPTLSCAFile:
 HTTPTLSCertFile: 
 HTTPTLSEnabled: false
 HTTPTLSKeyFile: 
-Token: `,
+MongoHost: 
+MongoName: 
+MongoEnabled: false
+MongoPort: 0
+MongoUserName: 
+MongoUserPassword: 
+Token: 
+UpkRSAPrivateKeyFile: 
+UpkRSAPublicKeyFile: 
+UpkSecretKey: `,
 		},
 		{
 			name: `positive test #1 zero config`,
 			fRun: zeroConfig,
-			want: `DBHost: 
+			want: `CacheEnabled: false
+CacheExpire: 0
+CacheGCInterval: 0
+DBHost: 
 DBName: 
 DBEnabled: false
 DBPort: 0
 DBUserName: 
 DBUserPassword: 
 Enabled: false
+ExternalAssetGRPCAddress: 
+ExternalAuthGRPCAddress: 
+ExternalRequestTimeoutInterval: 0
 GRPCAddress: 
 GRPCEnabled: false
 GRPCPort: 0
@@ -76,7 +98,16 @@ HTTPTLSCAFile:
 HTTPTLSCertFile: 
 HTTPTLSEnabled: false
 HTTPTLSKeyFile: 
-Token: `,
+MongoHost: 
+MongoName: 
+MongoEnabled: false
+MongoPort: 0
+MongoUserName: 
+MongoUserPassword: 
+Token: 
+UpkRSAPrivateKeyFile: 
+UpkRSAPublicKeyFile: 
+UpkSecretKey: `,
 		},
 	}
 	assert.NotNil(t, t)

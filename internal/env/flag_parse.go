@@ -1,5 +1,5 @@
 /*
- * This file was last modified at 2024-07-11 11:30 by Victor N. Skurikhin.
+ * This file was last modified at 2024-07-31 14:12 by Victor N. Skurikhin.
  * This is free and unencumbered software released into the public domain.
  * For more information, please refer to <http://unlicense.org>
  * flag_parse.go
@@ -10,18 +10,35 @@
 // Package env работа с настройками и окружением.
 package env
 
-import "github.com/spf13/pflag"
+import (
+	"time"
+
+	"github.com/spf13/pflag"
+)
 
 const (
-	flagDatabaseDSN  = "database-dsn"
-	flagGRPCAddress  = "grpc-address"
-	flagGRPCCAFile   = "grpc-ca-file"
-	flagGRPCCertFile = "grpc-cert-file"
-	flagGRPCKeyFile  = "grpc-key-file"
-	flagHTTPAddress  = "http-address"
-	flagHTTPCAFile   = "http-ca-file"
-	flagHTTPCertFile = "http-cert-file"
-	flagHTTPKeyFile  = "http-key-file"
+	flagCacheExpireMs                  = "cache-expire-ms"
+	flagCacheGCIntervalSec             = "cache-gc-interval-sec"
+	flagDatabaseDSN                    = "database-dsn"
+	flagExternalAssetGRPCAddress       = "asset-grpc-address"
+	flagExternalAuthGRPCAddress        = "auth-grpc-address"
+	flagExternalRequestTimeoutInterval = "request-timeout-interval"
+	flagGRPCAddress                    = "grpc-address"
+	flagGRPCCAFile                     = "grpc-ca-file"
+	flagGRPCCertFile                   = "grpc-cert-file"
+	flagGRPCKeyFile                    = "grpc-key-file"
+	flagHTTPAddress                    = "http-address"
+	flagHTTPCAFile                     = "http-ca-file"
+	flagHTTPCertFile                   = "http-cert-file"
+	flagHTTPKeyFile                    = "http-key-file"
+	flagJwtExpiresIn                   = "jwt-expires-in"
+	flagJwtMaxAgeSec                   = "Jwt-max-age-sec"
+	flagJwtSecret                      = "jwt-secret"
+	flagMongodbDSN                     = "mongodb-dsn"
+	flagSlogJson                       = "slog-json"
+	flagUpkPrivateKeyFile              = "upk-private-key-file"
+	flagUpkPublicKeyFile               = "upk-public-key-file"
+	flagUpkSecret                      = "upk-secret"
 )
 
 func makeFlagsParse() map[string]interface{} {
@@ -29,11 +46,37 @@ func makeFlagsParse() map[string]interface{} {
 	var flagsMap = make(map[string]interface{})
 
 	if !pflag.Parsed() {
+		flagsMap[flagCacheExpireMs] = pflag.Int(
+			flagCacheExpireMs,
+			1000,
+			"time to expire key in millisecond",
+		)
+		flagsMap[flagCacheGCIntervalSec] = pflag.Int(
+			flagCacheGCIntervalSec,
+			10,
+			"time before deleting expired keys in second",
+		)
 		flagsMap[flagDatabaseDSN] = pflag.StringP(
 			flagDatabaseDSN,
 			"d",
 			"postgres://dbuser:password@localhost:5432/db?sslmode=disable",
-			"for the database DSN",
+			"database DSN",
+		)
+		flagsMap[flagExternalAssetGRPCAddress] = pflag.String(
+			flagExternalAssetGRPCAddress,
+			"localhost:8444",
+			"asset gRPC server host and port",
+		)
+		flagsMap[flagExternalAuthGRPCAddress] = pflag.String(
+			flagExternalAuthGRPCAddress,
+			"localhost:8444",
+			"asset gRPC server host and port",
+		)
+		flagsMap[flagExternalRequestTimeoutInterval] = pflag.IntP(
+			flagExternalRequestTimeoutInterval,
+			"t",
+			5000,
+			"timeout in millisecond via gRPC clients for external services",
 		)
 		flagsMap[flagGRPCAddress] = pflag.StringP(
 			flagGRPCAddress,
@@ -43,17 +86,17 @@ func makeFlagsParse() map[string]interface{} {
 		)
 		flagsMap[flagGRPCCAFile] = pflag.String(
 			flagGRPCCAFile,
-			"cert/grpc-ca-cert.pem",
+			"cert/grpc-test_ca-cert.pem",
 			"gRPC CA file",
 		)
 		flagsMap[flagGRPCCertFile] = pflag.String(
 			flagGRPCCertFile,
-			"cert/grpc-server-cert.pem",
+			"cert/grpc-test_server-cert.pem",
 			"gRPC server certificate file",
 		)
 		flagsMap[flagGRPCKeyFile] = pflag.String(
 			flagGRPCKeyFile,
-			"cert/grpc-server-key.pem",
+			"cert/grpc-test_server-key.pem",
 			"gRPC server key file",
 		)
 		flagsMap[flagHTTPAddress] = pflag.StringP(
@@ -64,18 +107,60 @@ func makeFlagsParse() map[string]interface{} {
 		)
 		flagsMap[flagHTTPCAFile] = pflag.String(
 			flagHTTPCAFile,
-			"cert/http-ca-cert.pem",
+			"cert/http-test_ca-cert.pem",
 			"HTTP CA file",
 		)
 		flagsMap[flagHTTPCertFile] = pflag.String(
 			flagHTTPCertFile,
-			"cert/http-server-cert.pem",
+			"cert/http-test_server-cert.pem",
 			"HTTP server certificate file",
 		)
 		flagsMap[flagHTTPKeyFile] = pflag.String(
 			flagHTTPKeyFile,
-			"cert/http-server-key.pem",
+			"cert/http-test_server-key.pem",
 			"HTTP server key file",
+		)
+		flagsMap[flagJwtExpiresIn] = pflag.Duration(
+			flagJwtExpiresIn,
+			time.Duration(60)*time.Second,
+			"JWT expires in in second",
+		)
+		flagsMap[flagJwtMaxAgeSec] = pflag.Int(
+			flagJwtMaxAgeSec,
+			60,
+			"JWT max age",
+		)
+		flagsMap[flagJwtSecret] = pflag.String(
+			flagJwtSecret,
+			"",
+			"JWT secret",
+		)
+		flagsMap[flagMongodbDSN] = pflag.StringP(
+			flagMongodbDSN,
+			"m",
+			"mongodb://mongouser:password@localhost:27017/db?authSource=admin",
+			"database DSN",
+		)
+		flagsMap[flagSlogJson] = pflag.BoolP(
+			flagSlogJson,
+			"s",
+			false,
+			"slog JSON output",
+		)
+		flagsMap[flagUpkPrivateKeyFile] = pflag.String(
+			flagUpkPrivateKeyFile,
+			"cert/upk-private-key.pem",
+			"Private key file for decrypt UPK secret",
+		)
+		flagsMap[flagUpkPublicKeyFile] = pflag.String(
+			flagUpkPublicKeyFile,
+			"cert/upk-public-key.pem",
+			"Public key for encrypt UPK secret",
+		)
+		flagsMap[flagUpkSecret] = pflag.String(
+			flagUpkSecret,
+			"",
+			"UPK secret",
 		)
 		pflag.Parse()
 	}
