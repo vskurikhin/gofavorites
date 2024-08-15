@@ -1,4 +1,4 @@
-basePath: /api
+basePath: /
 definitions:
   dto.Favorites:
     properties:
@@ -9,8 +9,8 @@ definitions:
       isin:
         type: string
     required:
-      - asset_type
-      - isin
+    - asset_type
+    - isin
     type: object
   dto.SignInRequest:
     properties:
@@ -19,8 +19,8 @@ definitions:
       user_name:
         type: string
     required:
-      - password
-      - user_name
+    - password
+    - user_name
     type: object
 host: localhost:8443
 info:
@@ -32,23 +32,23 @@ info:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   termsOfService: http://swagger.io/terms/
-  title: Fiber Example API
+  title: GoFavorites API
   version: "1.0"
 paths:
   /api/auth/login:
     post:
       consumes:
-        - application/json
+      - application/json
       description: аутентификация пользователя
       parameters:
-        - description: Формат запроса JSON (body)
-          in: body
-          name: request
-          required: true
-          schema:
-            $ref: '#/definitions/dto.SignInRequest'
+      - description: Формат запроса JSON (body)
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SignInRequest'
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: пользователь успешно аутентифицирован
@@ -67,17 +67,17 @@ paths:
           schema:
             type: string
       security:
-        - none: [ ]
+      - none: []
       summary: аутентификация
       tags:
-        - Auth
+      - Auth
   /api/favorites/get:
     get:
       consumes:
-        - application/json
+      - application/json
       description: избранное получения инструментов для пользователя
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: успешная обработка запроса
@@ -96,23 +96,24 @@ paths:
           schema:
             type: string
       security:
-        - BearerAuth: [ ]
+      - Bearer: []
+      - BearerAuth: []
       summary: избранное
       tags:
-        - Favorites
+      - Favorites
     post:
       consumes:
-        - application/json
+      - application/json
       description: избранное получения инструмента для пользователя
       parameters:
-        - description: Формат запроса JSON (body)
-          in: body
-          name: request
-          required: true
-          schema:
-            $ref: '#/definitions/dto.Favorites'
+      - description: Формат запроса JSON (body)
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.Favorites'
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: получение инструмента
@@ -131,24 +132,24 @@ paths:
           schema:
             type: string
       security:
-        - none: [ ]
+      - none: []
       summary: избранное
       tags:
-        - Favorites
+      - Favorites
   /api/favorites/set:
     post:
       consumes:
-        - application/json
+      - application/json
       description: избранное сохранение инструмента для пользователя
       parameters:
-        - description: Формат запроса JSON (body)
-          in: body
-          name: request
-          required: true
-          schema:
-            $ref: '#/definitions/dto.Favorites'
+      - description: Формат запроса JSON (body)
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.Favorites'
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: получение инструмента
@@ -167,8 +168,15 @@ paths:
           schema:
             type: string
       security:
-        - none: [ ]
+      - none: []
       summary: избранное
       tags:
-        - Favorites
+      - Favorites
+security:
+- Bearer: []
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"
