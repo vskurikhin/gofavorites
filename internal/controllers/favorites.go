@@ -116,6 +116,7 @@ func (f *Favorites) Get(c *fiber.Ctx) error {
 //
 //	@Summary		избранное
 //	@Description	избранное получения инструментов для пользователя
+//	@Security	Bearer
 //	@Tags			Favorites
 //	@Accept			json
 //	@Produce		json

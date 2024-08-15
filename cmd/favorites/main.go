@@ -53,7 +53,8 @@ var (
 //go:embed migrations/*.sql
 var embedMigrations embed.FS //
 
-// @title Fiber Example API
+// @title GoFavorites API
+// @Security     Bearer
 // @version 1.0
 // @description This is a sample swagger for Fiber
 // @termsOfService http://swagger.io/terms/
@@ -62,7 +63,11 @@ var embedMigrations embed.FS //
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 // @host localhost:8443
-// @BasePath /api
+// @BasePath /
+// @securityDefinitions.apikey	BearerAuth
+// @in							header
+// @name						Authorization
+
 func main() {
 	run(context.Background())
 }
@@ -191,7 +196,7 @@ func makeHTTP(prop env.Properties) *fiber.App {
 	micro.Route("/auth", func(router fiber.Router) {
 		router.Post("/login", controllers.GetAuthController(prop).SignInUser)
 	})
-	app.Get("/swagger/*", swagger.HandlerDefault) // default
+	app.Get("/swagger/*", swagger.New(swagger.Config{PreauthorizeApiKey: "Bearer"}))
 	micro.Get(
 		"/favorites/get",
 		middleware.GetUserJwtHandler(prop).DeserializeUser,
